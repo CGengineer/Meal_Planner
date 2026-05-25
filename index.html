@@ -370,7 +370,7 @@ let currentMeal="昼";
 let settings={
   showCalories:true,showStars:true,showDifficulty:true,
   showCost:true,showNutritionColor:true,showPlannedCardImage:true,currency:"円",
-  cardDensity:"standard",uiMode:"standard",sheetLevel:4,sheetScale:10
+  cardDensity:"standard",uiMode:"standard",sheetLevel:4,sheetScale:10,sheetHeight:null
 };
 let activeTagFilter=null;
 let activeCostFilter=null;
@@ -444,6 +444,7 @@ function load(){
     }
     settings.sheetScale=10;
     settings.sheetLevel=clampSheetLevel(settings.sheetLevel);
+    settings.sheetHeight=Number.isFinite(Number(settings.sheetHeight))?Math.max(80,Math.round(Number(settings.sheetHeight))):null;
     for(const k in allData){
       const week=allData[k];
       if(Array.isArray(week)){
@@ -1014,13 +1015,16 @@ function showSettings(){
   ss.onchange=()=>{
     settings.sheetLevel=clampSheetLevel(ss.value);
     settings.sheetScale=10;
-    save();
     const sheet=document.getElementById("bottomSheet");
     if(sheet){
       const{snapLevels,level}=getSheetSnapPoints();
+      settings.sheetHeight=snapLevels[level];
+      save();
       sheet.classList.add("bs-anim");
       sheet.style.height=snapLevels[level]+"px";
       setTimeout(()=>sheet.classList.remove("bs-anim"),340);
+    }else{
+      save();
     }
   };
   sr.appendChild(sl);sr.appendChild(ss);c.appendChild(sr);
@@ -1074,6 +1078,7 @@ function importJSON(e){
       }
       settings.sheetLevel=clampSheetLevel(settings.sheetLevel);
       settings.sheetScale=10;
+      settings.sheetHeight=Number.isFinite(Number(settings.sheetHeight))?Math.max(80,Math.round(Number(settings.sheetHeight))):null;
       for(const k in allData)allData[k]=allData[k].map(day=>(day||[]).map(migrateItem));
       pool=pool.map(migrateItem);
       save();render();showToast("インポートしました ✓");
@@ -1187,28 +1192,18 @@ function initBottomSheet(){
   const search=document.getElementById("poolSearch");
   if(!sheet||!handle||!search)return;
   let drag=false,startY=0,startH=0;
-  function closestLevelFromHeight(h){
+  function clampSheetHeight(h){
     const{snapLevels}=getSheetSnapPoints();
-    let nearest=0,min=Math.abs(h-snapLevels[0]);
-    for(let lv=1;lv<=10;lv++){
-      const d=Math.abs(h-snapLevels[lv]);
-      if(d<min){min=d;nearest=lv;}
-    }
-    return nearest;
+    return Math.max(snapLevels[0],Math.min(snapLevels[10],Math.round(h)));
   }
-  function snapToLevel(level,{persist}={persist:false}){
-    const lv=clampSheetLevel(level);
-    const{snapLevels}=getSheetSnapPoints();
-    snapTo(snapLevels[lv]);
+  function snapTo(h,persist){
+    const next=clampSheetHeight(h);
+    sheet.classList.add("bs-anim");
+    sheet.style.height=next+"px";
     if(persist){
-      settings.sheetLevel=lv;
-      settings.sheetScale=10;
+      settings.sheetHeight=next;
       save();
     }
-  }
-  function snapTo(h){
-    sheet.classList.add("bs-anim");
-    sheet.style.height=h+"px";
     setTimeout(()=>sheet.classList.remove("bs-anim"),340);
   }
   function startDrag(clientY){
@@ -1217,13 +1212,18 @@ function initBottomSheet(){
   }
   function moveDrag(clientY){
     if(!drag)return;
-    const{snapLevels}=getSheetSnapPoints();
-    const h=Math.max(snapLevels[0],Math.min(snapLevels[10],startH+(startY-clientY)));
-    sheet.style.height=h+"px";
+    sheet.style.height=clampSheetHeight(startH+(startY-clientY))+"px";
   }
   function endDrag(){
     if(!drag)return;drag=false;
-    snapToLevel(closestLevelFromHeight(sheet.offsetHeight),{persist:true});
+    const finalHeight=clampSheetHeight(sheet.offsetHeight);
+    const{snapLevels}=getSheetSnapPoints();
+    const closeHeight=snapLevels[0];
+    const closeThreshold=closeHeight+48;
+    const settledHeight=finalHeight<=closeThreshold?closeHeight:finalHeight;
+    sheet.style.height=settledHeight+"px";
+    settings.sheetHeight=settledHeight;
+    save();
   }
 
   if("PointerEvent" in window){
@@ -1279,13 +1279,16 @@ function initBottomSheet(){
   }
 
   search.addEventListener("focus",()=>{
-    const{level}=getSheetSnapPoints();
-    snapToLevel(Math.min(level+2,10));
+    const focusHeight=clampSheetHeight(sheet.offsetHeight+120);
+    if(focusHeight>sheet.offsetHeight+2)snapTo(focusHeight,false);
   });
   search.addEventListener("input",renderPool);
-  const initLevel=clampSheetLevel(settings.sheetLevel);
-  const{snapLevels}=getSheetSnapPoints();
-  sheet.style.height=snapLevels[initLevel]+"px";
+  if(Number.isFinite(Number(settings.sheetHeight)))sheet.style.height=clampSheetHeight(Number(settings.sheetHeight))+"px";
+  else{
+    const initLevel=clampSheetLevel(settings.sheetLevel);
+    const{snapLevels}=getSheetSnapPoints();
+    sheet.style.height=snapLevels[initLevel]+"px";
+  }
 }
 
 function toggleTagFilter(){
@@ -1297,22 +1300,15 @@ function toggleTagFilter(){
   renderFilterPanel();
   panel.style.display="flex";
   if(sheet){
-    const minLv=5;
-    const currentLv=closestLevelFromHeightForPanel(sheet.offsetHeight);
-    if(currentLv<minLv){
-      const{snapLevels}=getSheetSnapPoints();
-      sheet.style.height=snapLevels[minLv]+"px";
+    const minHeight=levelToSheetHeight(5);
+    if(sheet.offsetHeight<minHeight){
+      sheet.classList.add("bs-anim");
+      sheet.style.height=minHeight+"px";
+      settings.sheetHeight=minHeight;
+      save();
+      setTimeout(()=>sheet.classList.remove("bs-anim"),340);
     }
   }
-}
-function closestLevelFromHeightForPanel(h){
-  const{snapLevels}=getSheetSnapPoints();
-  let nearest=0,min=Math.abs(h-snapLevels[0]);
-  for(let lv=1;lv<=10;lv++){
-    const d=Math.abs(h-snapLevels[lv]);
-    if(d<min){min=d;nearest=lv;}
-  }
-  return nearest;
 }
 
 function renderFilterPanel(){
