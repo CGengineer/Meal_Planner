@@ -370,7 +370,7 @@ let currentMeal="昼";
 let settings={
   showCalories:true,showStars:true,showDifficulty:true,
   showCost:true,showNutritionColor:true,showPlannedCardImage:true,currency:"円",
-  cardDensity:"standard",uiMode:"standard"
+  cardDensity:"standard",uiMode:"standard",sheetLevel:3
 };
 let activeTagFilter=null;
 let activeCostFilter=null;
@@ -504,8 +504,29 @@ function applyUIMode(mode){
   if(settings.uiMode==="focus")document.body.classList.add("ui-focus");
   if(settings.uiMode==="edit")document.body.classList.add("ui-edit");
 }
+function clampSheetLevel(v){
+  const n=parseInt(v,10);
+  if(!Number.isFinite(n))return 3;
+  return Math.min(5,Math.max(1,n));
+}
+function getSheetSnapPoints(){
+  const presets={
+    1:{expandRatio:0.42,expandCap:340,focusRatio:0.38,focusCap:300},
+    2:{expandRatio:0.48,expandCap:400,focusRatio:0.42,focusCap:340},
+    3:{expandRatio:0.55,expandCap:460,focusRatio:0.48,focusCap:400},
+    4:{expandRatio:0.62,expandCap:520,focusRatio:0.54,focusCap:450},
+    5:{expandRatio:0.68,expandCap:580,focusRatio:0.60,focusCap:500},
+  };
+  const level=clampSheetLevel(settings.sheetLevel);
+  const p=presets[level]||presets[3];
+  const snapC=80;
+  const snapE=Math.min(Math.round(window.innerHeight*p.expandRatio),p.expandCap);
+  const snapF=Math.min(snapE,Math.min(Math.round(window.innerHeight*p.focusRatio),p.focusCap));
+  return{snapC,snapE,snapF};
+}
 
-// ===== RENDER =====
+    if(s) settings={...settings,...JSON.parse(s)};
+    settings.sheetLevel=clampSheetLevel(settings.sheetLevel);
 function render(){
   const cal=document.getElementById("cal");cal.innerHTML="";
   const wd=weekData();const k=curKey();
@@ -971,6 +992,26 @@ function showSettings(){
   ds.onchange=()=>{settings.cardDensity=ds.value;save();render();};
   dr.appendChild(dl);dr.appendChild(ds);c.appendChild(dr);
 
+  const sr=document.createElement("div");sr.className="setting-row";
+  const sl=document.createElement("span");sl.style.fontSize="13px";sl.innerText="下部シート展開量";
+  const ss=document.createElement("select");ss.className="form-input";ss.style.cssText="width:136px;padding:4px 6px;";
+  [[1,"1 小さい"],[2,"2 やや小さい"],[3,"3 標準"],[4,"4 やや大きい"],[5,"5 大きい"]].forEach(([v,t])=>{
+    const o=document.createElement("option");o.value=String(v);o.innerText=t;ss.appendChild(o);
+  });
+  ss.value=String(clampSheetLevel(settings.sheetLevel));
+  ss.onchange=()=>{
+    settings.sheetLevel=clampSheetLevel(ss.value);
+    save();
+    const sheet=document.getElementById("bottomSheet");
+    if(sheet){
+      const{snapC,snapE}=getSheetSnapPoints();
+      const cur=sheet.offsetHeight||snapC;
+      const next=cur<=snapC+8?snapC:Math.min(cur,snapE);
+      sheet.style.height=next+"px";
+    }
+  };
+  sr.appendChild(sl);sr.appendChild(ss);c.appendChild(sr);
+
   const mr=document.createElement("div");mr.className="setting-row";
   const ml=document.createElement("span");ml.style.fontSize="13px";ml.innerText="画面モード";
   const ms=document.createElement("select");ms.className="form-input";ms.style.cssText="width:110px;padding:4px 6px;";
@@ -1121,9 +1162,6 @@ function renderPool(){
 function initBottomSheet(){
   const sheet=document.getElementById("bottomSheet");
   const handle=document.getElementById("sheetHandle");
-  const SNAP_C=80;
-  const SNAP_E=Math.min(Math.round(window.innerHeight*.55),460);
-  const SNAP_FOCUS=Math.min(Math.round(window.innerHeight*.48),400);
   let drag=false,startY=0,startH=0;
   function snapTo(h){
     sheet.classList.add("bs-anim");
@@ -1139,15 +1177,20 @@ function initBottomSheet(){
   });
   handle.addEventListener("pointermove",e=>{
     if(!drag)return;
-    const h=Math.max(SNAP_C,Math.min(SNAP_E,startH+(startY-e.clientY)));
+    const{snapC,snapE}=getSheetSnapPoints();
+    const h=Math.max(snapC,Math.min(snapE,startH+(startY-e.clientY)));
     sheet.style.height=h+"px";
   });
   handle.addEventListener("pointerup",()=>{
     if(!drag)return;drag=false;
-    snapTo(sheet.offsetHeight>(SNAP_C+SNAP_E)/2?SNAP_E:SNAP_C);
+    const{snapC,snapE}=getSheetSnapPoints();
+    snapTo(sheet.offsetHeight>(snapC+snapE)/2?snapE:snapC);
   });
   handle.addEventListener("pointercancel",()=>{drag=false;});
-  document.getElementById("poolSearch").addEventListener("focus",()=>snapTo(SNAP_FOCUS));
+  document.getElementById("poolSearch").addEventListener("focus",()=>{
+    const{snapF}=getSheetSnapPoints();
+    snapTo(snapF);
+  });
   document.getElementById("poolSearch").addEventListener("input",renderPool);
 }
 
