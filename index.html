@@ -6,11 +6,12 @@
 <title>🍱 献立ボード</title>
 <style>
 *{box-sizing:border-box;}
-body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#0f172a;color:#f1f5f9;height:100vh;overflow:hidden;}
+html,body{height:100%;}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#0f172a;color:#f1f5f9;height:100svh;min-height:100svh;overflow:hidden;}
 .header{display:flex;justify-content:space-between;align-items:center;padding:8px 14px;gap:8px;flex-wrap:wrap;border-bottom:1px solid #334155;background:#0f172a;position:sticky;top:0;z-index:100;}
 .title{font-size:16px;font-weight:bold;white-space:nowrap;}
 .actions{display:flex;gap:5px;align-items:center;flex-wrap:nowrap;min-width:0;}
-.btn{background:#334155;padding:5px 10px;border-radius:8px;cursor:pointer;border:none;color:#f1f5f9;font-size:12px;white-space:nowrap;transition:background .1s;font-family:inherit;}
+.btn{background:#334155;padding:7px 11px;border-radius:8px;cursor:pointer;border:none;color:#f1f5f9;font-size:12px;white-space:nowrap;transition:background .1s;font-family:inherit;min-height:34px;}
 .btn:hover{background:#475569;}.btn:active{transform:scale(.93);background:#1e293b;}
 .btn.primary{background:#2563eb;}.btn.primary:hover{background:#3b82f6;}
 .more-menu{position:relative;}
@@ -19,7 +20,7 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif
 .more-item{background:#334155;border:none;color:#f1f5f9;border-radius:8px;padding:7px 9px;font-size:12px;text-align:left;cursor:pointer;font-family:inherit;}
 .more-item:hover{background:#475569;}
 /* Calendar */
-.calendar{display:grid;grid-template-columns:repeat(7,1fr);height:calc(100vh - 140px);border-top:1px solid #334155;overflow-y:auto;}
+.calendar{display:grid;grid-template-columns:repeat(7,1fr);height:calc(100svh - 140px);border-top:1px solid #334155;overflow-y:auto;-webkit-overflow-scrolling:touch;}
 .day{border-right:1px solid #334155;padding:5px;display:flex;flex-direction:column;gap:5px;min-height:0;overflow-y:auto;transition:background .12s;}
 .day:last-child{border-right:none;}.day.drag-over{background:#1e3a5f!important;}
 .day-header{font-size:11px;font-weight:bold;text-align:center;padding:2px 0;border-radius:4px;}
@@ -39,21 +40,22 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif
 .card-overlay .card-badge,.card-overlay .card-tag,.card-overlay .card-stars{background:rgba(15,23,42,.78);backdrop-filter:blur(2px);}
 .card-overlay .card-stars{padding:1px 5px;border-radius:8px;line-height:1.2;}
 .card-overlay .card-tag{margin-top:0;}
-.card-edit-btn{position:absolute;top:4px;right:4px;background:transparent;border:none;color:#64748b;font-size:11px;padding:2px 4px;cursor:pointer;border-radius:4px;opacity:0;transition:opacity .15s;line-height:1;}
+.card-edit-btn{position:absolute;top:4px;right:4px;background:transparent;border:none;color:#64748b;font-size:13px;padding:4px 6px;cursor:pointer;border-radius:4px;opacity:0;transition:opacity .15s;line-height:1;min-height:28px;min-width:28px;display:flex;align-items:center;justify-content:center;}
 .card:hover .card-edit-btn{opacity:1;}.card-edit-btn:hover{background:#334155;color:#f1f5f9;}
 /* Bottom Sheet */
 .bottom-sheet{position:fixed;bottom:0;left:0;right:0;background:#1e293b;border-radius:16px 16px 0 0;border-top:1px solid #334155;z-index:150;height:80px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 -4px 20px rgba(0,0,0,.45);}
 .bs-anim{transition:height .3s cubic-bezier(.32,.72,0,1);}
-.sheet-handle{display:flex;justify-content:center;align-items:center;padding:9px 0 5px;flex-shrink:0;touch-action:none;cursor:grab;user-select:none;}
+.sheet-handle{display:flex;justify-content:center;align-items:center;padding:12px 0 7px;flex-shrink:0;touch-action:none;cursor:grab;user-select:none;}
 .sheet-handle:active{cursor:grabbing;}
-.handle-bar{width:36px;height:4px;background:#475569;border-radius:2px;pointer-events:none;}
+.handle-bar{width:52px;height:6px;background:#475569;border-radius:3px;pointer-events:none;}
 .sheet-search{display:flex;align-items:center;padding:0 8px 7px;gap:6px;flex-shrink:0;}
 .active-filter-bar{display:none;gap:5px;padding:0 8px 7px;flex-wrap:wrap;flex-shrink:0;}
 .active-filter-bar.show{display:flex;}
 .filter-chip{display:inline-flex;align-items:center;gap:5px;font-size:10px;background:#0f172a;border:1px solid #334155;color:#cbd5e1;padding:2px 7px;border-radius:999px;}
 .filter-chip button{background:transparent;border:none;color:#94a3b8;cursor:pointer;font-size:11px;line-height:1;padding:0;}
+.filter-chip.more{color:#94a3b8;border-style:dashed;}
 .search-wrap{flex:1;display:flex;align-items:center;background:#0f172a;border-radius:8px;padding:5px 9px;gap:6px;border:1px solid #334155;min-width:0;}
-.search-input{flex:1;background:transparent;border:none;color:#f1f5f9;font-size:12px;font-family:inherit;outline:none;min-width:0;}
+.search-input{flex:1;background:transparent;border:none;color:#f1f5f9;font-size:16px;font-family:inherit;outline:none;min-width:0;}
 .search-input::placeholder{color:#475569;}
 .sheet-tag-filter{display:none;gap:5px;padding:0 8px 7px;flex-wrap:wrap;flex-shrink:0;border-bottom:1px solid #1e3a5f;}
 .filter-accordion{width:100%;background:#0f172a;border:1px solid #334155;border-radius:8px;overflow:hidden;}
@@ -62,7 +64,7 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif
 .filter-acc-head.active{background:#1b2a45;color:#f1f5f9;}
 .filter-acc-body{display:none;padding:7px;gap:5px;flex-wrap:wrap;}
 .filter-acc-body.open{display:flex;}
-.pool-grid{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:6px 8px 8px;overflow-y:auto;align-content:start;}
+.pool-grid{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:6px 8px 8px;overflow-y:auto;align-content:start;-webkit-overflow-scrolling:touch;}
 .pool-empty{grid-column:1/-1;text-align:center;color:#475569;font-size:12px;padding:20px 0;}
 .pool-card{background:#334155;border-radius:8px;padding:7px 26px 6px 9px;cursor:grab;position:relative;font-size:12px;border-left:3px solid #475569;user-select:none;}
 .pool-card:hover{background:#3d4f65;}.pool-card .card-edit-btn{opacity:0;transition:opacity .15s;}.pool-card:hover .card-edit-btn{opacity:1;}
@@ -74,14 +76,14 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif
 /* Modal */
 .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:300;align-items:center;justify-content:center;}
 .overlay.open{display:flex;}
-.modal{background:#1e293b;border-radius:14px;padding:20px;width:min(520px,95vw);max-height:90vh;overflow-y:auto;display:flex;flex-direction:column;gap:12px;border:1px solid #334155;}
+.modal{background:#1e293b;border-radius:14px;padding:20px;width:min(520px,95vw);max-height:86svh;overflow-y:auto;display:flex;flex-direction:column;gap:12px;border:1px solid #334155;-webkit-overflow-scrolling:touch;}
 .modal h2{margin:0;font-size:15px;}
 .msec{border-top:1px solid #334155;padding-top:10px;}
 .msec-title{font-size:10px;color:#64748b;font-weight:bold;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;}
 .form-group{display:flex;flex-direction:column;gap:5px;}
 .form-group label{font-size:11px;color:#94a3b8;}
 .form-row{display:flex;gap:8px;}.form-row .form-group{flex:1;}
-.form-input{background:#0f172a;border:1px solid #334155;border-radius:7px;color:#f1f5f9;padding:7px 9px;font-size:13px;width:100%;font-family:inherit;}
+.form-input{background:#0f172a;border:1px solid #334155;border-radius:7px;color:#f1f5f9;padding:8px 10px;font-size:16px;width:100%;font-family:inherit;min-height:38px;}
 .form-input:focus{outline:none;border-color:#3b82f6;}
 .edit-tabs{display:flex;gap:5px;flex-wrap:wrap;padding-top:4px;}
 .edit-tab-btn{background:#334155;border:1px solid #475569;color:#cbd5e1;border-radius:999px;padding:4px 9px;font-size:11px;cursor:pointer;font-family:inherit;}
@@ -100,6 +102,7 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif
 .ing-stock input{accent-color:#22c55e;cursor:pointer;}
 .ing-row button{background:#475569;border:none;color:#f87171;border-radius:5px;padding:3px 7px;cursor:pointer;font-size:13px;}
 .modal-actions{display:flex;justify-content:flex-end;gap:7px;}
+.edit-actions{position:sticky;bottom:0;background:linear-gradient(to top,#1e293b 70%,rgba(30,41,59,0));padding-top:10px;margin-top:6px;border-top:1px solid #334155;z-index:2;}
 .img-preview{width:100%;max-height:150px;object-fit:cover;border-radius:8px;display:block;margin-top:5px;}
 .img-clear-btn{background:#475569;border:none;color:#f87171;border-radius:5px;padding:3px 8px;cursor:pointer;font-size:11px;margin-top:4px;}
 /* Graph */
@@ -132,15 +135,27 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif
 .toggle input:checked+.toggle-slider{background:#2563eb;}
 .toggle input:checked+.toggle-slider:before{transform:translateX(18px);background:#f1f5f9;}
 /* Toast */
-.toast{position:fixed;bottom:92px;left:50%;transform:translateX(-50%) translateY(10px);background:#1e293b;border:1px solid #334155;border-radius:8px;padding:8px 16px;font-size:12px;z-index:500;opacity:0;transition:opacity .25s,transform .25s;pointer-events:none;white-space:nowrap;}
+.toast{position:fixed;bottom:calc(92px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%) translateY(10px);background:#1e293b;border:1px solid #334155;border-radius:8px;padding:8px 16px;font-size:12px;z-index:500;opacity:0;transition:opacity .25s,transform .25s;pointer-events:none;white-space:nowrap;}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
-.mobile-nav{display:none;position:fixed;left:0;right:0;bottom:0;background:#111b2f;border-top:1px solid #334155;z-index:350;padding:6px;grid-template-columns:repeat(4,1fr);gap:6px;}
-.mobile-nav button{background:#1e293b;border:1px solid #334155;color:#e2e8f0;border-radius:8px;padding:7px 5px;font-size:11px;cursor:pointer;font-family:inherit;}
+.mobile-nav{display:none;position:fixed;left:0;right:0;bottom:0;background:#111b2f;border-top:1px solid #334155;z-index:350;padding:6px 6px calc(6px + env(safe-area-inset-bottom));grid-template-columns:repeat(4,1fr);gap:6px;}
+.mobile-nav button{background:#1e293b;border:1px solid #334155;color:#e2e8f0;border-radius:8px;padding:8px 5px;font-size:12px;cursor:pointer;font-family:inherit;min-height:38px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.1;}
 body.ui-focus .header .title{opacity:.8;}
 body.ui-focus .trash-bin,body.ui-focus .header .actions .meal-select{display:none;}
 body.ui-edit #bottomSheet{height:100px!important;}
-@media(max-width:600px){.calendar{grid-template-columns:repeat(7,minmax(70px,1fr));overflow-x:auto;}.header{padding:6px 10px;}.actions{gap:4px;}.title{font-size:14px;}.btn{padding:5px 8px;font-size:11px;}}
-@media(max-width:760px){.mobile-nav{display:grid;}body{padding-bottom:56px;}.toast{bottom:62px;}}
+@media(hover:none){.card-edit-btn{opacity:1;background:#33415599;color:#e2e8f0;}}
+@media(max-width:760px){
+  .calendar{grid-template-columns:repeat(7,minmax(72px,1fr));overflow-x:auto;}
+  .header{padding:8px 10px;gap:6px;}
+  .title{font-size:15px;width:100%;}
+  .actions{width:100%;overflow-x:auto;padding-bottom:2px;-webkit-overflow-scrolling:touch;}
+  .actions::-webkit-scrollbar{display:none;}
+  .more-panel{right:0;left:auto;max-width:86vw;}
+  .mobile-nav{display:grid;}
+  body{padding-bottom:calc(64px + env(safe-area-inset-bottom));}
+  .toast{bottom:calc(70px + env(safe-area-inset-bottom));}
+  .trash-bin{bottom:calc(102px + env(safe-area-inset-bottom));right:max(12px,env(safe-area-inset-right));}
+  #bottomSheet{padding-bottom:env(safe-area-inset-bottom);}
+}
 </style>
 </head>
 <body>
@@ -288,7 +303,7 @@ body.ui-edit #bottomSheet{height:100px!important;}
       <button class="img-clear-btn" id="eImageClear" style="display:none" onclick="clearImage()">✕ 画像を削除</button>
     </div>
 
-    <div class="modal-actions">
+    <div class="modal-actions edit-actions">
       <button class="btn" onclick="closeOverlay('editOverlay')">キャンセル</button>
       <button class="btn primary" onclick="saveEdit()">保存</button>
     </div>
@@ -296,10 +311,10 @@ body.ui-edit #bottomSheet{height:100px!important;}
 </div>
 
 <div class="mobile-nav" id="mobileNav">
-  <button onclick="openNewCard()">＋追加</button>
-  <button onclick="toggleTagFilter()">⚙ 絞込</button>
-  <button onclick="showShop()">🛒 買い物</button>
-  <button onclick="showSettings()">⚙ 設定</button>
+  <button onclick="openNewCard()">追加</button>
+  <button onclick="toggleTagFilter()">絞込</button>
+  <button onclick="showShop()">買物</button>
+  <button onclick="showSettings()">設定</button>
 </div>
 
 <!-- ===== Graph Modal ===== -->
@@ -795,13 +810,20 @@ function renderActiveFilterBar(){
   if(activeCalorieFilter)chips.push([`カロリー:${activeCalorieFilter.min??"0"}〜${activeCalorieFilter.max??"∞"}kcal`,()=>{activeCalorieFilter=null;}]);
   if(activeInventoryFilter===true)chips.push(["在庫あり",()=>{activeInventoryFilter=null;}]);
   if(activeInventoryFilter===false)chips.push(["在庫不足",()=>{activeInventoryFilter=null;}]);
-  chips.forEach(([label,reset])=>{
+  const MAX_VISIBLE_CHIPS=4;
+  chips.slice(0,MAX_VISIBLE_CHIPS).forEach(([label,reset])=>{
     const chip=document.createElement("span");chip.className="filter-chip";
     chip.innerText=label;
     const x=document.createElement("button");x.innerText="×";
     x.onclick=()=>{reset();renderPool();renderFilterPanel();};
     chip.appendChild(x);bar.appendChild(chip);
   });
+  if(chips.length>MAX_VISIBLE_CHIPS){
+    const more=document.createElement("span");
+    more.className="filter-chip more";
+    more.innerText=`+${chips.length-MAX_VISIBLE_CHIPS}件`;
+    bar.appendChild(more);
+  }
   bar.classList.toggle("show",chips.length>0);
 }
 
