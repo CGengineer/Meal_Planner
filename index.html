@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🍱 献立ボード</title>
+<style>
+*{box-sizing:border-box;}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#0f172a;color:#f1f5f9;height:100vh;overflow:hidden;}
+.header{display:flex;justify-content:space-between;align-items:center;padding:8px 14px;gap:8px;flex-wrap:wrap;border-bottom:1px solid #334155;background:#0f172a;position:sticky;top:0;z-index:100;}
+.title{font-size:16px;font-weight:bold;white-space:nowrap;}
+.actions{display:flex;gap:5px;align-items:center;flex-wrap:wrap;}
+.btn{background:#334155;padding:5px 10px;border-radius:8px;cursor:pointer;border:none;color:#f1f5f9;font-size:12px;white-space:nowrap;transition:background .1s;font-family:inherit;}
+.btn:hover{background:#475569;}.btn:active{transform:scale(.93);background:#1e293b;}
+.btn.primary{background:#2563eb;}.btn.primary:hover{background:#3b82f6;}
+/* Calendar */
+.calendar{display:grid;grid-template-columns:repeat(7,1fr);height:calc(100vh - 140px);border-top:1px solid #334155;overflow-y:auto;}
+.day{border-right:1px solid #334155;padding:5px;display:flex;flex-direction:column;gap:5px;min-height:0;overflow-y:auto;transition:background .12s;}
+.day:last-child{border-right:none;}.day.drag-over{background:#1e3a5f!important;}
+.day-header{font-size:11px;font-weight:bold;text-align:center;padding:2px 0;border-radius:4px;}
+.day.today{background:#1a2332;}.day.sun .day-header{color:#f87171;}.day.sat .day-header{color:#60a5fa;}
+/* Card */
+.card{background:#1e293b;border-radius:8px;padding:7px 7px 5px;cursor:grab;position:relative;border-left:3px solid #475569;font-size:12px;transition:background .1s;user-select:none;}
+.card:hover{background:#263348;}
+.card-img{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:6px;margin-top:6px;display:block;}
+.card-text{padding-right:20px;word-break:break-all;line-height:1.4;}
+.card-meta{display:flex;flex-wrap:wrap;gap:3px;margin-top:3px;align-items:center;}
+.card-badge{font-size:9px;padding:1px 5px;border-radius:8px;background:#0f172a;white-space:nowrap;}
+.card-stars{font-size:10px;color:#f59e0b;letter-spacing:-1px;}
+.card-tag{display:inline-block;font-size:9px;padding:1px 5px;border-radius:10px;margin-top:2px;}
+.card-edit-btn{position:absolute;top:4px;right:4px;background:transparent;border:none;color:#64748b;font-size:11px;padding:2px 4px;cursor:pointer;border-radius:4px;opacity:0;transition:opacity .15s;line-height:1;}
+.card:hover .card-edit-btn{opacity:1;}.card-edit-btn:hover{background:#334155;color:#f1f5f9;}
+/* Bottom Sheet */
+.bottom-sheet{position:fixed;bottom:0;left:0;right:0;background:#1e293b;border-radius:16px 16px 0 0;border-top:1px solid #334155;z-index:150;height:80px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 -4px 20px rgba(0,0,0,.45);}
+.bs-anim{transition:height .3s cubic-bezier(.32,.72,0,1);}
+.sheet-handle{display:flex;justify-content:center;align-items:center;padding:9px 0 5px;flex-shrink:0;touch-action:none;cursor:grab;user-select:none;}
+.sheet-handle:active{cursor:grabbing;}
+.handle-bar{width:36px;height:4px;background:#475569;border-radius:2px;pointer-events:none;}
+.sheet-search{display:flex;align-items:center;padding:0 8px 7px;gap:6px;flex-shrink:0;}
+.search-wrap{flex:1;display:flex;align-items:center;background:#0f172a;border-radius:8px;padding:5px 9px;gap:6px;border:1px solid #334155;min-width:0;}
+.search-input{flex:1;background:transparent;border:none;color:#f1f5f9;font-size:12px;font-family:inherit;outline:none;min-width:0;}
+.search-input::placeholder{color:#475569;}
+.sheet-tag-filter{display:none;gap:5px;padding:0 8px 7px;flex-wrap:wrap;flex-shrink:0;border-bottom:1px solid #1e3a5f;}
+.pool-grid{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:6px 8px 8px;overflow-y:auto;align-content:start;}
+.pool-empty{grid-column:1/-1;text-align:center;color:#475569;font-size:12px;padding:20px 0;}
+.pool-card{background:#334155;border-radius:8px;padding:7px 26px 6px 9px;cursor:grab;position:relative;font-size:12px;border-left:3px solid #475569;user-select:none;}
+.pool-card:hover{background:#3d4f65;}.pool-card .card-edit-btn{opacity:0;transition:opacity .15s;}.pool-card:hover .card-edit-btn{opacity:1;}
+/* Trash */
+.trash-bin{position:fixed;bottom:90px;right:12px;width:40px;height:40px;background:#334155;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;z-index:200;border:2px solid #475569;transition:background .15s,transform .15s,border-color .15s;}.trash-bin.drag-over{background:#ef4444;border-color:#f87171;transform:scale(1.2);}
+.trash-bin.drag-over{background:#ef4444;border-color:#f87171;transform:scale(1.2);}
+.meal-select{background:#1e293b;border:1px solid #475569;border-radius:8px;color:#f1f5f9;padding:5px 10px;font-size:13px;cursor:pointer;font-family:inherit;font-weight:bold;}
+.meal-select:focus{outline:none;border-color:#3b82f6;}
+/* Modal */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:300;align-items:center;justify-content:center;}
+.overlay.open{display:flex;}
+.modal{background:#1e293b;border-radius:14px;padding:20px;width:min(520px,95vw);max-height:90vh;overflow-y:auto;display:flex;flex-direction:column;gap:12px;border:1px solid #334155;}
+.modal h2{margin:0;font-size:15px;}
+.msec{border-top:1px solid #334155;padding-top:10px;}
+.msec-title{font-size:10px;color:#64748b;font-weight:bold;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;}
+.form-group{display:flex;flex-direction:column;gap:5px;}
+.form-group label{font-size:11px;color:#94a3b8;}
+.form-row{display:flex;gap:8px;}.form-row .form-group{flex:1;}
+.form-input{background:#0f172a;border:1px solid #334155;border-radius:7px;color:#f1f5f9;padding:7px 9px;font-size:13px;width:100%;font-family:inherit;}
+.form-input:focus{outline:none;border-color:#3b82f6;}
+.tag-picker{display:flex;gap:5px;flex-wrap:wrap;}
+.tag-btn{padding:3px 10px;border-radius:20px;border:2px solid transparent;cursor:pointer;font-size:11px;font-weight:bold;opacity:.6;transition:opacity .1s,border-color .1s;font-family:inherit;}
+.tag-btn.selected{opacity:1;border-color:#f1f5f9;}
+/* Star rating */
+.star-rating{display:flex;gap:1px;}
+.star-rating span{font-size:22px;cursor:pointer;color:#334155;transition:color .1s;user-select:none;line-height:1;}
+.star-rating span.on{color:#f59e0b;}
+/* Ingredient */
+.ing-list{display:flex;flex-direction:column;gap:4px;}
+.ing-row{display:flex;gap:5px;align-items:center;}.ing-row input{flex:1;}
+.ing-row button{background:#475569;border:none;color:#f87171;border-radius:5px;padding:3px 7px;cursor:pointer;font-size:13px;}
+.modal-actions{display:flex;justify-content:flex-end;gap:7px;}
+.img-preview{width:100%;max-height:150px;object-fit:cover;border-radius:8px;display:block;margin-top:5px;}
+.img-clear-btn{background:#475569;border:none;color:#f87171;border-radius:5px;padding:3px 8px;cursor:pointer;font-size:11px;margin-top:4px;}
+/* Graph */
+.graph-summary{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;}
+.graph-box{flex:1;background:#0f172a;border-radius:8px;padding:10px;text-align:center;min-width:90px;}
+.graph-bars{display:flex;gap:5px;align-items:flex-end;height:120px;margin-bottom:4px;}
+.graph-bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;}
+.graph-bar{width:100%;background:#3b82f6;border-radius:3px 3px 0 0;min-height:0;transition:height .4s;}
+.graph-bar.mid{background:#f59e0b;}.graph-bar.high{background:#ef4444;}
+.graph-bar-val{font-size:9px;color:#94a3b8;}.graph-bar-label{font-size:10px;font-weight:bold;}
+.macro-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+.macro-label{font-size:11px;width:64px;flex-shrink:0;}
+.macro-track{flex:1;background:#0f172a;border-radius:4px;height:10px;overflow:hidden;}
+.macro-fill{height:100%;border-radius:4px;}
+.macro-val{font-size:11px;color:#94a3b8;width:50px;text-align:right;flex-shrink:0;}
+/* Shop */
+.shop-list{display:flex;flex-direction:column;gap:5px;max-height:55vh;overflow-y:auto;}
+.shop-item{display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:7px;background:#0f172a;}
+.shop-item input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:#3b82f6;}
+.shop-item.checked label{text-decoration:line-through;color:#475569;}
+.shop-item label{cursor:pointer;flex:1;font-size:13px;}
+.shop-source{font-size:10px;color:#475569;white-space:nowrap;}
+/* Settings */
+.setting-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid #1e293b;}
+.setting-row:last-child{border-bottom:none;}
+.toggle{position:relative;width:40px;height:22px;flex-shrink:0;}
+.toggle input{opacity:0;width:0;height:0;position:absolute;}
+.toggle-slider{position:absolute;inset:0;background:#334155;border-radius:11px;cursor:pointer;transition:.2s;}
+.toggle-slider:before{content:"";position:absolute;width:16px;height:16px;left:3px;top:3px;background:#94a3b8;border-radius:50%;transition:.2s;}
+.toggle input:checked+.toggle-slider{background:#2563eb;}
+.toggle input:checked+.toggle-slider:before{transform:translateX(18px);background:#f1f5f9;}
+/* Toast */
+.toast{position:fixed;bottom:92px;left:50%;transform:translateX(-50%) translateY(10px);background:#1e293b;border:1px solid #334155;border-radius:8px;padding:8px 16px;font-size:12px;z-index:500;opacity:0;transition:opacity .25s,transform .25s;pointer-events:none;white-space:nowrap;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+@media(max-width:600px){.calendar{grid-template-columns:repeat(7,minmax(70px,1fr));overflow-x:auto;}.header{padding:6px 10px;}.actions{gap:4px;}}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="title">🍱 献立ボード</div>
+  <div class="actions">
+    <button class="btn" onclick="moveWeek(-1)">⬅週</button>
+    <span id="label" style="font-size:12px;white-space:nowrap;"></span>
+    <button class="btn" onclick="moveWeek(1)">週➡</button>
+    <button class="btn" onclick="goToday()" style="background:#0f766e">📅 今日</button>
+    <select class="meal-select" id="mealSelect" onchange="changeMeal(this.value)">
+      <option value="朝">🌅 朝</option>
+      <option value="昼" selected>☀️ 昼</option>
+      <option value="夜">🌙 夜</option>
+    </select>
+    <button class="btn primary" onclick="openNewCard()">＋追加</button>
+    <button class="btn" style="background:#7c3aed" onclick="autoSuggest()">🎲 おまかせ</button>
+    <button class="btn" onclick="showShop()">🛒 買い物</button>
+    <button class="btn" onclick="showGraph()">📊 グラフ</button>
+    <button class="btn" onclick="undo()" title="Ctrl+Z">↩ 取消</button>
+    <button class="btn" onclick="exportJSON()">📤</button>
+    <label class="btn" style="margin:0;cursor:pointer;" title="JSONインポート">📥<input type="file" accept=".json" style="display:none" onchange="importJSON(event)"></label>
+    <button class="btn" onclick="showSettings()">⚙️ 設定</button>
+  </div>
+</div>
+
+<div id="cal" class="calendar"></div>
+
+<div id="bottomSheet" class="bottom-sheet">
+  <div class="sheet-handle" id="sheetHandle">
+    <div class="handle-bar"></div>
+  </div>
+  <div class="sheet-search">
+    <div class="search-wrap">
+      <span style="font-size:13px;line-height:1;flex-shrink:0">🔍</span>
+      <input class="search-input" id="poolSearch" type="text" placeholder="献立を検索...">
+    </div>
+    <button class="btn" style="padding:5px 9px;font-size:13px;flex-shrink:0" onclick="toggleTagFilter()">⚙</button>
+    <button class="btn primary" style="padding:5px 9px;font-size:13px;flex-shrink:0" onclick="openNewCard()">＋</button>
+  </div>
+  <div class="sheet-tag-filter" id="sheetTagFilter"></div>
+  <div id="pool" class="pool-grid"></div>
+</div>
+<div id="trash" class="trash-bin">🗑️</div>
+
+<!-- ===== Edit Modal ===== -->
+<div class="overlay" id="editOverlay">
+  <div class="modal">
+    <h2 id="editTitle">献立を編集</h2>
+
+    <!-- 基本 -->
+    <div class="form-group">
+      <label>料理名 *</label>
+      <input class="form-input" id="eText" placeholder="例: カレーライス">
+    </div>
+    <div class="form-group">
+      <label>カテゴリ</label>
+      <div class="tag-picker" id="ePicker"></div>
+    </div>
+
+    <!-- 評価 -->
+    <div class="msec">
+      <div class="msec-title">評価</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>お気に入り ★</label>
+          <div class="star-rating" id="eFavorite" data-val="0"></div>
+        </div>
+        <div class="form-group">
+          <label>簡単度 ★</label>
+          <div class="star-rating" id="eDifficulty" data-val="0"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 栄養・費用 -->
+    <div class="msec">
+      <div class="msec-title">栄養・費用</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>カロリー (kcal)</label>
+          <input class="form-input" id="eCalories" type="number" min="0" placeholder="0">
+        </div>
+        <div class="form-group">
+          <label id="eCostLabel">費用</label>
+          <input class="form-input" id="eCost" type="number" min="0" placeholder="0">
+        </div>
+      </div>
+      <div class="form-row" style="margin-top:6px;">
+        <div class="form-group">
+          <label>タンパク質 (g)</label>
+          <input class="form-input" id="eProtein" type="number" min="0" placeholder="0">
+        </div>
+        <div class="form-group">
+          <label>炭水化物 (g)</label>
+          <input class="form-input" id="eCarbs" type="number" min="0" placeholder="0">
+        </div>
+        <div class="form-group">
+          <label>脂質 (g)</label>
+          <input class="form-input" id="eFat" type="number" min="0" placeholder="0">
+        </div>
+      </div>
+    </div>
+
+    <!-- 食材 -->
+    <div class="msec">
+      <div class="msec-title">食材（買い物リスト用）</div>
+      <div class="ing-list" id="eIngList"></div>
+      <button class="btn" style="margin-top:5px;align-self:start;font-size:11px" onclick="addIngRow()">＋食材追加</button>
+    </div>
+
+    <!-- 調理手順 -->
+    <div class="msec">
+      <div class="msec-title">調理手順</div>
+      <textarea class="form-input" id="eSteps" rows="3" placeholder="手順を入力..."></textarea>
+    </div>
+
+    <!-- メモ -->
+    <div class="msec">
+      <div class="msec-title">メモ・レシピURL</div>
+      <textarea class="form-input" id="eNote" rows="2" placeholder="レシピURLや調理メモなど"></textarea>
+    </div>
+
+    <!-- 画像 -->
+    <div class="msec">
+      <div class="msec-title">画像</div>
+      <input type="file" accept="image/*" id="eImageFile" style="display:none" onchange="handleImageUpload(event)">
+      <button class="btn" onclick="document.getElementById('eImageFile').click()">📷 画像を選択</button>
+      <img id="eImagePreview" class="img-preview" style="display:none" alt="">
+      <button class="img-clear-btn" id="eImageClear" style="display:none" onclick="clearImage()">✕ 画像を削除</button>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn" onclick="closeOverlay('editOverlay')">キャンセル</button>
+      <button class="btn primary" onclick="saveEdit()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Graph Modal ===== -->
+<div class="overlay" id="graphOverlay">
+  <div class="modal">
+    <h2>📊 今週の栄養グラフ</h2>
+    <div id="graphContent"></div>
+    <div class="modal-actions">
+      <button class="btn primary" onclick="closeOverlay('graphOverlay')">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Shopping Modal ===== -->
+<div class="overlay" id="shopOverlay">
+  <div class="modal">
+    <h2>🛒 今週の買い物リスト</h2>
+    <div class="shop-list" id="shopList"></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeOverlay('shopOverlay')">閉じる</button>
+      <button class="btn primary" onclick="copyShop()">📋 コピー</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Settings Modal ===== -->
+<div class="overlay" id="settingsOverlay">
+  <div class="modal">
+    <h2>⚙️ 設定</h2>
+    <div id="settingsContent"></div>
+    <div class="modal-actions">
+      <button class="btn primary" onclick="closeOverlay('settingsOverlay')">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== CONSTANTS =====
+const DAYS=["日","月","火","水","木","金","土"];
+const TAGS=["和食","洋食","麺類","丼","その他"];
+const TC={"和食":"#3b82f6","洋食":"#ef4444","麺類":"#f59e0b","丼":"#8b5cf6","その他":"#6b7280"};
+
+// ===== STATE =====
+let baseDate=new Date();
+let allData={};
+let pool=[];
+let undoStack=[];
+let editTarget=null;
+let currentImage="";
+let currentMeal="昼";
+let settings={
+  showCalories:true,showStars:true,showDifficulty:true,
+  showCost:true,showNutritionColor:true,currency:"円"
+};
+let activeTagFilter=null;
+
+// ===== ITEM FACTORY =====
+function uid(){return Math.random().toString(36).slice(2)+Date.now().toString(36);}
+function mkItem(text,tag,ings,note){
+  return{id:uid(),text,tag:tag||"その他",ingredients:Array.isArray(ings)?[...ings]:[],
+    note:note||"",favorite:0,difficulty:0,calories:0,protein:0,carbs:0,fat:0,cost:0,steps:"",image:""};
+}
+function migrateItem(it){
+  if(typeof it==="string") return mkItem(it);
+  return{favorite:0,difficulty:0,calories:0,protein:0,carbs:0,fat:0,cost:0,steps:"",image:"",...it};
+}
+
+// ===== WEEK UTILS =====
+function weekKey(d){const x=new Date(d);x.setDate(x.getDate()-x.getDay());return x.toISOString().slice(0,10);}
+function curKey(){return weekKey(baseDate);}
+const MEALS=["朝","昼","夜"];
+function weekData(){
+  const k=curKey();
+  if(!allData[k])allData[k]={};
+  MEALS.forEach(m=>{if(!allData[k][m])allData[k][m]=Array.from({length:7},()=>[]);});
+  return allData[k][currentMeal];
+}
+function allMealData(k){
+  if(!allData[k])return Array.from({length:7},()=>[]);
+  return Array.from({length:7},(_,i)=>MEALS.flatMap(m=>(allData[k]?.[m]?.[i])||[]));
+}
+function changeMeal(m){currentMeal=m;render();}
+function isToday(d){return d.toDateString()===new Date().toDateString();}
+
+// ===== STORAGE =====
+function save(){
+  try{
+    localStorage.setItem("kb_v2",JSON.stringify({allData,pool}));
+    localStorage.setItem("kb_settings",JSON.stringify(settings));
+  }catch(e){showToast("保存エラー（ストレージ上限の可能性）");}
+}
+function load(){
+  try{
+    const d=localStorage.getItem("kb_v2");
+    const legacy_d=localStorage.getItem("kb_data");
+    const legacy_p=localStorage.getItem("kb_pool");
+    const s=localStorage.getItem("kb_settings");
+    if(d){
+      const p=JSON.parse(d);
+      allData=p.allData||{};pool=p.pool||[];
+    } else if(legacy_d){
+      const p=JSON.parse(legacy_d);
+      if(p.allData){allData=p.allData;pool=p.pool||[];}
+      else{allData=p;if(legacy_p)pool=JSON.parse(legacy_p);}
+    }
+    if(s) settings={...settings,...JSON.parse(s)};
+    for(const k in allData){
+      const week=allData[k];
+      if(Array.isArray(week)){
+        allData[k]={朝:Array.from({length:7},()=>[]),昼:week.map(day=>(day||[]).map(migrateItem)),夜:Array.from({length:7},()=>[])};
+      }else{
+        MEALS.forEach(m=>{if(!allData[k][m])allData[k][m]=Array.from({length:7},()=>[]);else allData[k][m]=allData[k][m].map(day=>(day||[]).map(migrateItem));});
+      }
+    }
+    pool=pool.map(migrateItem);
+  }catch(e){console.warn(e);}
+}
+
+// ===== UNDO =====
+function pushUndo(){undoStack.push(JSON.stringify({allData,pool}));if(undoStack.length>40)undoStack.shift();}
+function undo(){
+  if(!undoStack.length){showToast("取り消せる操作がありません");return;}
+  const s=JSON.parse(undoStack.pop());allData=s.allData;pool=s.pool;
+  save();render();showToast("取り消しました ↩");
+}
+document.addEventListener("keydown",e=>{if((e.ctrlKey||e.metaKey)&&e.key==="z"){e.preventDefault();undo();}});
+
+// ===== TOAST =====
+function showToast(msg){
+  const t=document.getElementById("toast");t.innerText=msg;t.classList.add("show");
+  clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove("show"),2200);
+}
+
+// ===== CARD COLOR =====
+function cardBorderColor(item){
+  if(settings.showNutritionColor&&item.calories>0){
+    if(item.calories>600) return "#ef4444";
+    if(item.calories>400) return "#f59e0b";
+    return "#22c55e";
+  }
+  return TC[item.tag]||"#475569";
+}
+function starsHTML(v,max){let s="";for(let i=1;i<=max;i++)s+=i<=v?"★":"☆";return s;}
+
+// ===== RENDER =====
+function render(){
+  const cal=document.getElementById("cal");cal.innerHTML="";
+  const wd=weekData();const k=curKey();
+  const start=new Date(baseDate);start.setDate(start.getDate()-start.getDay());
+  const end=new Date(start);end.setDate(start.getDate()+6);
+  document.getElementById("label").innerText=`${start.getMonth()+1}/${start.getDate()}〜${end.getMonth()+1}/${end.getDate()}`;
+
+  for(let i=0;i<7;i++){
+    const d=new Date(start);d.setDate(start.getDate()+i);
+    const col=document.createElement("div");col.className="day";
+    if(i===0)col.classList.add("sun");if(i===6)col.classList.add("sat");if(isToday(d))col.classList.add("today");
+    col.addEventListener("dragover",e=>{e.preventDefault();col.classList.add("drag-over");});
+    col.addEventListener("dragleave",()=>col.classList.remove("drag-over"));
+    col.addEventListener("drop",e=>{
+      col.classList.remove("drag-over");
+      const raw=e.dataTransfer.getData("text");if(!raw)return;
+      const obj=JSON.parse(raw);pushUndo();
+      let item;
+      if(obj.fromPool){item={...pool[obj.pidx],id:uid()};}
+      else{const src=allData[obj.wk]?.[obj.meal];if(src&&src[obj.di])item=src[obj.di].splice(obj.ii,1)[0];}
+      if(item)wd[i].push(item);
+      save();render();
+    });
+    const hdr=document.createElement("div");hdr.className="day-header";
+    hdr.innerText=`${DAYS[d.getDay()]} ${d.getDate()}`;col.appendChild(hdr);
+    wd[i].forEach((item,ii)=>col.appendChild(mkCardEl(item,{wk:k,di:i,ii,meal:currentMeal})));
+    cal.appendChild(col);
+  }
+
+  // Pool
+  renderPool();
+}
+
+function mkCardEl(item,target){
+  const c=document.createElement("div");c.className="card";
+  c.style.borderLeftColor=cardBorderColor(item);c.draggable=true;
+
+  const textEl=document.createElement("div");textEl.className="card-text";textEl.innerText=item.text;c.appendChild(textEl);
+
+  const meta=document.createElement("div");meta.className="card-meta";
+  if(settings.showCalories&&item.calories>0){
+    const b=document.createElement("span");b.className="card-badge";
+    b.style.background=item.calories>600?"#ef444422":item.calories>400?"#f59e0b22":"#22c55e22";
+    b.style.color=item.calories>600?"#f87171":item.calories>400?"#fbbf24":"#4ade80";
+    b.innerText="🔥 "+item.calories+"kcal";meta.appendChild(b);
+  }
+  if(settings.showCost&&item.cost>0){
+    const b=document.createElement("span");b.className="card-badge";b.style.color="#94a3b8";
+    b.innerText="💰"+item.cost+settings.currency;meta.appendChild(b);
+  }
+  if(settings.showStars&&item.favorite>0){
+    const b=document.createElement("span");b.className="card-stars";b.innerText=starsHTML(item.favorite,5);meta.appendChild(b);
+  }
+  if(settings.showDifficulty&&item.difficulty>0){
+    const b=document.createElement("span");b.className="card-badge";b.style.color="#64748b";
+    b.innerText="難"+starsHTML(item.difficulty,5);meta.appendChild(b);
+  }
+  if(meta.children.length)c.appendChild(meta);
+
+  if(item.tag&&item.tag!=="その他"){
+    const tg=document.createElement("span");tg.className="card-tag";tg.innerText=item.tag;
+    tg.style.background=TC[item.tag]+"22";tg.style.color=TC[item.tag];c.appendChild(tg);
+  }
+
+  const eb=document.createElement("button");eb.className="card-edit-btn";eb.innerText="✏️";
+  eb.onclick=e=>{e.stopPropagation();openEdit(target);};c.appendChild(eb);
+
+  if(item.image){
+    const img=document.createElement("img");img.className="card-img";img.src=item.image;img.alt="";img.draggable=false;c.appendChild(img);
+  }
+
+  c.addEventListener("dragstart",e=>e.dataTransfer.setData("text",JSON.stringify(target)));
+  return c;
+}
+
+// ===== STAR RATING =====
+function buildStarRating(cid,val,max){
+  const c=document.getElementById(cid);
+  if(c._ml){c.removeEventListener("mouseleave",c._ml);}
+  c.innerHTML="";c.dataset.val=val;
+  for(let i=1;i<=max;i++){
+    const s=document.createElement("span");
+    s.innerText=i<=val?"★":"☆";if(i<=val)s.classList.add("on");
+    s.addEventListener("click",()=>{
+      const cur=parseInt(c.dataset.val);
+      buildStarRating(cid,cur===i?0:i,max);
+    });
+    s.addEventListener("mouseenter",()=>[...c.children].forEach((x,j)=>x.style.color=j<i?"#fbbf24":""));
+    c.appendChild(s);
+  }
+  c._ml=()=>{
+    const v=parseInt(c.dataset.val);
+    [...c.children].forEach((x,j)=>x.style.color=j<v?"#f59e0b":"");
+  };
+  c.addEventListener("mouseleave",c._ml);
+}
+
+function buildTagPicker(cur){
+  const p=document.getElementById("ePicker");p.innerHTML="";
+  TAGS.forEach(tag=>{
+    const b=document.createElement("button");b.className="tag-btn"+(cur===tag?" selected":"");
+    b.innerText=tag;b.style.background=TC[tag]+"22";b.style.color=TC[tag];
+    b.onclick=()=>{p.querySelectorAll(".tag-btn").forEach(x=>x.classList.remove("selected"));b.classList.add("selected");};
+    p.appendChild(b);
+  });
+}
+
+// ===== IMAGE HANDLING =====
+function handleImageUpload(ev){
+  const file=ev.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const img=new Image();
+    img.onload=()=>{
+      const canvas=document.createElement("canvas");
+      let w=img.width,h=img.height,mx=320;
+      if(w>mx||h>mx){if(w>h){h=Math.round(h*mx/w);w=mx;}else{w=Math.round(w*mx/h);h=mx;}}
+      canvas.width=w;canvas.height=h;
+      canvas.getContext("2d").drawImage(img,0,0,w,h);
+      currentImage=canvas.toDataURL("image/jpeg",0.7);
+      const pv=document.getElementById("eImagePreview");
+      pv.src=currentImage;pv.style.display="block";
+      document.getElementById("eImageClear").style.display="inline-block";
+    };
+    img.src=e.target.result;
+  };
+  reader.readAsDataURL(file);ev.target.value="";
+}
+function clearImage(){
+  currentImage="";
+  const pv=document.getElementById("eImagePreview");pv.src="";pv.style.display="none";
+  document.getElementById("eImageClear").style.display="none";
+}
+
+// ===== EDIT MODAL =====
+function openEdit(target){
+  editTarget=target;
+  let item=null;
+  if(target.type==="pool"&&target.pidx>=0)item=pool[target.pidx];
+  else if(target.wk)item=allData[target.wk]?.[target.di]?.[target.ii];
+  document.getElementById("editTitle").innerText=item?"献立を編集":"献立を追加";
+  document.getElementById("eText").value=item?.text||"";
+  document.getElementById("eNote").value=item?.note||"";
+  document.getElementById("eSteps").value=item?.steps||"";
+  document.getElementById("eCalories").value=item?.calories||"";
+  document.getElementById("eProtein").value=item?.protein||"";
+  document.getElementById("eCarbs").value=item?.carbs||"";
+  document.getElementById("eFat").value=item?.fat||"";
+  document.getElementById("eCost").value=item?.cost||"";
+  document.getElementById("eCostLabel").innerText="費用 ("+settings.currency+")";
+  buildTagPicker(item?.tag||"その他");
+  buildStarRating("eFavorite",item?.favorite||0,5);
+  buildStarRating("eDifficulty",item?.difficulty||0,5);
+  const list=document.getElementById("eIngList");list.innerHTML="";
+  (item?.ingredients||[]).forEach(v=>addIngRow(v));
+  currentImage=item?.image||"";
+  const pv=document.getElementById("eImagePreview");
+  if(currentImage){pv.src=currentImage;pv.style.display="block";document.getElementById("eImageClear").style.display="inline-block";}
+  else{pv.src="";pv.style.display="none";document.getElementById("eImageClear").style.display="none";}
+  document.getElementById("editOverlay").classList.add("open");
+  setTimeout(()=>document.getElementById("eText").focus(),50);
+}
+
+function openNewCard(){
+  editTarget={type:"pool",pidx:-1};
+  document.getElementById("editTitle").innerText="献立を追加";
+  ["eText","eNote","eSteps","eCalories","eProtein","eCarbs","eFat","eCost"].forEach(id=>document.getElementById(id).value="");
+  document.getElementById("eCostLabel").innerText="費用 ("+settings.currency+")";
+  buildTagPicker("その他");
+  buildStarRating("eFavorite",0,5);buildStarRating("eDifficulty",0,5);
+  document.getElementById("eIngList").innerHTML="";
+  clearImage();
+  document.getElementById("editOverlay").classList.add("open");
+  setTimeout(()=>document.getElementById("eText").focus(),50);
+}
+
+function addIngRow(val){
+  val=val||"";
+  const list=document.getElementById("eIngList");
+  const row=document.createElement("div");row.className="ing-row";
+  const inp=document.createElement("input");inp.className="form-input";inp.value=val;inp.placeholder="例: 鶏肉 200g";
+  const del=document.createElement("button");del.innerText="✕";del.onclick=()=>row.remove();
+  row.appendChild(inp);row.appendChild(del);list.appendChild(row);
+}
+
+function saveEdit(){
+  const text=document.getElementById("eText").value.trim();
+  if(!text){document.getElementById("eText").focus();return;}
+  const sel=document.querySelector("#ePicker .tag-btn.selected");
+  const tag=sel?sel.innerText:"その他";
+  const note=document.getElementById("eNote").value.trim();
+  const steps=document.getElementById("eSteps").value.trim();
+  const calories=parseInt(document.getElementById("eCalories").value)||0;
+  const protein=parseFloat(document.getElementById("eProtein").value)||0;
+  const carbs=parseFloat(document.getElementById("eCarbs").value)||0;
+  const fat=parseFloat(document.getElementById("eFat").value)||0;
+  const cost=parseInt(document.getElementById("eCost").value)||0;
+  const favorite=parseInt(document.getElementById("eFavorite").dataset.val)||0;
+  const difficulty=parseInt(document.getElementById("eDifficulty").dataset.val)||0;
+  const ings=[...document.querySelectorAll("#eIngList input")].map(x=>x.value.trim()).filter(Boolean);
+  pushUndo();
+  const fields={text,tag,note,steps,calories,protein,carbs,fat,cost,favorite,difficulty,ingredients:ings,image:currentImage};
+  if(editTarget.type==="pool"&&editTarget.pidx<0){
+    pool.push({...mkItem(text,tag,ings,note),...fields});
+  }else if(editTarget.type==="pool"){
+    Object.assign(pool[editTarget.pidx],fields);
+  }else{
+    Object.assign(allData[editTarget.wk][editTarget.meal][editTarget.di][editTarget.ii],fields);
+  }
+  save();closeOverlay("editOverlay");render();
+}
+
+function closeOverlay(id){document.getElementById(id).classList.remove("open");}
+document.querySelectorAll(".overlay").forEach(o=>o.addEventListener("click",e=>{if(e.target===o)o.classList.remove("open");}));
+
+// ===== GRAPH =====
+function showGraph(){
+  const k=curKey();
+  const start=new Date(baseDate);start.setDate(start.getDate()-start.getDay());
+  const combined=allMealData(k);
+  const dayStats=combined.map((day,i)=>{
+    const d=new Date(start);d.setDate(start.getDate()+i);
+    return{
+      label:DAYS[d.getDay()],
+      calories:day.reduce((s,it)=>s+(it.calories||0),0),
+      protein:day.reduce((s,it)=>s+(it.protein||0),0),
+      carbs:day.reduce((s,it)=>s+(it.carbs||0),0),
+      fat:day.reduce((s,it)=>s+(it.fat||0),0),
+      cost:day.reduce((s,it)=>s+(it.cost||0),0),
+    };
+  });
+  const maxCal=Math.max(...dayStats.map(d=>d.calories),1);
+  const totalCal=dayStats.reduce((s,d)=>s+d.calories,0);
+  const totalProt=dayStats.reduce((s,d)=>s+d.protein,0);
+  const totalCarbs=dayStats.reduce((s,d)=>s+d.carbs,0);
+  const totalFat=dayStats.reduce((s,d)=>s+d.fat,0);
+  const totalCost=dayStats.reduce((s,d)=>s+d.cost,0);
+  const maxMacro=Math.max(totalProt,totalCarbs,totalFat,1);
+
+  const g=document.getElementById("graphContent");g.innerHTML="";
+
+  // Summary boxes
+  const sumDiv=document.createElement("div");sumDiv.className="graph-summary";
+  [
+    ["🔥 週計カロリー",totalCal+"kcal","#f59e0b"],
+    ["💰 週計費用",totalCost+settings.currency,"#22c55e"],
+    ["🥩 タンパク質",totalProt+"g","#f97316"],
+    ["🍚 炭水化物",totalCarbs+"g","#3b82f6"],
+    ["🫒 脂質",totalFat+"g","#a855f7"],
+  ].forEach(([label,val,color])=>{
+    const box=document.createElement("div");box.className="graph-box";
+    box.style.borderLeft="3px solid "+color;
+    box.innerHTML="<div style=\"font-size:10px;color:#64748b;\">"+label+"</div><div style=\"font-size:15px;font-weight:bold;color:"+color+";margin-top:3px;\">"+val+"</div>";
+    sumDiv.appendChild(box);
+  });
+  g.appendChild(sumDiv);
+
+  // Calorie bar chart
+  const t1=document.createElement("div");t1.style.cssText="font-size:11px;color:#64748b;margin-bottom:6px;";t1.innerText="📊 日別カロリー";g.appendChild(t1);
+  const bars=document.createElement("div");bars.className="graph-bars";
+  dayStats.forEach(stat=>{
+    const wrap=document.createElement("div");wrap.className="graph-bar-wrap";
+    const bar=document.createElement("div");bar.className="graph-bar";
+    const pct=stat.calories>0?Math.max(4,Math.round(stat.calories/maxCal*100)):0;
+    bar.style.height=pct+"%";
+    if(stat.calories>600)bar.classList.add("high");else if(stat.calories>400)bar.classList.add("mid");
+    const val=document.createElement("div");val.className="graph-bar-val";val.innerText=stat.calories||"";
+    const lbl=document.createElement("div");lbl.className="graph-bar-label";lbl.innerText=stat.label;
+    wrap.appendChild(bar);wrap.appendChild(val);wrap.appendChild(lbl);bars.appendChild(wrap);
+  });
+  g.appendChild(bars);
+
+  // Macro bars
+  if(totalProt||totalCarbs||totalFat){
+    const t2=document.createElement("div");t2.style.cssText="font-size:11px;color:#64748b;margin:12px 0 8px;";t2.innerText="🥗 週計マクロ栄養素";g.appendChild(t2);
+    [["タンパク質",totalProt,"#f97316"],["炭水化物",totalCarbs,"#3b82f6"],["脂質",totalFat,"#a855f7"]].forEach(([label,val,color])=>{
+      const row=document.createElement("div");row.className="macro-row";
+      const lbl=document.createElement("div");lbl.className="macro-label";lbl.innerText=label;
+      const track=document.createElement("div");track.className="macro-track";
+      const fill=document.createElement("div");fill.className="macro-fill";
+      fill.style.cssText="width:"+Math.round(val/maxMacro*100)+"%;background:"+color+";";
+      track.appendChild(fill);
+      const v=document.createElement("div");v.className="macro-val";v.innerText=val+"g";
+      row.appendChild(lbl);row.appendChild(track);row.appendChild(v);g.appendChild(row);
+    });
+  }
+
+  document.getElementById("graphOverlay").classList.add("open");
+}
+
+// ===== SHOPPING =====
+function showShop(){
+  const combined=allMealData(curKey());const ingMap={};
+  const wd=combined;
+  wd.forEach(day=>(day||[]).forEach(item=>(item.ingredients||[]).forEach(ing=>{
+    if(ing){if(!ingMap[ing])ingMap[ing]=[];ingMap[ing].push(item.text);}
+  })));
+  const keys=Object.keys(ingMap);const list=document.getElementById("shopList");list.innerHTML="";
+  if(!keys.length){
+    list.innerHTML="<p style=\"color:#64748b;text-align:center;font-size:13px\">食材が登録されていません</p>";
+  }else{
+    keys.forEach((ing,i)=>{
+      const row=document.createElement("div");row.className="shop-item";
+      const cb=document.createElement("input");cb.type="checkbox";cb.id="si"+i;
+      cb.onchange=()=>row.classList.toggle("checked",cb.checked);
+      const lbl=document.createElement("label");lbl.htmlFor="si"+i;lbl.innerText=ing;
+      const src=document.createElement("span");src.className="shop-source";src.innerText="("+ingMap[ing].join("・")+")";
+      row.appendChild(cb);row.appendChild(lbl);row.appendChild(src);list.appendChild(row);
+    });
+  }
+  document.getElementById("shopOverlay").classList.add("open");
+}
+function copyShop(){
+  const items=[...document.querySelectorAll("#shopList .shop-item:not(.checked)")].map(r=>"・"+r.querySelector("label").innerText).join("\n");
+  if(!items){showToast("リストが空です");return;}
+  navigator.clipboard.writeText(items).then(()=>showToast("コピーしました ✓")).catch(()=>showToast("コピーできませんでした"));
+}
+
+// ===== SETTINGS =====
+function showSettings(){
+  const c=document.getElementById("settingsContent");c.innerHTML="";
+  const defs=[
+    {key:"showCalories",label:"カードにカロリー表示"},
+    {key:"showStars",label:"カードにお気に入り★表示"},
+    {key:"showDifficulty",label:"カードに難易度表示"},
+    {key:"showCost",label:"カードに費用表示"},
+    {key:"showNutritionColor",label:"栄養価で枠の色を変える"},
+  ];
+  defs.forEach(def=>{
+    const row=document.createElement("div");row.className="setting-row";
+    const lbl=document.createElement("span");lbl.style.fontSize="13px";lbl.innerText=def.label;
+    const toggle=document.createElement("label");toggle.className="toggle";
+    const inp=document.createElement("input");inp.type="checkbox";inp.checked=settings[def.key];
+    inp.onchange=()=>{settings[def.key]=inp.checked;save();render();};
+    const slider=document.createElement("span");slider.className="toggle-slider";
+    toggle.appendChild(inp);toggle.appendChild(slider);
+    row.appendChild(lbl);row.appendChild(toggle);c.appendChild(row);
+  });
+  // Currency
+  const cr=document.createElement("div");cr.className="setting-row";
+  const cl=document.createElement("span");cl.style.fontSize="13px";cl.innerText="通貨単位";
+  const ci=document.createElement("input");ci.className="form-input";ci.style.cssText="width:60px;padding:4px 6px;";ci.value=settings.currency;
+  ci.oninput=()=>{settings.currency=ci.value||"円";save();};
+  cr.appendChild(cl);cr.appendChild(ci);c.appendChild(cr);
+  document.getElementById("settingsOverlay").classList.add("open");
+}
+
+// ===== AUTO SUGGEST =====
+function autoSuggest(){
+  if(!pool.length){showToast("プールに献立がありません");return;}
+  pushUndo();const wd=weekData();let filled=0;
+  wd.forEach(day=>{if(!day.length){const pick=pool[Math.floor(Math.random()*pool.length)];day.push({...pick,id:uid()});filled++;}});
+  if(!filled){showToast("全日に献立が入っています");undoStack.pop();return;}
+  save();render();showToast(filled+"日分を提案しました 🎲");
+}
+
+// ===== EXPORT / IMPORT =====
+function exportJSON(){
+  const blob=new Blob([JSON.stringify({allData,pool,settings},null,2)],{type:"application/json"});
+  const url=URL.createObjectURL(blob);const a=document.createElement("a");
+  a.href=url;a.download="献立_"+new Date().toISOString().slice(0,10)+".json";a.click();URL.revokeObjectURL(url);
+}
+function importJSON(e){
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=ev=>{
+    try{
+      const p=JSON.parse(ev.target.result);pushUndo();
+      if(p.allData)allData=p.allData;if(p.pool)pool=p.pool;if(p.settings)settings={...settings,...p.settings};
+      for(const k in allData)allData[k]=allData[k].map(day=>(day||[]).map(migrateItem));
+      pool=pool.map(migrateItem);
+      save();render();showToast("インポートしました ✓");
+    }catch{showToast("読み込みエラー");}
+  };
+  r.readAsText(f);e.target.value="";
+}
+
+// ===== TRASH =====
+(function setupTrash(){
+  const bin=document.getElementById("trash");
+  bin.addEventListener("dragover",e=>{e.preventDefault();bin.classList.add("drag-over");});
+  bin.addEventListener("dragleave",()=>bin.classList.remove("drag-over"));
+  bin.addEventListener("drop",e=>{
+    e.preventDefault();bin.classList.remove("drag-over");
+    const raw=e.dataTransfer.getData("text");if(!raw)return;
+    const obj=JSON.parse(raw);pushUndo();
+    if(obj.fromPool)pool.splice(obj.pidx,1);
+    else{const src=allData[obj.wk]?.[obj.meal];if(src&&src[obj.di])src[obj.di].splice(obj.ii,1);}
+    save();render();
+  });
+})();
+
+// ===== POOL RENDER =====
+function renderPool(){
+  const pDiv=document.getElementById("pool");if(!pDiv)return;
+  pDiv.innerHTML="";
+  const term=(document.getElementById("poolSearch")?.value||"").toLowerCase();
+  const filtered=pool.filter(item=>{
+    if(activeTagFilter&&item.tag!==activeTagFilter)return false;
+    if(term&&!item.text.toLowerCase().includes(term))return false;
+    return true;
+  });
+  if(!filtered.length){
+    const em=document.createElement("div");em.className="pool-empty";
+    em.innerText=term||activeTagFilter?"条件に合う献立がありません":"献立プールが空です";
+    pDiv.appendChild(em);return;
+  }
+  filtered.forEach(item=>{
+    const pidx=pool.indexOf(item);
+    const c=document.createElement("div");c.className="pool-card";
+    c.style.borderLeftColor=cardBorderColor(item);c.draggable=true;
+    const span=document.createElement("div");span.className="card-text";span.innerText=item.text;c.appendChild(span);
+    if(settings.showStars&&item.favorite>0){
+      const s=document.createElement("span");s.style.cssText="font-size:9px;color:#f59e0b;display:block;margin-top:2px;";
+      s.innerText=starsHTML(item.favorite,5);c.appendChild(s);
+    }
+    if(item.tag&&item.tag!=="その他"){
+      const tg=document.createElement("span");tg.className="card-tag";
+      tg.style.background=TC[item.tag]+"22";tg.style.color=TC[item.tag];tg.innerText=item.tag;c.appendChild(tg);
+    }
+    const eb=document.createElement("button");eb.className="card-edit-btn";eb.innerText="✏️";
+    eb.onclick=e=>{e.stopPropagation();openEdit({type:"pool",pidx});};c.appendChild(eb);
+    c.addEventListener("dragstart",e=>e.dataTransfer.setData("text",JSON.stringify({fromPool:true,pidx})));
+    pDiv.appendChild(c);
+  });
+}
+
+// ===== BOTTOM SHEET =====
+function initBottomSheet(){
+  const sheet=document.getElementById("bottomSheet");
+  const handle=document.getElementById("sheetHandle");
+  const SNAP_C=80,SNAP_E=Math.min(Math.round(window.innerHeight*.65),540);
+  let drag=false,startY=0,startH=0;
+  function snapTo(h){
+    sheet.classList.add("bs-anim");
+    sheet.style.height=h+"px";
+    setTimeout(()=>sheet.classList.remove("bs-anim"),340);
+  }
+  handle.addEventListener("pointerdown",e=>{
+    if(e.target.closest("input,button"))return;
+    drag=true;startY=e.clientY;startH=sheet.offsetHeight;
+    sheet.classList.remove("bs-anim");
+    handle.setPointerCapture(e.pointerId);
+    e.preventDefault();
+  });
+  handle.addEventListener("pointermove",e=>{
+    if(!drag)return;
+    const h=Math.max(SNAP_C,Math.min(SNAP_E,startH+(startY-e.clientY)));
+    sheet.style.height=h+"px";
+  });
+  handle.addEventListener("pointerup",()=>{
+    if(!drag)return;drag=false;
+    snapTo(sheet.offsetHeight>(SNAP_C+SNAP_E)/2?SNAP_E:SNAP_C);
+  });
+  handle.addEventListener("pointercancel",()=>{drag=false;});
+  document.getElementById("poolSearch").addEventListener("focus",()=>snapTo(SNAP_E));
+  document.getElementById("poolSearch").addEventListener("input",renderPool);
+}
+
+function toggleTagFilter(){
+  const panel=document.getElementById("sheetTagFilter");
+  const isVisible=panel.style.display==="flex";
+  if(isVisible){panel.style.display="none";return;}
+  panel.innerHTML="";
+  const mkBtn=(label,val,color)=>{
+    const b=document.createElement("button");
+    b.className="tag-btn"+(activeTagFilter===val?" selected":"");
+    b.style.background=(color||"#94a3b8")+"22";b.style.color=color||"#94a3b8";
+    b.innerText=label;
+    b.onclick=()=>{activeTagFilter=val;renderPool();panel.style.display="none";};
+    panel.appendChild(b);
+  };
+  mkBtn("すべて",null);
+  TAGS.forEach(tag=>mkBtn(tag,tag,TC[tag]));
+  panel.style.display="flex";
+}
+
+// ===== WEEK NAV =====
+function moveWeek(n){baseDate=new Date(baseDate);baseDate.setDate(baseDate.getDate()+n*7);requestAnimationFrame(render);}
+function goToday(){baseDate=new Date();render();const el=document.querySelector(".day.today");if(el)el.scrollIntoView({behavior:"smooth",block:"nearest",inline:"center"});}
+
+// ===== INIT =====
+load();
+if(!pool.length){
+  pool=["カレー","パスタ","ラーメン","ハンバーグ","サラダ","唐揚げ","肉じゃが","チャーハン","焼き魚","餃子"].map(t=>mkItem(t));
+}
+render();
+initBottomSheet();
+</script>
+</body>
+</html>
