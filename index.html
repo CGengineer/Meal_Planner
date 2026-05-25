@@ -9,10 +9,15 @@
 body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#0f172a;color:#f1f5f9;height:100vh;overflow:hidden;}
 .header{display:flex;justify-content:space-between;align-items:center;padding:8px 14px;gap:8px;flex-wrap:wrap;border-bottom:1px solid #334155;background:#0f172a;position:sticky;top:0;z-index:100;}
 .title{font-size:16px;font-weight:bold;white-space:nowrap;}
-.actions{display:flex;gap:5px;align-items:center;flex-wrap:wrap;}
+.actions{display:flex;gap:5px;align-items:center;flex-wrap:nowrap;min-width:0;}
 .btn{background:#334155;padding:5px 10px;border-radius:8px;cursor:pointer;border:none;color:#f1f5f9;font-size:12px;white-space:nowrap;transition:background .1s;font-family:inherit;}
 .btn:hover{background:#475569;}.btn:active{transform:scale(.93);background:#1e293b;}
 .btn.primary{background:#2563eb;}.btn.primary:hover{background:#3b82f6;}
+.more-menu{position:relative;}
+.more-panel{display:none;position:absolute;right:0;top:calc(100% + 6px);background:#1e293b;border:1px solid #334155;border-radius:10px;padding:6px;min-width:150px;box-shadow:0 8px 24px rgba(0,0,0,.45);z-index:220;}
+.more-panel.open{display:flex;flex-direction:column;gap:5px;}
+.more-item{background:#334155;border:none;color:#f1f5f9;border-radius:8px;padding:7px 9px;font-size:12px;text-align:left;cursor:pointer;font-family:inherit;}
+.more-item:hover{background:#475569;}
 /* Calendar */
 .calendar{display:grid;grid-template-columns:repeat(7,1fr);height:calc(100vh - 140px);border-top:1px solid #334155;overflow-y:auto;}
 .day{border-right:1px solid #334155;padding:5px;display:flex;flex-direction:column;gap:5px;min-height:0;overflow-y:auto;transition:background .12s;}
@@ -43,10 +48,20 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif
 .sheet-handle:active{cursor:grabbing;}
 .handle-bar{width:36px;height:4px;background:#475569;border-radius:2px;pointer-events:none;}
 .sheet-search{display:flex;align-items:center;padding:0 8px 7px;gap:6px;flex-shrink:0;}
+.active-filter-bar{display:none;gap:5px;padding:0 8px 7px;flex-wrap:wrap;flex-shrink:0;}
+.active-filter-bar.show{display:flex;}
+.filter-chip{display:inline-flex;align-items:center;gap:5px;font-size:10px;background:#0f172a;border:1px solid #334155;color:#cbd5e1;padding:2px 7px;border-radius:999px;}
+.filter-chip button{background:transparent;border:none;color:#94a3b8;cursor:pointer;font-size:11px;line-height:1;padding:0;}
 .search-wrap{flex:1;display:flex;align-items:center;background:#0f172a;border-radius:8px;padding:5px 9px;gap:6px;border:1px solid #334155;min-width:0;}
 .search-input{flex:1;background:transparent;border:none;color:#f1f5f9;font-size:12px;font-family:inherit;outline:none;min-width:0;}
 .search-input::placeholder{color:#475569;}
 .sheet-tag-filter{display:none;gap:5px;padding:0 8px 7px;flex-wrap:wrap;flex-shrink:0;border-bottom:1px solid #1e3a5f;}
+.filter-accordion{width:100%;background:#0f172a;border:1px solid #334155;border-radius:8px;overflow:hidden;}
+.filter-acc-head{width:100%;text-align:left;padding:7px 9px;font-size:11px;color:#cbd5e1;background:#111b2f;border:none;cursor:pointer;font-family:inherit;border-bottom:1px solid #1f2a44;}
+.filter-acc-head:last-child{border-bottom:none;}
+.filter-acc-head.active{background:#1b2a45;color:#f1f5f9;}
+.filter-acc-body{display:none;padding:7px;gap:5px;flex-wrap:wrap;}
+.filter-acc-body.open{display:flex;}
 .pool-grid{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:6px 8px 8px;overflow-y:auto;align-content:start;}
 .pool-empty{grid-column:1/-1;text-align:center;color:#475569;font-size:12px;padding:20px 0;}
 .pool-card{background:#334155;border-radius:8px;padding:7px 26px 6px 9px;cursor:grab;position:relative;font-size:12px;border-left:3px solid #475569;user-select:none;}
@@ -68,8 +83,11 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif
 .form-row{display:flex;gap:8px;}.form-row .form-group{flex:1;}
 .form-input{background:#0f172a;border:1px solid #334155;border-radius:7px;color:#f1f5f9;padding:7px 9px;font-size:13px;width:100%;font-family:inherit;}
 .form-input:focus{outline:none;border-color:#3b82f6;}
+.edit-tabs{display:flex;gap:5px;flex-wrap:wrap;padding-top:4px;}
+.edit-tab-btn{background:#334155;border:1px solid #475569;color:#cbd5e1;border-radius:999px;padding:4px 9px;font-size:11px;cursor:pointer;font-family:inherit;}
+.edit-tab-btn.active{background:#2563eb;border-color:#3b82f6;color:#f8fafc;}
 .tag-picker{display:flex;gap:5px;flex-wrap:wrap;}
-.tag-btn{padding:3px 10px;border-radius:20px;border:2px solid transparent;cursor:pointer;font-size:11px;font-weight:bold;opacity:.6;transition:opacity .1s,border-color .1s;font-family:inherit;}
+.tag-btn{padding:2px 8px;border-radius:20px;border:2px solid transparent;cursor:pointer;font-size:10px;font-weight:bold;opacity:.7;transition:opacity .1s,border-color .1s;font-family:inherit;}
 .tag-btn.selected{opacity:1;border-color:#f1f5f9;}
 /* Star rating */
 .star-rating{display:flex;gap:1px;}
@@ -78,6 +96,8 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif
 /* Ingredient */
 .ing-list{display:flex;flex-direction:column;gap:4px;}
 .ing-row{display:flex;gap:5px;align-items:center;}.ing-row input{flex:1;}
+.ing-stock{display:flex;align-items:center;gap:3px;font-size:11px;color:#94a3b8;white-space:nowrap;}
+.ing-stock input{accent-color:#22c55e;cursor:pointer;}
 .ing-row button{background:#475569;border:none;color:#f87171;border-radius:5px;padding:3px 7px;cursor:pointer;font-size:13px;}
 .modal-actions{display:flex;justify-content:flex-end;gap:7px;}
 .img-preview{width:100%;max-height:150px;object-fit:cover;border-radius:8px;display:block;margin-top:5px;}
@@ -114,7 +134,13 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif
 /* Toast */
 .toast{position:fixed;bottom:92px;left:50%;transform:translateX(-50%) translateY(10px);background:#1e293b;border:1px solid #334155;border-radius:8px;padding:8px 16px;font-size:12px;z-index:500;opacity:0;transition:opacity .25s,transform .25s;pointer-events:none;white-space:nowrap;}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
-@media(max-width:600px){.calendar{grid-template-columns:repeat(7,minmax(70px,1fr));overflow-x:auto;}.header{padding:6px 10px;}.actions{gap:4px;}}
+.mobile-nav{display:none;position:fixed;left:0;right:0;bottom:0;background:#111b2f;border-top:1px solid #334155;z-index:350;padding:6px;grid-template-columns:repeat(4,1fr);gap:6px;}
+.mobile-nav button{background:#1e293b;border:1px solid #334155;color:#e2e8f0;border-radius:8px;padding:7px 5px;font-size:11px;cursor:pointer;font-family:inherit;}
+body.ui-focus .header .title{opacity:.8;}
+body.ui-focus .trash-bin,body.ui-focus .header .actions .meal-select{display:none;}
+body.ui-edit #bottomSheet{height:100px!important;}
+@media(max-width:600px){.calendar{grid-template-columns:repeat(7,minmax(70px,1fr));overflow-x:auto;}.header{padding:6px 10px;}.actions{gap:4px;}.title{font-size:14px;}.btn{padding:5px 8px;font-size:11px;}}
+@media(max-width:760px){.mobile-nav{display:grid;}body{padding-bottom:56px;}.toast{bottom:62px;}}
 </style>
 </head>
 <body>
@@ -132,13 +158,19 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif
       <option value="夜">🌙 夜</option>
     </select>
     <button class="btn primary" onclick="openNewCard()">＋追加</button>
-    <button class="btn" style="background:#7c3aed" onclick="autoSuggest()">🎲 おまかせ</button>
-    <button class="btn" onclick="showShop()">🛒 買い物</button>
-    <button class="btn" onclick="showGraph()">📊 グラフ</button>
-    <button class="btn" onclick="undo()" title="Ctrl+Z">↩ 取消</button>
-    <button class="btn" onclick="exportJSON()">📤</button>
-    <label class="btn" style="margin:0;cursor:pointer;" title="JSONインポート">📥<input type="file" accept=".json" style="display:none" onchange="importJSON(event)"></label>
-    <button class="btn" onclick="showSettings()">⚙️ 設定</button>
+    <div class="more-menu">
+      <button class="btn" id="moreBtn" onclick="toggleMoreMenu(event)">⋯ その他</button>
+      <div class="more-panel" id="morePanel">
+        <button class="more-item" onclick="autoSuggest();closeMoreMenu();">🎲 おまかせ</button>
+        <button class="more-item" onclick="showShop();closeMoreMenu();">🛒 買い物</button>
+        <button class="more-item" onclick="showGraph();closeMoreMenu();">📊 グラフ</button>
+        <button class="more-item" onclick="undo();closeMoreMenu();" title="Ctrl+Z">↩ 取消</button>
+        <button class="more-item" onclick="cycleUIMode();closeMoreMenu();">👁 表示モード切替</button>
+        <button class="more-item" onclick="exportJSON();closeMoreMenu();">📤 エクスポート</button>
+        <label class="more-item" style="display:block;margin:0;cursor:pointer;" title="JSONインポート">📥 インポート<input type="file" accept=".json" style="display:none" onchange="importJSON(event);closeMoreMenu();"></label>
+        <button class="more-item" onclick="showSettings();closeMoreMenu();">⚙️ 設定</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -156,6 +188,7 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif
     <button class="btn" style="padding:5px 9px;font-size:13px;flex-shrink:0" onclick="toggleTagFilter()">⚙</button>
     <button class="btn primary" style="padding:5px 9px;font-size:13px;flex-shrink:0" onclick="openNewCard()">＋</button>
   </div>
+  <div class="active-filter-bar" id="activeFilterBar"></div>
   <div class="sheet-tag-filter" id="sheetTagFilter"></div>
   <div id="pool" class="pool-grid"></div>
 </div>
@@ -165,19 +198,26 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif
 <div class="overlay" id="editOverlay">
   <div class="modal">
     <h2 id="editTitle">献立を編集</h2>
+    <div class="edit-tabs" id="editTabs">
+      <button class="edit-tab-btn active" type="button" data-tab="basic" onclick="selectEditTab('basic')">基本</button>
+      <button class="edit-tab-btn" type="button" data-tab="nutrition" onclick="selectEditTab('nutrition')">栄養</button>
+      <button class="edit-tab-btn" type="button" data-tab="ingredients" onclick="selectEditTab('ingredients')">食材</button>
+      <button class="edit-tab-btn" type="button" data-tab="notes" onclick="selectEditTab('notes')">メモ</button>
+      <button class="edit-tab-btn" type="button" data-tab="image" onclick="selectEditTab('image')">画像</button>
+    </div>
 
     <!-- 基本 -->
-    <div class="form-group">
+    <div class="form-group edit-panel" data-tab="basic">
       <label>料理名 *</label>
       <input class="form-input" id="eText" placeholder="例: カレーライス">
     </div>
-    <div class="form-group">
+    <div class="form-group edit-panel" data-tab="basic">
       <label>カテゴリ</label>
       <div class="tag-picker" id="ePicker"></div>
     </div>
 
     <!-- 評価 -->
-    <div class="msec">
+    <div class="msec edit-panel" data-tab="basic">
       <div class="msec-title">評価</div>
       <div class="form-row">
         <div class="form-group">
@@ -192,7 +232,7 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif
     </div>
 
     <!-- 栄養・費用 -->
-    <div class="msec">
+    <div class="msec edit-panel" data-tab="nutrition">
       <div class="msec-title">栄養・費用</div>
       <div class="form-row">
         <div class="form-group">
@@ -221,26 +261,26 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif
     </div>
 
     <!-- 食材 -->
-    <div class="msec">
+    <div class="msec edit-panel" data-tab="ingredients">
       <div class="msec-title">食材（買い物リスト用）</div>
       <div class="ing-list" id="eIngList"></div>
       <button class="btn" style="margin-top:5px;align-self:start;font-size:11px" onclick="addIngRow()">＋食材追加</button>
     </div>
 
     <!-- 調理手順 -->
-    <div class="msec">
+    <div class="msec edit-panel" data-tab="notes">
       <div class="msec-title">調理手順</div>
       <textarea class="form-input" id="eSteps" rows="3" placeholder="手順を入力..."></textarea>
     </div>
 
     <!-- メモ -->
-    <div class="msec">
+    <div class="msec edit-panel" data-tab="notes">
       <div class="msec-title">メモ・レシピURL</div>
       <textarea class="form-input" id="eNote" rows="2" placeholder="レシピURLや調理メモなど"></textarea>
     </div>
 
     <!-- 画像 -->
-    <div class="msec">
+    <div class="msec edit-panel" data-tab="image">
       <div class="msec-title">画像</div>
       <input type="file" accept="image/*" id="eImageFile" style="display:none" onchange="handleImageUpload(event)">
       <button class="btn" onclick="document.getElementById('eImageFile').click()">📷 画像を選択</button>
@@ -253,6 +293,13 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif
       <button class="btn primary" onclick="saveEdit()">保存</button>
     </div>
   </div>
+</div>
+
+<div class="mobile-nav" id="mobileNav">
+  <button onclick="openNewCard()">＋追加</button>
+  <button onclick="toggleTagFilter()">⚙ 絞込</button>
+  <button onclick="showShop()">🛒 買い物</button>
+  <button onclick="showSettings()">⚙ 設定</button>
 </div>
 
 <!-- ===== Graph Modal ===== -->
@@ -307,23 +354,28 @@ let currentImage="";
 let currentMeal="昼";
 let settings={
   showCalories:true,showStars:true,showDifficulty:true,
-  showCost:true,showNutritionColor:true,showPlannedCardImage:true,currency:"円"
+  showCost:true,showNutritionColor:true,showPlannedCardImage:true,currency:"円",
+  cardDensity:"standard",uiMode:"standard"
 };
 let activeTagFilter=null;
 let activeCostFilter=null;
 let activeFavoriteFilter=null;
 let activeDifficultyFilter=null;
 let activeCalorieFilter=null;
+let activeInventoryFilter=null;
+let activeFilterSection="category";
+let editActiveTab="basic";
+let expandedDayKeys={};
 
 // ===== ITEM FACTORY =====
 function uid(){return Math.random().toString(36).slice(2)+Date.now().toString(36);}
 function mkItem(text,tag,ings,note){
   return{id:uid(),text,tag:tag||"その他",ingredients:Array.isArray(ings)?[...ings]:[],
-    note:note||"",favorite:0,difficulty:0,calories:0,protein:0,carbs:0,fat:0,cost:0,steps:"",image:""};
+    ingredientInventory:{},note:note||"",favorite:0,difficulty:0,calories:0,protein:0,carbs:0,fat:0,cost:0,steps:"",image:""};
 }
 function migrateItem(it){
   if(typeof it==="string") return mkItem(it);
-  return{favorite:0,difficulty:0,calories:0,protein:0,carbs:0,fat:0,cost:0,steps:"",image:"",...it};
+  return{favorite:0,difficulty:0,calories:0,protein:0,carbs:0,fat:0,cost:0,steps:"",image:"",ingredientInventory:{},...it};
 }
 
 // ===== WEEK UTILS =====
@@ -402,6 +454,41 @@ function cardBorderColor(item){
   return TC[item.tag]||"#475569";
 }
 function starsHTML(v,max){let s="";for(let i=1;i<=max;i++)s+=i<=v?"★":"☆";return s;}
+function inventoryScore(item){
+  const ings=item.ingredients||[];
+  if(!ings.length)return 0;
+  const inv=item.ingredientInventory||{};
+  const stocked=ings.reduce((s,ing)=>s+(inv[ing]===true?1:0),0);
+  return stocked/ings.length;
+}
+function inventoryCount(item){
+  const ings=item.ingredients||[];
+  if(!ings.length)return{stocked:0,total:0};
+  const inv=item.ingredientInventory||{};
+  const stocked=ings.reduce((s,ing)=>s+(inv[ing]===true?1:0),0);
+  return{stocked,total:ings.length};
+}
+function inventoryBadgeTone(stocked,total){
+  const ratio=total?stocked/total:0;
+  if(ratio>=1)return{bg:"#16a34a22",fg:"#4ade80"};
+  if(ratio>=0.5)return{bg:"#f59e0b22",fg:"#fbbf24"};
+  return{bg:"#ef444422",fg:"#f87171"};
+}
+function cardLimitByDensity(){
+  if(settings.cardDensity==="minimal")return 2;
+  if(settings.cardDensity==="detailed")return 6;
+  return 3;
+}
+function showCardField(field){
+  if(settings.cardDensity==="minimal")return field==="calories"||field==="inventory"||field==="tag";
+  return true;
+}
+function applyUIMode(mode){
+  settings.uiMode=mode||"standard";
+  document.body.classList.remove("ui-focus","ui-edit");
+  if(settings.uiMode==="focus")document.body.classList.add("ui-focus");
+  if(settings.uiMode==="edit")document.body.classList.add("ui-edit");
+}
 
 // ===== RENDER =====
 function render(){
@@ -429,7 +516,18 @@ function render(){
     });
     const hdr=document.createElement("div");hdr.className="day-header";
     hdr.innerText=`${DAYS[d.getDay()]} ${d.getDate()}`;col.appendChild(hdr);
-    wd[i].forEach((item,ii)=>col.appendChild(mkCardEl(item,{wk:k,di:i,ii,meal:currentMeal})));
+    const dayKey=`${k}-${currentMeal}-${i}`;
+    const limit=cardLimitByDensity();
+    const items=expandedDayKeys[dayKey]?wd[i]:wd[i].slice(0,limit);
+    items.forEach((item,ii)=>col.appendChild(mkCardEl(item,{wk:k,di:i,ii:wd[i].indexOf(item),meal:currentMeal})));
+    if(wd[i].length>limit){
+      const more=document.createElement("button");
+      more.className="btn";
+      more.style.cssText="padding:3px 6px;font-size:10px;align-self:flex-start;";
+      more.innerText=expandedDayKeys[dayKey]?"折りたたむ":`+${wd[i].length-limit}件`;
+      more.onclick=()=>{expandedDayKeys[dayKey]=!expandedDayKeys[dayKey];render();};
+      col.appendChild(more);
+    }
     cal.appendChild(col);
   }
 
@@ -445,7 +543,7 @@ function mkCardEl(item,target){
   const textEl=document.createElement("div");textEl.className="card-text";textEl.innerText=item.text;c.appendChild(textEl);
 
   const meta=document.createElement("div");meta.className="card-meta";
-  if(settings.showCalories&&item.calories>0){
+  if(showCardField("calories")&&settings.showCalories&&item.calories>0){
     const b=document.createElement("span");b.className="card-badge";
     b.style.background=item.calories>600?"#ef444422":item.calories>400?"#f59e0b22":"#22c55e22";
     b.style.color=item.calories>600?"#f87171":item.calories>400?"#fbbf24":"#4ade80";
@@ -455,16 +553,23 @@ function mkCardEl(item,target){
     }
     b.innerText="🔥 "+item.calories+"kcal";meta.appendChild(b);
   }
-  if(settings.showCost&&item.cost>0){
+  if(showCardField("cost")&&settings.showCost&&item.cost>0){
     const b=document.createElement("span");b.className="card-badge";b.style.color="#94a3b8";
     b.innerText="💰"+item.cost+settings.currency;meta.appendChild(b);
   }
-  if(item.favorite>0){
+  if(showCardField("favorite")&&item.favorite>0){
     const b=document.createElement("span");b.className="card-stars";b.innerText=starsHTML(item.favorite,5);meta.appendChild(b);
   }
-  if(item.difficulty>0){
+  if(showCardField("difficulty")&&item.difficulty>0){
     const b=document.createElement("span");b.className="card-badge";b.style.color="#64748b";
     b.innerText="難"+starsHTML(item.difficulty,5);meta.appendChild(b);
+  }
+  const invCt=inventoryCount(item);
+  if(showCardField("inventory")&&invCt.total>0){
+    const tone=inventoryBadgeTone(invCt.stocked,invCt.total);
+    const b=document.createElement("span");b.className="card-badge";b.style.color="#cbd5e1";
+    b.style.background=tone.bg;b.style.color=tone.fg;
+    b.innerText="📦 在庫 "+invCt.stocked+"/"+invCt.total;meta.appendChild(b);
   }
 
   const tag=item.tag||"その他";
@@ -478,7 +583,7 @@ function mkCardEl(item,target){
 
   if(!hasImage){
     if(meta.children.length)c.appendChild(meta);
-    c.appendChild(makeTagEl());
+    if(showCardField("tag"))c.appendChild(makeTagEl());
   }
 
   const eb=document.createElement("button");eb.className="card-edit-btn";eb.innerText="✏️";
@@ -489,7 +594,7 @@ function mkCardEl(item,target){
     const img=document.createElement("img");img.className="card-img";img.src=item.image;img.alt="";img.draggable=false;imgWrap.appendChild(img);
     const ov=document.createElement("div");ov.className="card-overlay";
     if(meta.children.length)ov.appendChild(meta);
-    ov.appendChild(makeTagEl());
+    if(showCardField("tag"))ov.appendChild(makeTagEl());
     imgWrap.appendChild(ov);
     c.appendChild(imgWrap);
   }
@@ -577,11 +682,12 @@ function openEdit(target){
   buildStarRating("eFavorite",item?.favorite||0,5);
   buildStarRating("eDifficulty",item?.difficulty||0,5);
   const list=document.getElementById("eIngList");list.innerHTML="";
-  (item?.ingredients||[]).forEach(v=>addIngRow(v));
+  (item?.ingredients||[]).forEach(v=>addIngRow(v,(item?.ingredientInventory||{})[v]===true));
   currentImage=item?.image||"";
   const pv=document.getElementById("eImagePreview");
   if(currentImage){pv.src=currentImage;pv.style.display="block";document.getElementById("eImageClear").style.display="inline-block";}
   else{pv.src="";pv.style.display="none";document.getElementById("eImageClear").style.display="none";}
+  selectEditTab("basic");
   document.getElementById("editOverlay").classList.add("open");
   setTimeout(()=>document.getElementById("eText").focus(),50);
 }
@@ -595,6 +701,7 @@ function openNewCard(){
   buildStarRating("eFavorite",0,5);buildStarRating("eDifficulty",0,5);
   document.getElementById("eIngList").innerHTML="";
   clearImage();
+  selectEditTab("basic");
   document.getElementById("editOverlay").classList.add("open");
   setTimeout(()=>document.getElementById("eText").focus(),50);
 }
@@ -604,8 +711,13 @@ function addIngRow(val){
   const list=document.getElementById("eIngList");
   const row=document.createElement("div");row.className="ing-row";
   const inp=document.createElement("input");inp.className="form-input";inp.value=val;inp.placeholder="例: 鶏肉 200g";
+  const stockWrap=document.createElement("label");stockWrap.className="ing-stock";
+  const stock=document.createElement("input");stock.type="checkbox";stock.className="ing-stock-check";
+  stock.checked=arguments.length>1?!!arguments[1]:false;
+  const stockTxt=document.createElement("span");stockTxt.innerText="在庫";
+  stockWrap.appendChild(stock);stockWrap.appendChild(stockTxt);
   const del=document.createElement("button");del.innerText="✕";del.onclick=()=>row.remove();
-  row.appendChild(inp);row.appendChild(del);list.appendChild(row);
+  row.appendChild(inp);row.appendChild(stockWrap);row.appendChild(del);list.appendChild(row);
 }
 
 function saveEdit(){
@@ -622,9 +734,18 @@ function saveEdit(){
   const cost=parseInt(document.getElementById("eCost").value)||0;
   const favorite=parseInt(document.getElementById("eFavorite").dataset.val)||0;
   const difficulty=parseInt(document.getElementById("eDifficulty").dataset.val)||0;
-  const ings=[...document.querySelectorAll("#eIngList input")].map(x=>x.value.trim()).filter(Boolean);
+  const ings=[];
+  const ingredientInventory={};
+  [...document.querySelectorAll("#eIngList .ing-row")].forEach(row=>{
+    const input=row.querySelector("input.form-input");
+    const stock=row.querySelector(".ing-stock-check");
+    const v=(input?.value||"").trim();
+    if(!v)return;
+    ings.push(v);
+    ingredientInventory[v]=!!stock?.checked;
+  });
   pushUndo();
-  const fields={text,tag,note,steps,calories,protein,carbs,fat,cost,favorite,difficulty,ingredients:ings,image:currentImage};
+  const fields={text,tag,note,steps,calories,protein,carbs,fat,cost,favorite,difficulty,ingredients:ings,ingredientInventory,image:currentImage};
   if(editTarget.type==="pool"&&editTarget.pidx<0){
     pool.push({...mkItem(text,tag,ings,note),...fields});
   }else if(editTarget.type==="pool"){
@@ -637,6 +758,52 @@ function saveEdit(){
 
 function closeOverlay(id){document.getElementById(id).classList.remove("open");}
 document.querySelectorAll(".overlay").forEach(o=>o.addEventListener("click",e=>{if(e.target===o)o.classList.remove("open");}));
+
+function selectEditTab(tab){
+  editActiveTab=tab;
+  document.querySelectorAll("#editTabs .edit-tab-btn").forEach(btn=>btn.classList.toggle("active",btn.dataset.tab===tab));
+  document.querySelectorAll("#editOverlay .edit-panel").forEach(p=>p.style.display=p.dataset.tab===tab?"":"none");
+}
+
+function toggleMoreMenu(ev){
+  ev.stopPropagation();
+  document.getElementById("morePanel").classList.toggle("open");
+}
+function closeMoreMenu(){
+  document.getElementById("morePanel").classList.remove("open");
+}
+document.addEventListener("click",e=>{
+  if(!e.target.closest(".more-menu"))closeMoreMenu();
+});
+function cycleUIMode(){
+  const order=["standard","focus","edit"];
+  const idx=order.indexOf(settings.uiMode||"standard");
+  applyUIMode(order[(idx+1)%order.length]);
+  save();render();
+  showToast("表示モード: "+(settings.uiMode==="focus"?"集中":settings.uiMode==="edit"?"編集":"標準"));
+}
+
+function renderActiveFilterBar(){
+  const bar=document.getElementById("activeFilterBar");
+  if(!bar)return;
+  bar.innerHTML="";
+  const chips=[];
+  if(activeTagFilter)chips.push([`カテゴリ:${activeTagFilter}`,()=>{activeTagFilter=null;}]);
+  if(activeCostFilter)chips.push([`金額:${activeCostFilter.min??"0"}〜${activeCostFilter.max??"∞"}${settings.currency}`,()=>{activeCostFilter=null;}]);
+  if(activeFavoriteFilter!=null)chips.push([`お気に入り:${activeFavoriteFilter}★以上`,()=>{activeFavoriteFilter=null;}]);
+  if(activeDifficultyFilter!=null)chips.push([`簡単度:${activeDifficultyFilter}★以上`,()=>{activeDifficultyFilter=null;}]);
+  if(activeCalorieFilter)chips.push([`カロリー:${activeCalorieFilter.min??"0"}〜${activeCalorieFilter.max??"∞"}kcal`,()=>{activeCalorieFilter=null;}]);
+  if(activeInventoryFilter===true)chips.push(["在庫あり",()=>{activeInventoryFilter=null;}]);
+  if(activeInventoryFilter===false)chips.push(["在庫不足",()=>{activeInventoryFilter=null;}]);
+  chips.forEach(([label,reset])=>{
+    const chip=document.createElement("span");chip.className="filter-chip";
+    chip.innerText=label;
+    const x=document.createElement("button");x.innerText="×";
+    x.onclick=()=>{reset();renderPool();renderFilterPanel();};
+    chip.appendChild(x);bar.appendChild(chip);
+  });
+  bar.classList.toggle("show",chips.length>0);
+}
 
 // ===== GRAPH =====
 function showGraph(){
@@ -718,18 +885,23 @@ function showShop(){
   const combined=allMealData(curKey());const ingMap={};
   const wd=combined;
   wd.forEach(day=>(day||[]).forEach(item=>(item.ingredients||[]).forEach(ing=>{
-    if(ing){if(!ingMap[ing])ingMap[ing]=[];ingMap[ing].push(item.text);}
+    if(ing){
+      if(!ingMap[ing])ingMap[ing]={need:[],stock:[]};
+      if(item.ingredientInventory?.[ing]===true)ingMap[ing].stock.push(item.text);
+      else ingMap[ing].need.push(item.text);
+    }
   })));
   const keys=Object.keys(ingMap);const list=document.getElementById("shopList");list.innerHTML="";
-  if(!keys.length){
+  const needKeys=keys.filter(ing=>ingMap[ing].need.length>0);
+  if(!needKeys.length){
     list.innerHTML="<p style=\"color:#64748b;text-align:center;font-size:13px\">食材が登録されていません</p>";
   }else{
-    keys.forEach((ing,i)=>{
+    needKeys.forEach((ing,i)=>{
       const row=document.createElement("div");row.className="shop-item";
       const cb=document.createElement("input");cb.type="checkbox";cb.id="si"+i;
       cb.onchange=()=>row.classList.toggle("checked",cb.checked);
       const lbl=document.createElement("label");lbl.htmlFor="si"+i;lbl.innerText=ing;
-      const src=document.createElement("span");src.className="shop-source";src.innerText="("+ingMap[ing].join("・")+")";
+      const src=document.createElement("span");src.className="shop-source";src.innerText="("+ingMap[ing].need.join("・")+")";
       row.appendChild(cb);row.appendChild(lbl);row.appendChild(src);list.appendChild(row);
     });
   }
@@ -768,6 +940,22 @@ function showSettings(){
   const ci=document.createElement("input");ci.className="form-input";ci.style.cssText="width:60px;padding:4px 6px;";ci.value=settings.currency;
   ci.oninput=()=>{settings.currency=ci.value||"円";save();};
   cr.appendChild(cl);cr.appendChild(ci);c.appendChild(cr);
+
+  const dr=document.createElement("div");dr.className="setting-row";
+  const dl=document.createElement("span");dl.style.fontSize="13px";dl.innerText="表示密度";
+  const ds=document.createElement("select");ds.className="form-input";ds.style.cssText="width:110px;padding:4px 6px;";
+  [["minimal","ミニマル"],["standard","標準"],["detailed","詳細"]].forEach(([v,t])=>{const o=document.createElement("option");o.value=v;o.innerText=t;ds.appendChild(o);});
+  ds.value=settings.cardDensity||"standard";
+  ds.onchange=()=>{settings.cardDensity=ds.value;save();render();};
+  dr.appendChild(dl);dr.appendChild(ds);c.appendChild(dr);
+
+  const mr=document.createElement("div");mr.className="setting-row";
+  const ml=document.createElement("span");ml.style.fontSize="13px";ml.innerText="画面モード";
+  const ms=document.createElement("select");ms.className="form-input";ms.style.cssText="width:110px;padding:4px 6px;";
+  [["standard","標準"],["focus","集中"],["edit","編集"]].forEach(([v,t])=>{const o=document.createElement("option");o.value=v;o.innerText=t;ms.appendChild(o);});
+  ms.value=settings.uiMode||"standard";
+  ms.onchange=()=>{applyUIMode(ms.value);save();render();};
+  mr.appendChild(ml);mr.appendChild(ms);c.appendChild(mr);
   document.getElementById("settingsOverlay").classList.add("open");
 }
 
@@ -775,7 +963,15 @@ function showSettings(){
 function autoSuggest(){
   if(!pool.length){showToast("プールに献立がありません");return;}
   pushUndo();const wd=weekData();let filled=0;
-  wd.forEach(day=>{if(!day.length){const pick=pool[Math.floor(Math.random()*pool.length)];day.push({...pick,id:uid()});filled++;}});
+  const scored=[...pool].sort((a,b)=>inventoryScore(b)-inventoryScore(a));
+  const topN=Math.max(1,Math.min(scored.length,Math.ceil(scored.length*0.35)));
+  wd.forEach(day=>{
+    if(!day.length){
+      const candidates=scored.slice(0,topN);
+      const pick=(candidates.length?candidates:pool)[Math.floor(Math.random()*(candidates.length||pool.length))];
+      day.push({...pick,id:uid()});filled++;
+    }
+  });
   if(!filled){showToast("全日に献立が入っています");undoStack.pop();return;}
   save();render();showToast(filled+"日分を提案しました 🎲");
 }
@@ -820,6 +1016,7 @@ function importJSON(e){
 function renderPool(){
   const pDiv=document.getElementById("pool");if(!pDiv)return;
   pDiv.innerHTML="";
+  renderActiveFilterBar();
   const term=(document.getElementById("poolSearch")?.value||"").toLowerCase();
   const matchCost=item=>{
     if(!activeCostFilter)return true;
@@ -847,18 +1044,28 @@ function renderPool(){
     if(activeCalorieFilter.max!=null&&calories>activeCalorieFilter.max)return false;
     return true;
   };
+  const matchInventory=item=>{
+    const ings=item.ingredients||[];
+    if(activeInventoryFilter===null)return true;
+    if(!ings.length)return false;
+    const inv=item.ingredientInventory||{};
+    if(activeInventoryFilter===true)return ings.every(ing=>inv[ing]===true);
+    return ings.some(ing=>inv[ing]!==true);
+  };
   const filtered=pool.filter(item=>{
     if(activeTagFilter&&item.tag!==activeTagFilter)return false;
     if(!matchCost(item))return false;
     if(!matchFavorite(item))return false;
     if(!matchDifficulty(item))return false;
     if(!matchCalorie(item))return false;
+    if(!matchInventory(item))return false;
     if(term&&!item.text.toLowerCase().includes(term))return false;
     return true;
   });
   if(!filtered.length){
     const em=document.createElement("div");em.className="pool-empty";
-    em.innerText=term||activeTagFilter||activeCostFilter||activeFavoriteFilter||activeDifficultyFilter||activeCalorieFilter?"条件に合う献立がありません":"献立プールが空です";
+    const hasFilter=!!(term||activeTagFilter||activeCostFilter||activeFavoriteFilter!=null||activeDifficultyFilter!=null||activeCalorieFilter||activeInventoryFilter!==null);
+    em.innerText=hasFilter?"条件が厳しめです。条件を1つ外してみてください":"献立プールが空です";
     pDiv.appendChild(em);return;
   }
   filtered.forEach(item=>{
@@ -866,11 +1073,18 @@ function renderPool(){
     const c=document.createElement("div");c.className="pool-card";
     c.style.borderLeftColor=cardBorderColor(item);c.draggable=true;
     const span=document.createElement("div");span.className="card-text";span.innerText=item.text;c.appendChild(span);
-    if(settings.showStars&&item.favorite>0){
+    if(showCardField("favorite")&&settings.showStars&&item.favorite>0){
       const s=document.createElement("span");s.style.cssText="font-size:9px;color:#f59e0b;display:block;margin-top:2px;";
       s.innerText=starsHTML(item.favorite,5);c.appendChild(s);
     }
-    if(item.tag&&item.tag!=="その他"){
+    const invCt=inventoryCount(item);
+    if(invCt.total>0){
+      const tone=inventoryBadgeTone(invCt.stocked,invCt.total);
+      const ib=document.createElement("span");ib.className="card-badge";
+      ib.style.cssText=`display:inline-block;margin-top:2px;color:${tone.fg};background:${tone.bg};`;
+      ib.innerText="📦 在庫 "+invCt.stocked+"/"+invCt.total;c.appendChild(ib);
+    }
+    if(showCardField("tag")&&item.tag&&item.tag!=="その他"){
       const tg=document.createElement("span");tg.className="card-tag";
       tg.style.background=TC[item.tag]+"22";tg.style.color=TC[item.tag];tg.innerText=item.tag;c.appendChild(tg);
     }
@@ -925,244 +1139,68 @@ function toggleTagFilter(){
 function renderFilterPanel(){
   const panel=document.getElementById("sheetTagFilter");
   panel.innerHTML="";
-
-  const section=document.createElement("div");
-  section.style.cssText="width:100%;font-size:10px;color:#94a3b8;margin-bottom:2px;";
-  section.innerText="カテゴリ";
-  panel.appendChild(section);
-
-  const mkBtn=(label,val,color)=>{
+  const root=document.createElement("div");root.className="filter-accordion";panel.appendChild(root);
+  const mkBtn=(label,val,color,activeVal,setter,target)=>{
     const b=document.createElement("button");
-    const isSelected=activeTagFilter===val;
-    b.className="tag-btn"+(isSelected?" selected":"");
+    b.className="tag-btn"+(activeVal===val?" selected":"");
     b.style.background=(color||"#94a3b8")+"22";b.style.color=color||"#94a3b8";
     b.innerText=label;
-    b.onclick=()=>{
-      activeTagFilter=activeTagFilter===val?null:val;
-      renderPool();
-      renderFilterPanel();
-    };
-    panel.appendChild(b);
+    b.onclick=()=>{setter(val);renderPool();renderFilterPanel();};
+    target.appendChild(b);
+  };
+  const addSection=(key,title,builder)=>{
+    const h=document.createElement("button");h.className="filter-acc-head"+(activeFilterSection===key?" active":"");h.type="button";h.innerText=title;
+    const b=document.createElement("div");b.className="filter-acc-body"+(activeFilterSection===key?" open":"");
+    h.onclick=()=>{activeFilterSection=activeFilterSection===key?"":key;renderFilterPanel();};
+    builder(b);root.appendChild(h);root.appendChild(b);
   };
 
-  mkBtn("すべて",null,null);
-  TAGS.forEach(tag=>mkBtn(tag,tag,TC[tag]));
+  addSection("category","カテゴリ",body=>{
+    mkBtn("すべて",null,null,activeTagFilter,v=>activeTagFilter=activeTagFilter===v?null:v,body);
+    TAGS.forEach(tag=>mkBtn(tag,tag,TC[tag],activeTagFilter,v=>activeTagFilter=activeTagFilter===v?null:v,body));
+  });
 
-  const section2=document.createElement("div");
-  section2.style.cssText="width:100%;font-size:10px;color:#94a3b8;margin:4px 0 2px;";
-  section2.innerText="金額";
-  panel.appendChild(section2);
+  addSection("cost","金額",body=>{
+    const minInput=document.createElement("input");minInput.type="number";minInput.min="0";minInput.inputMode="numeric";minInput.placeholder="最小";minInput.className="form-input";minInput.style.cssText="width:86px;padding:5px 7px;font-size:12px;";minInput.value=activeCostFilter?.min!=null?String(activeCostFilter.min):"";
+    const sep=document.createElement("span");sep.style.cssText="color:#94a3b8;font-size:12px;";sep.innerText="〜";
+    const maxInput=document.createElement("input");maxInput.type="number";maxInput.min="0";maxInput.inputMode="numeric";maxInput.placeholder="最大";maxInput.className="form-input";maxInput.style.cssText="width:86px;padding:5px 7px;font-size:12px;";maxInput.value=activeCostFilter?.max!=null?String(activeCostFilter.max):"";
+    const unit=document.createElement("span");unit.style.cssText="color:#94a3b8;font-size:11px;";unit.innerText=settings.currency;
+    const applyBtn=document.createElement("button");applyBtn.className="btn primary";applyBtn.style.cssText="padding:4px 8px;font-size:11px;";applyBtn.innerText="適用";
+    const clearBtn=document.createElement("button");clearBtn.className="btn";clearBtn.style.cssText="padding:4px 8px;font-size:11px;";clearBtn.innerText="クリア";
+    const apply=()=>{const minRaw=minInput.value.trim();const maxRaw=maxInput.value.trim();const min=minRaw===""?null:Math.max(0,parseInt(minRaw,10)||0);const max=maxRaw===""?null:Math.max(0,parseInt(maxRaw,10)||0);if(min===null&&max===null)activeCostFilter=null;else if(min!==null&&max!==null&&min>max)activeCostFilter={min:max,max:min};else activeCostFilter={min,max};renderPool();renderFilterPanel();};
+    applyBtn.onclick=apply;clearBtn.onclick=()=>{activeCostFilter=null;renderPool();renderFilterPanel();};
+    minInput.addEventListener("keydown",e=>{if(e.key==="Enter")apply();});maxInput.addEventListener("keydown",e=>{if(e.key==="Enter")apply();});
+    body.appendChild(minInput);body.appendChild(sep);body.appendChild(maxInput);body.appendChild(unit);body.appendChild(applyBtn);body.appendChild(clearBtn);
+  });
 
-  const costWrap=document.createElement("div");
-  costWrap.style.cssText="display:flex;gap:6px;align-items:center;width:100%;flex-wrap:wrap;";
+  addSection("favorite","お気に入り",body=>{
+    [["すべて",null,"#94a3b8"],["★1以上",1,"#fbbf24"],["★2以上",2,"#f59e0b"],["★3以上",3,"#f59e0b"],["★4以上",4,"#d97706"],["★5",5,"#b45309"]]
+      .forEach(([label,val,color])=>mkBtn(label,val,color,activeFavoriteFilter,v=>activeFavoriteFilter=v,body));
+  });
 
-  const minInput=document.createElement("input");
-  minInput.type="number";
-  minInput.min="0";
-  minInput.inputMode="numeric";
-  minInput.placeholder="最小";
-  minInput.className="form-input";
-  minInput.style.cssText="width:86px;padding:5px 7px;font-size:12px;";
-  minInput.value=activeCostFilter?.min!=null?String(activeCostFilter.min):"";
+  addSection("difficulty","簡単度",body=>{
+    [["すべて",null,"#94a3b8"],["★1以上",1,"#60a5fa"],["★2以上",2,"#3b82f6"],["★3以上",3,"#2563eb"],["★4以上",4,"#1d4ed8"],["★5",5,"#1e40af"]]
+      .forEach(([label,val,color])=>mkBtn(label,val,color,activeDifficultyFilter,v=>activeDifficultyFilter=v,body));
+  });
 
-  const sep=document.createElement("span");
-  sep.style.cssText="color:#94a3b8;font-size:12px;";
-  sep.innerText="〜";
+  addSection("calorie","カロリー",body=>{
+    const minInput=document.createElement("input");minInput.type="number";minInput.min="0";minInput.inputMode="numeric";minInput.placeholder="最小";minInput.className="form-input";minInput.style.cssText="width:86px;padding:5px 7px;font-size:12px;";minInput.value=activeCalorieFilter?.min!=null?String(activeCalorieFilter.min):"";
+    const sep=document.createElement("span");sep.style.cssText="color:#94a3b8;font-size:12px;";sep.innerText="〜";
+    const maxInput=document.createElement("input");maxInput.type="number";maxInput.min="0";maxInput.inputMode="numeric";maxInput.placeholder="最大";maxInput.className="form-input";maxInput.style.cssText="width:86px;padding:5px 7px;font-size:12px;";maxInput.value=activeCalorieFilter?.max!=null?String(activeCalorieFilter.max):"";
+    const unit=document.createElement("span");unit.style.cssText="color:#94a3b8;font-size:11px;";unit.innerText="kcal";
+    const applyBtn=document.createElement("button");applyBtn.className="btn primary";applyBtn.style.cssText="padding:4px 8px;font-size:11px;";applyBtn.innerText="適用";
+    const clearBtn=document.createElement("button");clearBtn.className="btn";clearBtn.style.cssText="padding:4px 8px;font-size:11px;";clearBtn.innerText="クリア";
+    const apply=()=>{const minRaw=minInput.value.trim();const maxRaw=maxInput.value.trim();const min=minRaw===""?null:Math.max(0,parseInt(minRaw,10)||0);const max=maxRaw===""?null:Math.max(0,parseInt(maxRaw,10)||0);if(min===null&&max===null)activeCalorieFilter=null;else if(min!==null&&max!==null&&min>max)activeCalorieFilter={min:max,max:min};else activeCalorieFilter={min,max};renderPool();renderFilterPanel();};
+    applyBtn.onclick=apply;clearBtn.onclick=()=>{activeCalorieFilter=null;renderPool();renderFilterPanel();};
+    minInput.addEventListener("keydown",e=>{if(e.key==="Enter")apply();});maxInput.addEventListener("keydown",e=>{if(e.key==="Enter")apply();});
+    body.appendChild(minInput);body.appendChild(sep);body.appendChild(maxInput);body.appendChild(unit);body.appendChild(applyBtn);body.appendChild(clearBtn);
+  });
 
-  const maxInput=document.createElement("input");
-  maxInput.type="number";
-  maxInput.min="0";
-  maxInput.inputMode="numeric";
-  maxInput.placeholder="最大";
-  maxInput.className="form-input";
-  maxInput.style.cssText="width:86px;padding:5px 7px;font-size:12px;";
-  maxInput.value=activeCostFilter?.max!=null?String(activeCostFilter.max):"";
-
-  const unit=document.createElement("span");
-  unit.style.cssText="color:#94a3b8;font-size:11px;";
-  unit.innerText=settings.currency;
-
-  const applyBtn=document.createElement("button");
-  applyBtn.className="btn primary";
-  applyBtn.style.cssText="padding:4px 8px;font-size:11px;";
-  applyBtn.innerText="適用";
-
-  const clearBtn=document.createElement("button");
-  clearBtn.className="btn";
-  clearBtn.style.cssText="padding:4px 8px;font-size:11px;";
-  clearBtn.innerText="クリア";
-
-  const applyCostRange=()=>{
-    const minRaw=minInput.value.trim();
-    const maxRaw=maxInput.value.trim();
-    const min=minRaw===""?null:Math.max(0,parseInt(minRaw,10)||0);
-    const max=maxRaw===""?null:Math.max(0,parseInt(maxRaw,10)||0);
-    if(min===null&&max===null){
-      activeCostFilter=null;
-    }else if(min!==null&&max!==null&&min>max){
-      activeCostFilter={min:max,max:min};
-    }else{
-      activeCostFilter={min,max};
-    }
-    renderPool();
-    renderFilterPanel();
-  };
-
-  applyBtn.onclick=applyCostRange;
-  clearBtn.onclick=()=>{
-    activeCostFilter=null;
-    renderPool();
-    renderFilterPanel();
-  };
-  minInput.addEventListener("keydown",e=>{if(e.key==="Enter")applyCostRange();});
-  maxInput.addEventListener("keydown",e=>{if(e.key==="Enter")applyCostRange();});
-
-  costWrap.appendChild(minInput);
-  costWrap.appendChild(sep);
-  costWrap.appendChild(maxInput);
-  costWrap.appendChild(unit);
-  costWrap.appendChild(applyBtn);
-  costWrap.appendChild(clearBtn);
-  panel.appendChild(costWrap);
-
-  const section3=document.createElement("div");
-  section3.style.cssText="width:100%;font-size:10px;color:#94a3b8;margin:6px 0 2px;";
-  section3.innerText="お気に入り";
-  panel.appendChild(section3);
-
-  const favWrap=document.createElement("div");
-  favWrap.style.cssText="display:flex;gap:5px;align-items:center;width:100%;flex-wrap:wrap;";
-
-  const mkFavBtn=(label,minStars,color)=>{
-    const b=document.createElement("button");
-    const selected=(minStars===null&&activeFavoriteFilter===null)||(minStars!==null&&activeFavoriteFilter===minStars);
-    b.className="tag-btn"+(selected?" selected":"");
-    b.style.background=(color||"#94a3b8")+"22";
-    b.style.color=color||"#94a3b8";
-    b.innerText=label;
-    b.onclick=()=>{
-      activeFavoriteFilter=minStars;
-      renderPool();
-      renderFilterPanel();
-    };
-    favWrap.appendChild(b);
-  };
-
-  mkFavBtn("すべて",null,"#94a3b8");
-  mkFavBtn("★1以上",1,"#fbbf24");
-  mkFavBtn("★2以上",2,"#f59e0b");
-  mkFavBtn("★3以上",3,"#f59e0b");
-  mkFavBtn("★4以上",4,"#d97706");
-  mkFavBtn("★5",5,"#b45309");
-  panel.appendChild(favWrap);
-
-  const section4=document.createElement("div");
-  section4.style.cssText="width:100%;font-size:10px;color:#94a3b8;margin:6px 0 2px;";
-  section4.innerText="簡単度";
-  panel.appendChild(section4);
-
-  const diffWrap=document.createElement("div");
-  diffWrap.style.cssText="display:flex;gap:5px;align-items:center;width:100%;flex-wrap:wrap;";
-
-  const mkDiffBtn=(label,minStars,color)=>{
-    const b=document.createElement("button");
-    const selected=(minStars===null&&activeDifficultyFilter===null)||(minStars!==null&&activeDifficultyFilter===minStars);
-    b.className="tag-btn"+(selected?" selected":"");
-    b.style.background=(color||"#94a3b8")+"22";
-    b.style.color=color||"#94a3b8";
-    b.innerText=label;
-    b.onclick=()=>{
-      activeDifficultyFilter=minStars;
-      renderPool();
-      renderFilterPanel();
-    };
-    diffWrap.appendChild(b);
-  };
-
-  mkDiffBtn("すべて",null,"#94a3b8");
-  mkDiffBtn("★1以上",1,"#60a5fa");
-  mkDiffBtn("★2以上",2,"#3b82f6");
-  mkDiffBtn("★3以上",3,"#2563eb");
-  mkDiffBtn("★4以上",4,"#1d4ed8");
-  mkDiffBtn("★5",5,"#1e40af");
-  panel.appendChild(diffWrap);
-
-  const section5=document.createElement("div");
-  section5.style.cssText="width:100%;font-size:10px;color:#94a3b8;margin:6px 0 2px;";
-  section5.innerText="カロリー";
-  panel.appendChild(section5);
-
-  const calWrap=document.createElement("div");
-  calWrap.style.cssText="display:flex;gap:6px;align-items:center;width:100%;flex-wrap:wrap;";
-
-  const cMinInput=document.createElement("input");
-  cMinInput.type="number";
-  cMinInput.min="0";
-  cMinInput.inputMode="numeric";
-  cMinInput.placeholder="最小";
-  cMinInput.className="form-input";
-  cMinInput.style.cssText="width:86px;padding:5px 7px;font-size:12px;";
-  cMinInput.value=activeCalorieFilter?.min!=null?String(activeCalorieFilter.min):"";
-
-  const cSep=document.createElement("span");
-  cSep.style.cssText="color:#94a3b8;font-size:12px;";
-  cSep.innerText="〜";
-
-  const cMaxInput=document.createElement("input");
-  cMaxInput.type="number";
-  cMaxInput.min="0";
-  cMaxInput.inputMode="numeric";
-  cMaxInput.placeholder="最大";
-  cMaxInput.className="form-input";
-  cMaxInput.style.cssText="width:86px;padding:5px 7px;font-size:12px;";
-  cMaxInput.value=activeCalorieFilter?.max!=null?String(activeCalorieFilter.max):"";
-
-  const cUnit=document.createElement("span");
-  cUnit.style.cssText="color:#94a3b8;font-size:11px;";
-  cUnit.innerText="kcal";
-
-  const cApplyBtn=document.createElement("button");
-  cApplyBtn.className="btn primary";
-  cApplyBtn.style.cssText="padding:4px 8px;font-size:11px;";
-  cApplyBtn.innerText="適用";
-
-  const cClearBtn=document.createElement("button");
-  cClearBtn.className="btn";
-  cClearBtn.style.cssText="padding:4px 8px;font-size:11px;";
-  cClearBtn.innerText="クリア";
-
-  const applyCalorieRange=()=>{
-    const minRaw=cMinInput.value.trim();
-    const maxRaw=cMaxInput.value.trim();
-    const min=minRaw===""?null:Math.max(0,parseInt(minRaw,10)||0);
-    const max=maxRaw===""?null:Math.max(0,parseInt(maxRaw,10)||0);
-    if(min===null&&max===null){
-      activeCalorieFilter=null;
-    }else if(min!==null&&max!==null&&min>max){
-      activeCalorieFilter={min:max,max:min};
-    }else{
-      activeCalorieFilter={min,max};
-    }
-    renderPool();
-    renderFilterPanel();
-  };
-
-  cApplyBtn.onclick=applyCalorieRange;
-  cClearBtn.onclick=()=>{
-    activeCalorieFilter=null;
-    renderPool();
-    renderFilterPanel();
-  };
-  cMinInput.addEventListener("keydown",e=>{if(e.key==="Enter")applyCalorieRange();});
-  cMaxInput.addEventListener("keydown",e=>{if(e.key==="Enter")applyCalorieRange();});
-
-  calWrap.appendChild(cMinInput);
-  calWrap.appendChild(cSep);
-  calWrap.appendChild(cMaxInput);
-  calWrap.appendChild(cUnit);
-  calWrap.appendChild(cApplyBtn);
-  calWrap.appendChild(cClearBtn);
-  panel.appendChild(calWrap);
+  addSection("inventory","在庫",body=>{
+    mkBtn("すべて",null,"#94a3b8",activeInventoryFilter,v=>activeInventoryFilter=v,body);
+    mkBtn("在庫あり",true,"#22c55e",activeInventoryFilter,v=>activeInventoryFilter=v,body);
+    mkBtn("在庫不足",false,"#ef4444",activeInventoryFilter,v=>activeInventoryFilter=v,body);
+  });
 }
 
 // ===== WEEK NAV =====
@@ -1171,6 +1209,7 @@ function goToday(){baseDate=new Date();render();const el=document.querySelector(
 
 // ===== INIT =====
 load();
+applyUIMode(settings.uiMode||"standard");
 if(!pool.length){
   pool=["カレー","パスタ","ラーメン","ハンバーグ","サラダ","唐揚げ","肉じゃが","チャーハン","焼き魚","餃子"].map(t=>mkItem(t));
 }
