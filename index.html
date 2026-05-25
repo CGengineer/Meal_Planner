@@ -141,7 +141,7 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif
 .mobile-nav button{background:#1e293b;border:1px solid #334155;color:#e2e8f0;border-radius:8px;padding:8px 5px;font-size:12px;cursor:pointer;font-family:inherit;min-height:38px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.1;}
 body.ui-focus .header .title{opacity:.8;}
 body.ui-focus .trash-bin,body.ui-focus .header .actions .meal-select{display:none;}
-body.ui-edit #bottomSheet{height:100px!important;}
+body.ui-edit #bottomSheet{min-height:100px;}
 @media(hover:none){.card-edit-btn{opacity:1;background:#33415599;color:#e2e8f0;}}
 @media(max-width:760px){
   .calendar{grid-template-columns:repeat(7,minmax(72px,1fr));overflow-x:auto;}
@@ -370,7 +370,7 @@ let currentMeal="昼";
 let settings={
   showCalories:true,showStars:true,showDifficulty:true,
   showCost:true,showNutritionColor:true,showPlannedCardImage:true,currency:"円",
-  cardDensity:"standard",uiMode:"standard",sheetLevel:3
+  cardDensity:"standard",uiMode:"standard",sheetLevel:4,sheetScale:10
 };
 let activeTagFilter=null;
 let activeCostFilter=null;
@@ -431,7 +431,18 @@ function load(){
       if(p.allData){allData=p.allData;pool=p.pool||[];}
       else{allData=p;if(legacy_p)pool=JSON.parse(legacy_p);}
     }
-    if(s) settings={...settings,...JSON.parse(s)};
+    let parsedSettings=null;
+    if(s){
+      parsedSettings=JSON.parse(s);
+      settings={...settings,...parsedSettings};
+    }
+    // Migrate legacy 1-5 scale to 0-10 scale if needed.
+    if(parsedSettings&&parsedSettings.sheetScale!==10&&parsedSettings.sheetLevel!=null){
+      settings.sheetLevel=clampSheetLevel((parseInt(parsedSettings.sheetLevel,10)||0)*2);
+    }else{
+      settings.sheetLevel=clampSheetLevel(settings.sheetLevel);
+    }
+    settings.sheetScale=10;
     settings.sheetLevel=clampSheetLevel(settings.sheetLevel);
     for(const k in allData){
       const week=allData[k];
@@ -507,23 +518,26 @@ function applyUIMode(mode){
 }
 function clampSheetLevel(v){
   const n=parseInt(v,10);
-  if(!Number.isFinite(n))return 3;
-  return Math.min(5,Math.max(1,n));
+  if(!Number.isFinite(n))return 4;
+  return Math.min(10,Math.max(0,n));
+}
+function levelToSheetHeight(level){
+  const lv=clampSheetLevel(level);
+  const snapC=80;
+  if(lv===0)return snapC;
+  const minRatio=0.42,maxRatio=0.68;
+  const minCap=340,maxCap=580;
+  const ratio=minRatio+((maxRatio-minRatio)*lv/10);
+  const cap=Math.round(minCap+((maxCap-minCap)*lv/10));
+  return Math.min(Math.round(window.innerHeight*ratio),cap);
 }
 function getSheetSnapPoints(){
-  const presets={
-    1:{expandRatio:0.42,expandCap:340,focusRatio:0.38,focusCap:300},
-    2:{expandRatio:0.48,expandCap:400,focusRatio:0.42,focusCap:340},
-    3:{expandRatio:0.55,expandCap:460,focusRatio:0.48,focusCap:400},
-    4:{expandRatio:0.62,expandCap:520,focusRatio:0.54,focusCap:450},
-    5:{expandRatio:0.68,expandCap:580,focusRatio:0.60,focusCap:500},
-  };
   const level=clampSheetLevel(settings.sheetLevel);
-  const p=presets[level]||presets[3];
-  const snapC=80;
-  const snapE=Math.min(Math.round(window.innerHeight*p.expandRatio),p.expandCap);
-  const snapF=Math.min(snapE,Math.min(Math.round(window.innerHeight*p.focusRatio),p.focusCap));
-  return{snapC,snapE,snapF};
+  const snapLevels=Array.from({length:11},(_,lv)=>levelToSheetHeight(lv));
+  const snapC=snapLevels[0];
+  const snapE=snapLevels[level];
+  const snapF=snapLevels[Math.min(level+2,10)];
+  return{level,snapC,snapE,snapF,snapLevels};
 }
 function render(){
   const cal=document.getElementById("cal");cal.innerHTML="";
@@ -991,21 +1005,22 @@ function showSettings(){
   dr.appendChild(dl);dr.appendChild(ds);c.appendChild(dr);
 
   const sr=document.createElement("div");sr.className="setting-row";
-  const sl=document.createElement("span");sl.style.fontSize="13px";sl.innerText="下部シート展開量";
-  const ss=document.createElement("select");ss.className="form-input";ss.style.cssText="width:136px;padding:4px 6px;";
-  [[1,"1 小さい"],[2,"2 やや小さい"],[3,"3 標準"],[4,"4 やや大きい"],[5,"5 大きい"]].forEach(([v,t])=>{
+  const sl=document.createElement("span");sl.style.fontSize="13px";sl.innerText="下部シート位置 (0-10)";
+  const ss=document.createElement("select");ss.className="form-input";ss.style.cssText="width:128px;padding:4px 6px;";
+  [[0,"0 閉"],[1,"1"],[2,"2"],[3,"3"],[4,"4"],[5,"5"],[6,"6"],[7,"7"],[8,"8"],[9,"9"],[10,"10 開"]].forEach(([v,t])=>{
     const o=document.createElement("option");o.value=String(v);o.innerText=t;ss.appendChild(o);
   });
   ss.value=String(clampSheetLevel(settings.sheetLevel));
   ss.onchange=()=>{
     settings.sheetLevel=clampSheetLevel(ss.value);
+    settings.sheetScale=10;
     save();
     const sheet=document.getElementById("bottomSheet");
     if(sheet){
-      const{snapC,snapE}=getSheetSnapPoints();
-      const cur=sheet.offsetHeight||snapC;
-      const next=cur<=snapC+8?snapC:Math.min(cur,snapE);
-      sheet.style.height=next+"px";
+      const{snapLevels,level}=getSheetSnapPoints();
+      sheet.classList.add("bs-anim");
+      sheet.style.height=snapLevels[level]+"px";
+      setTimeout(()=>sheet.classList.remove("bs-anim"),340);
     }
   };
   sr.appendChild(sl);sr.appendChild(ss);c.appendChild(sr);
@@ -1049,7 +1064,16 @@ function importJSON(e){
   r.onload=ev=>{
     try{
       const p=JSON.parse(ev.target.result);pushUndo();
-      if(p.allData)allData=p.allData;if(p.pool)pool=p.pool;if(p.settings)settings={...settings,...p.settings};
+      if(p.allData)allData=p.allData;if(p.pool)pool=p.pool;
+      if(p.settings){
+        const importedSettings=p.settings;
+        settings={...settings,...importedSettings};
+        if(importedSettings.sheetScale!==10&&importedSettings.sheetLevel!=null){
+          settings.sheetLevel=clampSheetLevel((parseInt(importedSettings.sheetLevel,10)||0)*2);
+        }
+      }
+      settings.sheetLevel=clampSheetLevel(settings.sheetLevel);
+      settings.sheetScale=10;
       for(const k in allData)allData[k]=allData[k].map(day=>(day||[]).map(migrateItem));
       pool=pool.map(migrateItem);
       save();render();showToast("インポートしました ✓");
@@ -1160,45 +1184,135 @@ function renderPool(){
 function initBottomSheet(){
   const sheet=document.getElementById("bottomSheet");
   const handle=document.getElementById("sheetHandle");
+  const search=document.getElementById("poolSearch");
+  if(!sheet||!handle||!search)return;
   let drag=false,startY=0,startH=0;
+  function closestLevelFromHeight(h){
+    const{snapLevels}=getSheetSnapPoints();
+    let nearest=0,min=Math.abs(h-snapLevels[0]);
+    for(let lv=1;lv<=10;lv++){
+      const d=Math.abs(h-snapLevels[lv]);
+      if(d<min){min=d;nearest=lv;}
+    }
+    return nearest;
+  }
+  function snapToLevel(level,{persist}={persist:false}){
+    const lv=clampSheetLevel(level);
+    const{snapLevels}=getSheetSnapPoints();
+    snapTo(snapLevels[lv]);
+    if(persist){
+      settings.sheetLevel=lv;
+      settings.sheetScale=10;
+      save();
+    }
+  }
   function snapTo(h){
     sheet.classList.add("bs-anim");
     sheet.style.height=h+"px";
     setTimeout(()=>sheet.classList.remove("bs-anim"),340);
   }
-  handle.addEventListener("pointerdown",e=>{
-    if(e.target.closest("input,button"))return;
-    drag=true;startY=e.clientY;startH=sheet.offsetHeight;
+  function startDrag(clientY){
+    drag=true;startY=clientY;startH=sheet.offsetHeight;
     sheet.classList.remove("bs-anim");
-    handle.setPointerCapture(e.pointerId);
-    e.preventDefault();
-  });
-  handle.addEventListener("pointermove",e=>{
+  }
+  function moveDrag(clientY){
     if(!drag)return;
-    const{snapC,snapE}=getSheetSnapPoints();
-    const h=Math.max(snapC,Math.min(snapE,startH+(startY-e.clientY)));
+    const{snapLevels}=getSheetSnapPoints();
+    const h=Math.max(snapLevels[0],Math.min(snapLevels[10],startH+(startY-clientY)));
     sheet.style.height=h+"px";
-  });
-  handle.addEventListener("pointerup",()=>{
+  }
+  function endDrag(){
     if(!drag)return;drag=false;
-    const{snapC,snapE}=getSheetSnapPoints();
-    snapTo(sheet.offsetHeight>(snapC+snapE)/2?snapE:snapC);
+    snapToLevel(closestLevelFromHeight(sheet.offsetHeight),{persist:true});
+  }
+
+  if("PointerEvent" in window){
+    const onPointerMove=e=>moveDrag(e.clientY);
+    const onPointerEnd=()=>{
+      endDrag();
+      window.removeEventListener("pointermove",onPointerMove);
+      window.removeEventListener("pointerup",onPointerEnd);
+      window.removeEventListener("pointercancel",onPointerEnd);
+    };
+    handle.addEventListener("pointerdown",e=>{
+      if(e.target.closest("input,button"))return;
+      startDrag(e.clientY);
+      window.addEventListener("pointermove",onPointerMove);
+      window.addEventListener("pointerup",onPointerEnd);
+      window.addEventListener("pointercancel",onPointerEnd);
+      e.preventDefault();
+    });
+  }else{
+    const onMouseMove=e=>moveDrag(e.clientY);
+    const onMouseUp=()=>{
+      endDrag();
+      window.removeEventListener("mousemove",onMouseMove);
+      window.removeEventListener("mouseup",onMouseUp);
+    };
+    handle.addEventListener("mousedown",e=>{
+      if(e.target.closest("input,button"))return;
+      startDrag(e.clientY);
+      window.addEventListener("mousemove",onMouseMove);
+      window.addEventListener("mouseup",onMouseUp);
+      e.preventDefault();
+    });
+
+    const onTouchMove=e=>{
+      if(!e.touches.length)return;
+      moveDrag(e.touches[0].clientY);
+      e.preventDefault();
+    };
+    const onTouchEnd=()=>{
+      endDrag();
+      window.removeEventListener("touchmove",onTouchMove);
+      window.removeEventListener("touchend",onTouchEnd);
+      window.removeEventListener("touchcancel",onTouchEnd);
+    };
+    handle.addEventListener("touchstart",e=>{
+      if(e.target.closest("input,button")||!e.touches.length)return;
+      startDrag(e.touches[0].clientY);
+      window.addEventListener("touchmove",onTouchMove,{passive:false});
+      window.addEventListener("touchend",onTouchEnd);
+      window.addEventListener("touchcancel",onTouchEnd);
+      e.preventDefault();
+    },{passive:false});
+  }
+
+  search.addEventListener("focus",()=>{
+    const{level}=getSheetSnapPoints();
+    snapToLevel(Math.min(level+2,10));
   });
-  handle.addEventListener("pointercancel",()=>{drag=false;});
-  document.getElementById("poolSearch").addEventListener("focus",()=>{
-    const{snapF}=getSheetSnapPoints();
-    snapTo(snapF);
-  });
-  document.getElementById("poolSearch").addEventListener("input",renderPool);
+  search.addEventListener("input",renderPool);
+  const initLevel=clampSheetLevel(settings.sheetLevel);
+  const{snapLevels}=getSheetSnapPoints();
+  sheet.style.height=snapLevels[initLevel]+"px";
 }
 
 function toggleTagFilter(){
   const panel=document.getElementById("sheetTagFilter");
+  const sheet=document.getElementById("bottomSheet");
   const isVisible=panel.style.display==="flex";
   if(isVisible){panel.style.display="none";return;}
 
   renderFilterPanel();
   panel.style.display="flex";
+  if(sheet){
+    const minLv=5;
+    const currentLv=closestLevelFromHeightForPanel(sheet.offsetHeight);
+    if(currentLv<minLv){
+      const{snapLevels}=getSheetSnapPoints();
+      sheet.style.height=snapLevels[minLv]+"px";
+    }
+  }
+}
+function closestLevelFromHeightForPanel(h){
+  const{snapLevels}=getSheetSnapPoints();
+  let nearest=0,min=Math.abs(h-snapLevels[0]);
+  for(let lv=1;lv<=10;lv++){
+    const d=Math.abs(h-snapLevels[lv]);
+    if(d<min){min=d;nearest=lv;}
+  }
+  return nearest;
 }
 
 function renderFilterPanel(){
