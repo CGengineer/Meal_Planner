@@ -432,6 +432,7 @@ function load(){
       else{allData=p;if(legacy_p)pool=JSON.parse(legacy_p);}
     }
     if(s) settings={...settings,...JSON.parse(s)};
+    settings.sheetLevel=clampSheetLevel(settings.sheetLevel);
     for(const k in allData){
       const week=allData[k];
       if(Array.isArray(week)){
@@ -524,9 +525,6 @@ function getSheetSnapPoints(){
   const snapF=Math.min(snapE,Math.min(Math.round(window.innerHeight*p.focusRatio),p.focusCap));
   return{snapC,snapE,snapF};
 }
-
-    if(s) settings={...settings,...JSON.parse(s)};
-    settings.sheetLevel=clampSheetLevel(settings.sheetLevel);
 function render(){
   const cal=document.getElementById("cal");cal.innerHTML="";
   const wd=weekData();const k=curKey();
