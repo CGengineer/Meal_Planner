@@ -1121,7 +1121,9 @@ function renderPool(){
 function initBottomSheet(){
   const sheet=document.getElementById("bottomSheet");
   const handle=document.getElementById("sheetHandle");
-  const SNAP_C=80,SNAP_E=Math.min(Math.round(window.innerHeight*.65),540);
+  const SNAP_C=80;
+  const SNAP_E=Math.min(Math.round(window.innerHeight*.55),460);
+  const SNAP_FOCUS=Math.min(Math.round(window.innerHeight*.48),400);
   let drag=false,startY=0,startH=0;
   function snapTo(h){
     sheet.classList.add("bs-anim");
@@ -1145,7 +1147,7 @@ function initBottomSheet(){
     snapTo(sheet.offsetHeight>(SNAP_C+SNAP_E)/2?SNAP_E:SNAP_C);
   });
   handle.addEventListener("pointercancel",()=>{drag=false;});
-  document.getElementById("poolSearch").addEventListener("focus",()=>snapTo(SNAP_E));
+  document.getElementById("poolSearch").addEventListener("focus",()=>snapTo(SNAP_FOCUS));
   document.getElementById("poolSearch").addEventListener("input",renderPool);
 }
 
