@@ -36,6 +36,14 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif
 .card:hover{background:#263348;}
 .card-img-wrap{position:relative;margin-top:6px;border-radius:6px;overflow:hidden;}
 .card-img{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:6px;display:block;}
+.card.has-image{display:flex;align-items:flex-start;gap:8px;}
+.card.has-image .card-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;}
+.card.has-image .card-img-wrap{margin-top:0;width:72px;min-width:72px;flex-shrink:0;}
+.card.has-image .card-img{width:72px;height:72px;aspect-ratio:auto;}
+body[data-card-density="minimal"] .card.has-image .card-img-wrap{width:64px;min-width:64px;}
+body[data-card-density="minimal"] .card.has-image .card-img{width:64px;height:64px;}
+body[data-card-density="detailed"] .card.has-image .card-img-wrap{width:80px;min-width:80px;}
+body[data-card-density="detailed"] .card.has-image .card-img{width:80px;height:80px;}
 .card-text{padding-right:20px;word-break:break-all;line-height:1.4;}
 .card-meta{display:flex;flex-wrap:wrap;gap:3px;margin-top:3px;align-items:center;}
 .card-badge{font-size:9px;padding:1px 5px;border-radius:8px;background:#0f172a;white-space:nowrap;}
@@ -153,6 +161,12 @@ body.ui-edit #bottomSheet{min-height:100px;}
   .calendar{grid-template-columns:1fr;overflow-x:hidden;}
   .day{min-height:calc(100svh - 180px);border-right:none;}
   .day:nth-child(3n){border-right:none;}
+  .card.has-image .card-img-wrap{width:64px;min-width:64px;}
+  .card.has-image .card-img{width:64px;height:64px;}
+  body[data-card-density="minimal"] .card.has-image .card-img-wrap{width:60px;min-width:60px;}
+  body[data-card-density="minimal"] .card.has-image .card-img{width:60px;height:60px;}
+  body[data-card-density="detailed"] .card.has-image .card-img-wrap{width:72px;min-width:72px;}
+  body[data-card-density="detailed"] .card.has-image .card-img{width:72px;height:72px;}
   .header{padding:8px 10px;gap:6px;}
   .title{font-size:15px;width:100%;}
   .actions{width:100%;overflow-x:auto;padding-bottom:2px;-webkit-overflow-scrolling:touch;}
@@ -593,6 +607,7 @@ function getSheetSnapPoints(){
 }
 function render(){
   const cal=document.getElementById("cal");cal.innerHTML="";
+  document.body.dataset.cardDensity=settings.cardDensity||"standard";
   const wd=weekData();const k=curKey();
   const start=new Date(baseDate);start.setDate(start.getDate()-start.getDay());
   const end=new Date(start);end.setDate(start.getDate()+6);
@@ -650,8 +665,11 @@ function mkCardEl(item,target){
   const c=document.createElement("div");c.className="card";
   c.style.borderLeftColor=cardBorderColor(item);c.draggable=true;
   const hasImage=settings.showPlannedCardImage&&item.image;
+  if(hasImage)c.classList.add("has-image");
 
-  const textEl=document.createElement("div");textEl.className="card-text";textEl.innerText=item.text;c.appendChild(textEl);
+  const main=document.createElement("div");main.className="card-main";
+
+  const textEl=document.createElement("div");textEl.className="card-text";textEl.innerText=item.text;main.appendChild(textEl);
 
   const meta=document.createElement("div");meta.className="card-meta";
   if(showCardField("calories")&&settings.showCalories&&item.calories>0){
@@ -693,8 +711,9 @@ function mkCardEl(item,target){
   };
 
   if(!hasImage){
-    if(meta.children.length)c.appendChild(meta);
-    if(showCardField("tag"))c.appendChild(makeTagEl());
+    if(meta.children.length)main.appendChild(meta);
+    if(showCardField("tag"))main.appendChild(makeTagEl());
+    c.appendChild(main);
   }
 
   const eb=document.createElement("button");eb.className="card-edit-btn";eb.innerText="✏️";
@@ -703,11 +722,10 @@ function mkCardEl(item,target){
   if(hasImage){
     const imgWrap=document.createElement("div");imgWrap.className="card-img-wrap";
     const img=document.createElement("img");img.className="card-img";img.src=item.image;img.alt="";img.draggable=false;imgWrap.appendChild(img);
-    const ov=document.createElement("div");ov.className="card-overlay";
-    if(meta.children.length)ov.appendChild(meta);
-    if(showCardField("tag"))ov.appendChild(makeTagEl());
-    imgWrap.appendChild(ov);
     c.appendChild(imgWrap);
+    if(meta.children.length)main.appendChild(meta);
+    if(showCardField("tag"))main.appendChild(makeTagEl());
+    c.appendChild(main);
   }
 
   c.addEventListener("dragstart",e=>e.dataTransfer.setData("text",JSON.stringify(target)));
