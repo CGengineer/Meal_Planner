@@ -259,6 +259,8 @@ linear-gradient(125deg,#020617 0%,#0b1120 40%,#111827 100%);overflow:auto;}
   .auth-card{padding:24px 16px 16px;border-radius:20px;}
   .auth-title{font-size:24px;}
 }
+.board-badge{display:none;align-items:center;gap:4px;background:#1e3a5f;border:1px solid #2563eb;color:#93c5fd;border-radius:8px;padding:4px 9px;font-size:11px;cursor:pointer;font-family:inherit;white-space:nowrap;line-height:1.2;min-height:28px;}
+.board-badge:hover{background:#1d4ed8;color:#f8fafc;}
 </style>
 </head>
 <body class="auth-locked">
@@ -296,6 +298,7 @@ linear-gradient(125deg,#020617 0%,#0b1120 40%,#111827 100%);overflow:auto;}
 </div>
 <div class="header">
   <div class="title">🍱 献立ボード</div>
+  <button class="board-badge" id="boardBadge" type="button" onclick="showBoardManager()"></button>
   <div class="actions">
     <button class="btn" onclick="moveWeek(-1)">⬅週</button>
     <span id="label" style="font-size:12px;white-space:nowrap;"></span>
@@ -522,6 +525,17 @@ linear-gradient(125deg,#020617 0%,#0b1120 40%,#111827 100%);overflow:auto;}
   </div>
 </div>
 
+<!-- ===== Board Manager Modal ===== -->
+<div class="overlay" id="boardOverlay">
+  <div class="modal">
+    <h2>📋 ボード管理</h2>
+    <div id="boardContent"></div>
+    <div class="modal-actions">
+      <button class="btn primary" onclick="closeOverlay('boardOverlay')">閉じる</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -574,6 +588,9 @@ let cloudCurrentUser=null;
 let cloudLastErrorToastAt=0;
 let cloudKnownImageRegistry={};
 const cloudImageUploadCache=new Map();
+let activeBoardId=null;
+let activeBoardName="個人ボード";
+let joinedBoards=[];
 let touchDragState=null;
 let touchDayClickSuppressUntil=0;
 const TOUCH_LONG_PRESS_MS=430;
@@ -1013,6 +1030,16 @@ function load(){
     }
     normalizeCurrentState(parsedSettings);
   }catch(e){console.warn(e);}
+  try{
+    const boardsRaw=localStorage.getItem("kb_boards");
+    if(boardsRaw)joinedBoards=JSON.parse(boardsRaw)||[];
+    const savedActiveBoard=localStorage.getItem("kb_activeBoard")||"";
+    if(savedActiveBoard){
+      activeBoardId=savedActiveBoard;
+      const found=joinedBoards.find(b=>b.boardId===savedActiveBoard);
+      activeBoardName=found?found.name:"共有ボード";
+    }
+  }catch(e){}
 }
 
 // ===== CLOUD SYNC =====
@@ -1293,7 +1320,7 @@ function applyRemoteState(data){
   allData=remoteAllData;
   pool=mergedPool;
   dayPresets=remotePresets.length?remotePresets:dayPresets;
-  normalizeCurrentState((data&&data.settings)||null);
+  normalizeCurrentState(activeBoardId?null:(data&&data.settings)||null);
   rebuildImageRegistry({...cloudKnownImageRegistry,...imageRegistry});
   saveLocalOnly();
   render();
@@ -1302,14 +1329,16 @@ async function pushCurrentStateToCloud(){
   if(!cloudDocRef)return;
   const safe=await sanitizeForCloud();
   cloudLastClientWriteAt=Date.now();
-  await cloudDocRef.set({
+  const setPayload={
     allData:safe.allData,
     pool:safe.pool,
+    dayPresets:safe.dayPresets||[],
     imageRegistry:safe.imageRegistry,
-    settings:safe.settings,
     clientUpdatedAt:cloudLastClientWriteAt,
     updatedAt:firebase.firestore.FieldValue.serverTimestamp()
-  },{merge:true});
+  };
+  if(!activeBoardId)setPayload.settings=safe.settings;
+  await cloudDocRef.set(setPayload,{merge:true});
 }
 function scheduleCloudSave(){
   if(!cloudReady||!cloudDocRef||cloudApplyingRemote)return;
@@ -1336,7 +1365,11 @@ async function startCloudSync(user,keepRetryState=false){
   }
   stopCloudSync(keepRetryState);
   cloudCurrentUser=user;
-  cloudDocRef=db.collection("users").doc(user.uid).collection("app").doc("board");
+  if(activeBoardId){
+    cloudDocRef=db.collection("sharedBoards").doc(activeBoardId);
+  }else{
+    cloudDocRef=db.collection("users").doc(user.uid).collection("app").doc("board");
+  }
 
   try{
     const snap=await cloudDocRef.get();
@@ -1376,6 +1409,173 @@ async function startCloudSync(user,keepRetryState=false){
 
   cloudReady=true;
   return true;
+}
+
+// ===== SHARED BOARDS =====
+function generateBoardId(){
+  const c="abcdefghijklmnopqrstuvwxyz0123456789";
+  let id="";for(let i=0;i<8;i++)id+=c[Math.floor(Math.random()*c.length)];
+  return id;
+}
+function saveJoinedBoards(){
+  try{localStorage.setItem("kb_boards",JSON.stringify(joinedBoards));}catch(e){}
+}
+function getBoardShareLink(boardId){
+  const url=new URL(location.href);
+  url.searchParams.set("board",boardId);
+  return url.toString();
+}
+function updateBoardBadge(){
+  const badge=document.getElementById("boardBadge");
+  if(!badge)return;
+  if(activeBoardId){
+    badge.innerText=activeBoardName+" ▾";
+    badge.style.display="inline-flex";
+  }else{
+    badge.style.display="none";
+  }
+}
+async function switchToBoard(boardId,name){
+  activeBoardId=boardId||null;
+  activeBoardName=name||"個人ボード";
+  try{localStorage.setItem("kb_activeBoard",activeBoardId||"");}catch(e){}
+  updateBoardBadge();
+  if(cloudCurrentUser){
+    stopCloudSync();
+    await startCloudSync(cloudCurrentUser);
+  }
+}
+async function createSharedBoard(name){
+  const db=getCloudDb();
+  if(!db||!cloudCurrentUser){showToast("ログインが必要です");return;}
+  const boardId=generateBoardId();
+  const userUid=cloudCurrentUser.uid;
+  const safe=await sanitizeForCloud();
+  await db.collection("sharedBoards").doc(boardId).set({
+    ownerUid:userUid,
+    members:[userUid],
+    name:name,
+    allData:safe.allData,
+    pool:safe.pool,
+    dayPresets:safe.dayPresets||[],
+    imageRegistry:safe.imageRegistry,
+    clientUpdatedAt:0,
+    createdAt:firebase.firestore.FieldValue.serverTimestamp(),
+    updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+  });
+  joinedBoards.push({boardId,name,ownerUid:userUid});
+  saveJoinedBoards();
+  await switchToBoard(boardId,name);
+  showToast(`「${name}」を作成しました`);
+}
+async function joinSharedBoard(boardId){
+  const db=getCloudDb();
+  if(!db||!cloudCurrentUser){showToast("ログインが必要です");throw new Error("not logged in");}
+  const userUid=cloudCurrentUser.uid;
+  const ref=db.collection("sharedBoards").doc(boardId);
+  const snap=await ref.get();
+  if(!snap.exists){showToast("ボードが見つかりません");throw new Error("not found");}
+  const data=snap.data();
+  if(!(data.members||[]).includes(userUid)){
+    await ref.update({members:firebase.firestore.FieldValue.arrayUnion(userUid)});
+  }
+  const entry={boardId,name:data.name,ownerUid:data.ownerUid};
+  if(!joinedBoards.find(b=>b.boardId===boardId)){
+    joinedBoards.push(entry);
+    saveJoinedBoards();
+  }
+  await switchToBoard(boardId,data.name);
+  showToast(`「${data.name}」に参加しました`);
+}
+async function leaveSharedBoard(boardId){
+  const db=getCloudDb();
+  if(!db||!cloudCurrentUser)return;
+  const userUid=cloudCurrentUser.uid;
+  try{
+    await db.collection("sharedBoards").doc(boardId).update({members:firebase.firestore.FieldValue.arrayRemove(userUid)});
+  }catch(e){console.warn(e);}
+  joinedBoards=joinedBoards.filter(b=>b.boardId!==boardId);
+  saveJoinedBoards();
+  if(activeBoardId===boardId)await switchToBoard(null,"個人ボード");
+  showToast("ボードから退出しました");
+  showBoardManager();
+}
+function showBoardManager(){
+  if(!cloudCurrentUser){showToast("ログインが必要です");return;}
+  const c=document.getElementById("boardContent");
+  if(!c)return;
+  c.innerHTML="";
+
+  // 現在のボード
+  const curSec=document.createElement("div");curSec.className="msec";
+  const curTitle=document.createElement("div");curTitle.className="msec-title";curTitle.innerText="現在のボード";curSec.appendChild(curTitle);
+  const curName=document.createElement("div");curName.style.cssText="font-size:14px;font-weight:bold;margin-bottom:8px;";
+  curName.innerText=activeBoardId?activeBoardName:"個人ボード";curSec.appendChild(curName);
+  if(activeBoardId){
+    const codeRow=document.createElement("div");codeRow.style.cssText="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:8px;";
+    const codeLabel=document.createElement("span");codeLabel.style.cssText="font-size:11px;color:#94a3b8;";codeLabel.innerText="コード:";
+    const codeVal=document.createElement("code");codeVal.style.cssText="font-size:13px;background:#0f172a;padding:3px 8px;border-radius:5px;letter-spacing:.08em;color:#93c5fd;";codeVal.innerText=activeBoardId;
+    const copyCodeBtn=document.createElement("button");copyCodeBtn.className="btn";copyCodeBtn.style.cssText="padding:4px 8px;font-size:11px;";copyCodeBtn.innerText="コードをコピー";
+    copyCodeBtn.onclick=()=>navigator.clipboard.writeText(activeBoardId).then(()=>showToast("コードをコピーしました"));
+    const copyLinkBtn=document.createElement("button");copyLinkBtn.className="btn primary";copyLinkBtn.style.cssText="padding:4px 8px;font-size:11px;";copyLinkBtn.innerText="リンクをコピー";
+    copyLinkBtn.onclick=()=>navigator.clipboard.writeText(getBoardShareLink(activeBoardId)).then(()=>showToast("リンクをコピーしました"));
+    codeRow.appendChild(codeLabel);codeRow.appendChild(codeVal);codeRow.appendChild(copyCodeBtn);codeRow.appendChild(copyLinkBtn);curSec.appendChild(codeRow);
+    const actionRow=document.createElement("div");actionRow.style.cssText="display:flex;gap:6px;flex-wrap:wrap;";
+    const personalBtn=document.createElement("button");personalBtn.className="btn";personalBtn.innerText="個人ボードに切替";
+    personalBtn.onclick=async()=>{closeOverlay("boardOverlay");await switchToBoard(null,"個人ボード");};
+    const leaveBtn=document.createElement("button");leaveBtn.className="btn";leaveBtn.style.color="#f87171";leaveBtn.innerText="退出";
+    const leaveBoardId=activeBoardId;
+    leaveBtn.onclick=async()=>{if(!confirm(`「${activeBoardName}」から退出しますか？`))return;closeOverlay("boardOverlay");await leaveSharedBoard(leaveBoardId);};
+    actionRow.appendChild(personalBtn);actionRow.appendChild(leaveBtn);curSec.appendChild(actionRow);
+  }else{
+    const note=document.createElement("div");note.style.cssText="font-size:11px;color:#64748b;";note.innerText="個人ボードを使用中です";curSec.appendChild(note);
+  }
+  c.appendChild(curSec);
+
+  // 参加中ボード一覧
+  const others=joinedBoards.filter(b=>b.boardId!==activeBoardId);
+  if(others.length>0){
+    const listSec=document.createElement("div");listSec.className="msec";
+    const listTitle=document.createElement("div");listTitle.className="msec-title";listTitle.innerText="参加中のボード";listSec.appendChild(listTitle);
+    others.forEach(board=>{
+      const row=document.createElement("div");row.style.cssText="display:flex;align-items:center;gap:6px;margin-bottom:5px;";
+      const name=document.createElement("span");name.style.cssText="flex:1;font-size:13px;";name.innerText=board.name;
+      const switchBtn=document.createElement("button");switchBtn.className="btn primary";switchBtn.style.cssText="padding:4px 8px;font-size:11px;";switchBtn.innerText="切替";
+      switchBtn.onclick=async()=>{closeOverlay("boardOverlay");await switchToBoard(board.boardId,board.name);};
+      row.appendChild(name);row.appendChild(switchBtn);listSec.appendChild(row);
+    });
+    c.appendChild(listSec);
+  }
+
+  // 新規作成
+  const createSec=document.createElement("div");createSec.className="msec";
+  const createTitle=document.createElement("div");createTitle.className="msec-title";createTitle.innerText="新しい共有ボードを作成";createSec.appendChild(createTitle);
+  const createRow=document.createElement("div");createRow.style.cssText="display:flex;gap:6px;";
+  const nameInput=document.createElement("input");nameInput.className="form-input";nameInput.placeholder="ボード名（例: 家族の献立）";nameInput.style.fontSize="14px";
+  const createBtn=document.createElement("button");createBtn.className="btn primary";createBtn.style.cssText="white-space:nowrap;";createBtn.innerText="作成";
+  createBtn.onclick=async()=>{
+    const n=nameInput.value.trim();if(!n){nameInput.focus();return;}
+    createBtn.disabled=true;createBtn.innerText="作成中...";
+    try{await createSharedBoard(n);closeOverlay("boardOverlay");}
+    catch(e){showToast("作成に失敗しました");createBtn.disabled=false;createBtn.innerText="作成";}
+  };
+  createRow.appendChild(nameInput);createRow.appendChild(createBtn);createSec.appendChild(createRow);c.appendChild(createSec);
+
+  // 招待コードで参加
+  const joinSec=document.createElement("div");joinSec.className="msec";
+  const joinTitle=document.createElement("div");joinTitle.className="msec-title";joinTitle.innerText="招待コードで参加";joinSec.appendChild(joinTitle);
+  const joinRow=document.createElement("div");joinRow.style.cssText="display:flex;gap:6px;";
+  const codeInput=document.createElement("input");codeInput.className="form-input";codeInput.placeholder="8文字のコードを入力";codeInput.style.cssText="font-size:14px;letter-spacing:.08em;";
+  const joinBtn=document.createElement("button");joinBtn.className="btn primary";joinBtn.style.cssText="white-space:nowrap;";joinBtn.innerText="参加";
+  joinBtn.onclick=async()=>{
+    const code=codeInput.value.trim().toLowerCase();if(!code){codeInput.focus();return;}
+    joinBtn.disabled=true;joinBtn.innerText="参加中...";
+    try{await joinSharedBoard(code);closeOverlay("boardOverlay");}
+    catch(e){showToast("参加に失敗しました");joinBtn.disabled=false;joinBtn.innerText="参加";}
+  };
+  joinRow.appendChild(codeInput);joinRow.appendChild(joinBtn);joinSec.appendChild(joinRow);c.appendChild(joinSec);
+
+  document.getElementById("boardOverlay").classList.add("open");
 }
 
 // ===== UNDO =====
@@ -2887,6 +3087,18 @@ function initAuth(){
       }
       setAuthBusy(false);
       unlockBoard();
+      // URL パラメータから共有ボードへ自動参加
+      try{
+        const urlBoard=new URLSearchParams(location.search).get("board");
+        if(urlBoard){
+          const already=joinedBoards.find(b=>b.boardId===urlBoard);
+          if(already){
+            if(activeBoardId!==urlBoard)await switchToBoard(urlBoard,already.name);
+          }else{
+            await joinSharedBoard(urlBoard);
+          }
+        }
+      }catch(e){console.warn(e);}
       return;
     }
     stopCloudSync();
@@ -2973,6 +3185,7 @@ if(!pool.length){
   pool=["カレー","パスタ","ラーメン","ハンバーグ","サラダ","唐揚げ","肉じゃが","チャーハン","焼き魚","餃子"].map(t=>mkItem(t));
 }
 render();
+updateBoardBadge();
 initBottomSheet();
 initAuth();
 </script>
