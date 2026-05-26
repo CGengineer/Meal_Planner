@@ -476,7 +476,9 @@ let pool=[];
 let undoStack=[];
 let editTarget=null;
 let currentImage="";
+let currentImageId="";
 let currentMeal="昼";
+let imageRegistry={};
 let settings={
   showCalories:true,showStars:true,showDifficulty:true,
   showCost:true,showNutritionColor:true,showPlannedCardImage:true,currency:"円",
@@ -506,6 +508,7 @@ let cloudRetryCount=0;
 let cloudErrorState=null;
 let cloudCurrentUser=null;
 let cloudLastErrorToastAt=0;
+let cloudKnownImageRegistry={};
 const cloudImageUploadCache=new Map();
 let touchDragState=null;
 let touchDayClickSuppressUntil=0;
@@ -516,12 +519,70 @@ const TOUCH_DRAG_CANCEL_PX=12;
 function uid(){return Math.random().toString(36).slice(2)+Date.now().toString(36);}
 function mkItem(text,tag,ings,note){
   return{id:uid(),text,tag:tag||"その他",ingredients:Array.isArray(ings)?[...ings]:[],
-    ingredientInventory:{},note:note||"",favorite:0,difficulty:0,calories:0,protein:0,carbs:0,fat:0,cost:0,steps:"",image:""};
+    ingredientInventory:{},note:note||"",favorite:0,difficulty:0,calories:0,protein:0,carbs:0,fat:0,cost:0,steps:"",image:"",imageId:""};
 }
 function migrateItem(it){
   if(!it) return mkItem("");
   if(typeof it==="string") return mkItem(it);
-  return{favorite:0,difficulty:0,calories:0,protein:0,carbs:0,fat:0,cost:0,steps:"",image:"",ingredientInventory:{},...it};
+  const migrated={favorite:0,difficulty:0,calories:0,protein:0,carbs:0,fat:0,cost:0,steps:"",image:"",imageId:"",ingredientInventory:{},...it};
+  if(!migrated.imageId&&migrated.image)migrated.imageId=migrated.id||uid();
+  return migrated;
+}
+function isValidImageValue(v){
+  return typeof v==="string"&&v.trim().length>0;
+}
+function ensureItemImageId(item){
+  if(!item||typeof item!=="object")return "";
+  const existing=typeof item.imageId==="string"?item.imageId.trim():"";
+  if(existing)return existing;
+  if(isValidImageValue(item.image)){
+    const next=String(item.id||uid());
+    item.imageId=next;
+    return next;
+  }
+  return "";
+}
+function rebuildImageRegistry(seed){
+  const next={};
+  if(seed&&typeof seed==="object"){
+    for(const key in seed){
+      if(isValidImageValue(seed[key]))next[key]=String(seed[key]);
+    }
+  }
+  const capture=item=>{
+    if(!item)return;
+    if(!isValidImageValue(item.image))return;
+    const imageId=ensureItemImageId(item);
+    if(imageId)next[imageId]=String(item.image);
+  };
+  (pool||[]).forEach(capture);
+  for(const wk in allData){
+    for(const meal in (allData[wk]||{})){
+      const days=Array.isArray(allData[wk][meal])?allData[wk][meal]:[];
+      days.forEach(day=>(day||[]).forEach(capture));
+    }
+  }
+  imageRegistry=next;
+}
+function resolveItemImage(item){
+  if(!item)return "";
+  const imageId=ensureItemImageId(item);
+  if(imageId&&isValidImageValue(imageRegistry[imageId]))return imageRegistry[imageId];
+  if(isValidImageValue(item.image)){
+    if(imageId)imageRegistry[imageId]=String(item.image);
+    return String(item.image);
+  }
+  return "";
+}
+function createPlannedItemFromSource(src,newId){
+  if(!src)return null;
+  const imageUrl=resolveItemImage(src);
+  const imageId=ensureItemImageId(src);
+  const next={...src,image:""};
+  if(newId)next.id=uid();
+  next.imageId=imageId||"";
+  if(imageId&&isValidImageValue(imageUrl)&&!isValidImageValue(imageRegistry[imageId]))imageRegistry[imageId]=imageUrl;
+  return next;
 }
 
 // ===== WEEK UTILS =====
@@ -611,7 +672,7 @@ function applyDropToDay(obj,col,clientX){
     const src=pool[obj.pidx];
     if(src){
       pushUndo();
-      item=shouldCopy?{...src,id:uid()}:src;
+      item=createPlannedItemFromSource(src,shouldCopy);
       if(!shouldCopy)pool.splice(obj.pidx,1);
       changed=true;
     }
@@ -622,9 +683,9 @@ function applyDropToDay(obj,col,clientX){
     if(srcItem){
       pushUndo();
       if(shouldCopy){
-        item={...srcItem,id:uid()};
+        item=createPlannedItemFromSource(srcItem,true);
       }else{
-        item=srcDay.splice(obj.ii,1)[0];
+        item=createPlannedItemFromSource(srcDay.splice(obj.ii,1)[0],false);
       }
       changed=true;
     }
@@ -778,7 +839,7 @@ function assignPoolItemToSelectedDay(pidx){
   const src=pool[pidx];
   if(!src)return;
   pushUndo();
-  const item={...src,id:uid()};
+  const item=createPlannedItemFromSource(src,true);
   weekData()[assignmentDayIndex].push(item);
   save();
   showToast(`${assignmentDateLabel(assignmentDayIndex)} に追加しました`);
@@ -808,11 +869,22 @@ function normalizeCurrentState(parsedSettings){
       MEALS.forEach(m=>{if(!allData[k][m])allData[k][m]=Array.from({length:7},()=>[]);else allData[k][m]=allData[k][m].map(day=>(day||[]).map(migrateItem));});
     }
   }
+  for(const wk in allData){
+    for(const meal in (allData[wk]||{})){
+      const days=Array.isArray(allData[wk][meal])?allData[wk][meal]:[];
+      days.forEach(day=>(day||[]).forEach(item=>{
+        const imageId=ensureItemImageId(item);
+        if(imageId&&isValidImageValue(item.image))imageRegistry[imageId]=String(item.image);
+        item.image="";
+      }));
+    }
+  }
   pool=(pool||[]).map(migrateItem);
+  rebuildImageRegistry(imageRegistry);
 }
 function saveLocalOnly(){
   try{
-    localStorage.setItem("kb_v2",JSON.stringify({allData,pool}));
+    localStorage.setItem("kb_v2",JSON.stringify({allData,pool,imageRegistry}));
     localStorage.setItem("kb_settings",JSON.stringify(settings));
   }catch(e){showToast("保存エラー（ストレージ上限の可能性）");}
 }
@@ -828,7 +900,9 @@ function load(){
     const s=localStorage.getItem("kb_settings");
     if(d){
       const p=JSON.parse(d);
-      allData=p.allData||{};pool=p.pool||[];
+      allData=p.allData||{};
+      pool=p.pool||[];
+      imageRegistry=(p&&typeof p.imageRegistry==="object"&&p.imageRegistry)||{};
     } else if(legacy_d){
       const p=JSON.parse(legacy_d);
       if(p.allData){allData=p.allData;pool=p.pool||[];}
@@ -948,6 +1022,17 @@ function cloudErrorMessage(err){
   }
 }
 async function sanitizeForCloud(){
+  const cloudImageRegistry={...cloudKnownImageRegistry};
+  async function ensureImageUrlById(imageId,image,kind,fallbackId){
+    const id=String(imageId||"").trim();
+    if(!id)return "";
+    if(isValidImageValue(cloudImageRegistry[id]))return cloudImageRegistry[id];
+    const source=isValidImageValue(image)?String(image):"";
+    if(!source)return "";
+    const imageUrl=await ensureCloudImageUrl(source,userUid,kind,id||fallbackId);
+    if(isValidImageValue(imageUrl))cloudImageRegistry[id]=imageUrl;
+    return imageUrl||"";
+  }
   async function withUploadedImages(data,userUid){
     const result={};
     for(const wk in data){
@@ -960,8 +1045,10 @@ async function sanitizeForCloud(){
           for(let ii=0;ii<day.length;ii++){
             const item=day[ii]||{};
             const {image,...rest}=item;
-            const imageUrl=await ensureCloudImageUrl(image,userUid,"planned",rest?.id||`${wk}_${meal}_${di}_${ii}`);
-            flat.push({...rest,image:imageUrl||"",dayIndex:di});
+            const imageId=ensureItemImageId(rest)||ensureItemImageId(item)||"";
+            const resolvedImage=isValidImageValue(image)?image:resolveItemImage(item);
+            await ensureImageUrlById(imageId,resolvedImage,"planned",rest?.id||`${wk}_${meal}_${di}_${ii}`);
+            flat.push({...rest,image:"",imageId,dayIndex:di});
           }
         }
         result[wk][meal]=flat;
@@ -975,10 +1062,12 @@ async function sanitizeForCloud(){
   for(let i=0;i<(pool||[]).length;i++){
     const item=pool[i]||{};
     const {image,...rest}=item;
-    const imageUrl=await ensureCloudImageUrl(image,userUid,"pool",rest?.id||`pool_${i}`);
-    safePool.push({...rest,image:imageUrl||""});
+    const imageId=ensureItemImageId(rest)||ensureItemImageId(item)||"";
+    const resolvedImage=isValidImageValue(image)?image:resolveItemImage(item);
+    const imageUrl=await ensureImageUrlById(imageId,resolvedImage,"pool",rest?.id||`pool_${i}`);
+    safePool.push({...rest,image:imageUrl||"",imageId});
   }
-  return JSON.parse(JSON.stringify({allData:safeAllData,pool:safePool,settings}));
+  return JSON.parse(JSON.stringify({allData:safeAllData,pool:safePool,settings,imageRegistry:cloudImageRegistry}));
 }
 function clearCloudErrorState(){
   const hadError=!!cloudErrorState;
@@ -1021,13 +1110,17 @@ function handleCloudError(err,source){
 function applyRemoteState(data){
   const sourceAllData=(data&&data.allData)||{};
   const remoteAllData={};
+  const incomingImageRegistry=(data&&typeof data.imageRegistry==="object")?data.imageRegistry:{};
+  cloudKnownImageRegistry={...cloudKnownImageRegistry,...incomingImageRegistry};
 
   const localImageById={};
   for(const wk in allData){
     for(const meal in (allData[wk]||{})){
       const days=Array.isArray(allData[wk][meal])?allData[wk][meal]:[];
       days.forEach(day=>(day||[]).forEach(item=>{
-        if(item?.id&&item?.image)localImageById[item.id]=item.image;
+        const imageId=ensureItemImageId(item);
+        const resolvedImage=resolveItemImage(item);
+        if(imageId&&resolvedImage)localImageById[imageId]=resolvedImage;
       }));
     }
   }
@@ -1039,8 +1132,10 @@ function applyRemoteState(data){
       // Legacy shape fallback: Array<Array<Item>>
       if(Array.isArray(raw)&&raw.some(Array.isArray)){
         remoteAllData[wk][meal]=raw.map(day=>(day||[]).map(remoteItem=>{
-          const localImg=(remoteItem?.id&&localImageById[remoteItem.id])||"";
-          return {...remoteItem,image:remoteItem?.image||localImg};
+          const migrated=migrateItem(remoteItem);
+          const imageId=ensureItemImageId(migrated);
+          const localImg=(imageId&&localImageById[imageId])||"";
+          return {...migrated,image:migrated?.image||localImg,imageId:imageId||""};
         }));
         continue;
       }
@@ -1052,8 +1147,12 @@ function applyRemoteState(data){
           const parsedDay=parseInt(remoteItem?.dayIndex,10);
           const di=Number.isFinite(parsedDay)?Math.max(0,Math.min(6,parsedDay)):0;
           const {dayIndex,image,...rest}=remoteItem||{};
-          const localImg=(rest?.id&&localImageById[rest.id])||"";
-          days[di].push({...rest,image:image||localImg});
+          const migrated=migrateItem({...rest,image:image||""});
+          const imageId=ensureItemImageId(migrated);
+          const knownRemote=(imageId&&incomingImageRegistry[imageId])||"";
+          const localImg=(imageId&&localImageById[imageId])||"";
+          days[di].push({...migrated,image:migrated.image||localImg||"",imageId:imageId||""});
+          if(imageId&&isValidImageValue(knownRemote))cloudKnownImageRegistry[imageId]=knownRemote;
         });
       }
       remoteAllData[wk][meal]=days;
@@ -1061,10 +1160,16 @@ function applyRemoteState(data){
   }
 
   const remotePool=Array.isArray(data?.pool)?data.pool:[];
-  const mergedPool=remotePool.map((item,i)=>({...item,image:item?.image||pool[i]?.image||""}));
+  const mergedPool=remotePool.map((item,i)=>{
+    const migrated=migrateItem(item);
+    const imageId=ensureItemImageId(migrated);
+    const knownRemote=(imageId&&incomingImageRegistry[imageId])||"";
+    return {...migrated,image:migrated?.image||knownRemote||pool[i]?.image||"",imageId:imageId||""};
+  });
   allData=remoteAllData;
   pool=mergedPool;
   normalizeCurrentState((data&&data.settings)||null);
+  rebuildImageRegistry({...cloudKnownImageRegistry,...imageRegistry});
   saveLocalOnly();
   render();
 }
@@ -1075,6 +1180,7 @@ async function pushCurrentStateToCloud(){
   await cloudDocRef.set({
     allData:safe.allData,
     pool:safe.pool,
+    imageRegistry:safe.imageRegistry,
     settings:safe.settings,
     clientUpdatedAt:cloudLastClientWriteAt,
     updatedAt:firebase.firestore.FieldValue.serverTimestamp()
@@ -1148,10 +1254,11 @@ async function startCloudSync(user,keepRetryState=false){
 }
 
 // ===== UNDO =====
-function pushUndo(){undoStack.push(JSON.stringify({allData,pool}));if(undoStack.length>40)undoStack.shift();}
+function pushUndo(){undoStack.push(JSON.stringify({allData,pool,imageRegistry}));if(undoStack.length>40)undoStack.shift();}
 function undo(){
   if(!undoStack.length){showToast("取り消せる操作がありません");return;}
-  const s=JSON.parse(undoStack.pop());allData=s.allData;pool=s.pool;
+  const s=JSON.parse(undoStack.pop());allData=s.allData;pool=s.pool;imageRegistry=(s&&s.imageRegistry)||{};
+  rebuildImageRegistry(imageRegistry);
   save();render();showToast("取り消しました ↩");
 }
 document.addEventListener("keydown",e=>{
@@ -1327,7 +1434,8 @@ function mkCardEl(item,target){
   const isDraggable=canUseDragDrop()&&assignmentDayIndex==null;
   c.draggable=false;
   c.classList.toggle("is-draggable",isDraggable);
-  const hasImage=settings.showPlannedCardImage&&item.image;
+  const resolvedImage=resolveItemImage(item);
+  const hasImage=settings.showPlannedCardImage&&resolvedImage;
   if(hasImage)c.classList.add("has-image");
 
   const main=document.createElement("div");main.className="card-main";
@@ -1386,7 +1494,7 @@ function mkCardEl(item,target){
 
   if(hasImage){
     const imgWrap=document.createElement("div");imgWrap.className="card-img-wrap";
-    const img=document.createElement("img");img.className="card-img";img.src=item.image;img.alt="";img.draggable=false;imgWrap.appendChild(img);
+    const img=document.createElement("img");img.className="card-img";img.src=resolvedImage;img.alt="";img.draggable=false;imgWrap.appendChild(img);
     c.appendChild(imgWrap);
     if(meta.children.length)main.appendChild(meta);
     if(showCardField("tag"))main.appendChild(makeTagEl());
@@ -1511,6 +1619,7 @@ function handleImageUpload(ev){
       canvas.width=w;canvas.height=h;
       canvas.getContext("2d").drawImage(img,0,0,w,h);
       currentImage=canvas.toDataURL("image/jpeg",0.7);
+      if(!currentImageId)currentImageId=uid();
       const pv=document.getElementById("eImagePreview");
       pv.src=currentImage;pv.style.display="block";
       document.getElementById("eImageClear").style.display="inline-block";
@@ -1521,6 +1630,7 @@ function handleImageUpload(ev){
 }
 function clearImage(){
   currentImage="";
+  currentImageId="";
   const pv=document.getElementById("eImagePreview");pv.src="";pv.style.display="none";
   document.getElementById("eImageClear").style.display="none";
 }
@@ -1546,7 +1656,9 @@ function openEdit(target){
   buildStarRating("eDifficulty",item?.difficulty||0,5);
   const list=document.getElementById("eIngList");list.innerHTML="";
   (item?.ingredients||[]).forEach(v=>addIngRow(v,(item?.ingredientInventory||{})[v]===true));
-  currentImage=item?.image||"";
+  currentImageId=item?.imageId||"";
+  currentImage=resolveItemImage(item)||"";
+  if(currentImage&&!currentImageId)currentImageId=item?.id||uid();
   const pv=document.getElementById("eImagePreview");
   if(currentImage){pv.src=currentImage;pv.style.display="block";document.getElementById("eImageClear").style.display="inline-block";}
   else{pv.src="";pv.style.display="none";document.getElementById("eImageClear").style.display="none";}
@@ -1607,8 +1719,16 @@ function saveEdit(){
     ings.push(v);
     ingredientInventory[v]=!!stock?.checked;
   });
+  const isPoolTarget=editTarget.type==="pool";
+  let nextImageId=(currentImageId||"").trim();
+  if(currentImage){
+    if(!nextImageId)nextImageId=uid();
+    imageRegistry[nextImageId]=currentImage;
+  }else{
+    nextImageId="";
+  }
   pushUndo();
-  const fields={text,tag,note,steps,calories,protein,carbs,fat,cost,favorite,difficulty,ingredients:ings,ingredientInventory,image:currentImage};
+  const fields={text,tag,note,steps,calories,protein,carbs,fat,cost,favorite,difficulty,ingredients:ings,ingredientInventory,image:isPoolTarget?currentImage:"",imageId:nextImageId};
   if(editTarget.type==="pool"&&editTarget.pidx<0){
     pool.push({...mkItem(text,tag,ings,note),...fields});
   }else if(editTarget.type==="pool"){
@@ -1922,7 +2042,7 @@ function autoSuggest(){
     if(!day.length){
       const candidates=scored.slice(0,topN);
       const pick=(candidates.length?candidates:pool)[Math.floor(Math.random()*(candidates.length||pool.length))];
-      day.push({...pick,id:uid()});filled++;
+      day.push(createPlannedItemFromSource(pick,true));filled++;
     }
   });
   if(!filled){showToast("全日に献立が入っています");undoStack.pop();return;}
@@ -1931,7 +2051,7 @@ function autoSuggest(){
 
 // ===== EXPORT / IMPORT =====
 function exportJSON(){
-  const blob=new Blob([JSON.stringify({allData,pool,settings},null,2)],{type:"application/json"});
+  const blob=new Blob([JSON.stringify({allData,pool,imageRegistry,settings},null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob);const a=document.createElement("a");
   a.href=url;a.download="献立_"+new Date().toISOString().slice(0,10)+".json";a.click();URL.revokeObjectURL(url);
 }
@@ -1942,6 +2062,7 @@ function importJSON(e){
     try{
       const p=JSON.parse(ev.target.result);pushUndo();
       if(p.allData)allData=p.allData;if(p.pool)pool=p.pool;
+      if(p.imageRegistry&&typeof p.imageRegistry==="object")imageRegistry=p.imageRegistry;
       if(p.settings){
         const importedSettings=p.settings;
         settings={...settings,...importedSettings};
@@ -1952,8 +2073,7 @@ function importJSON(e){
       settings.sheetLevel=clampSheetLevel(settings.sheetLevel);
       settings.sheetScale=10;
       settings.sheetHeight=Number.isFinite(Number(settings.sheetHeight))?Math.max(80,Math.round(Number(settings.sheetHeight))):null;
-      for(const k in allData)allData[k]=allData[k].map(day=>(day||[]).map(migrateItem));
-      pool=pool.map(migrateItem);
+      normalizeCurrentState(null);
       save();render();showToast("インポートしました ✓");
     }catch{showToast("読み込みエラー");}
   };
@@ -2048,7 +2168,8 @@ function renderPool(){
   }
   filtered.forEach(item=>{
     const pidx=pool.indexOf(item);
-    const hasImage=!!(item.image&&settings.showPlannedCardImage);
+    const resolvedImage=resolveItemImage(item);
+    const hasImage=!!(resolvedImage&&settings.showPlannedCardImage);
     const c=document.createElement("div");
     c.className="pool-card"+(hasImage?" has-image":"");
     c.style.borderLeftColor=cardBorderColor(item);
@@ -2096,7 +2217,7 @@ function renderPool(){
 
     if(hasImage){
       const imgWrap=document.createElement("div");imgWrap.className="card-img-wrap";
-      const img=document.createElement("img");img.className="card-img";img.src=item.image;img.alt="";img.draggable=false;
+      const img=document.createElement("img");img.className="card-img";img.src=resolvedImage;img.alt="";img.draggable=false;
       imgWrap.appendChild(img);c.appendChild(imgWrap);
     }
 
