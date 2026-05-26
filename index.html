@@ -571,8 +571,9 @@ function openAssignmentMode(dayIndex){
   const sheet=document.getElementById("bottomSheet");
   if(sheet){
     const {snapE}=getSheetSnapPoints();
-    sheet.style.height=snapE+"px";
-    settings.sheetHeight=snapE;
+    const assignH=Math.max(200,Math.round(snapE*0.72));
+    sheet.style.height=assignH+"px";
+    settings.sheetHeight=assignH;
     save();
   }
   showToast(`${assignmentDateLabel(dayIndex)} に割り当て: カードをタップ`);
@@ -992,6 +993,7 @@ function render(){
       }
     });
     col.addEventListener("click",e=>{
+      if(isTouchLikeDevice())return;
       if(e.target.closest(".card,.card-edit-btn,.day-assign-btn,.btn"))return;
       openAssignmentMode(i);
     });
