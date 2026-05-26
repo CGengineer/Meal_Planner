@@ -881,12 +881,15 @@ function isRetryableCloudError(err){
   return msg.includes("network")||msg.includes("offline")||msg.includes("timeout")||msg.includes("failed to get document");
 }
 function cloudErrorMessage(err){
+  if(typeof err==="string")return err;
+  if(err&&typeof err.message==="string"&&err.message.trim())return err.message;
   const code=cloudErrorCode(err);
-  if(code==="failed-precondition")return "Firestore Database を作成してください（Firebase Console > Firestore Database）";
-  if(code==="permission-denied")return "クラウド同期権限がありません";
-  if(code==="unauthenticated")return "ログイン状態を確認してください";
-  if(isRetryableCloudError(err))return "クラウド同期を再試行しています";
-  return "クラウド同期に失敗しました";
+  if(code)return `cloud error: ${code}`;
+  try{
+    return JSON.stringify(err);
+  }catch(_e){
+    return String(err||"クラウド同期に失敗しました");
+  }
 }
 function sanitizeForCloud(){
   function stripImages(data){
