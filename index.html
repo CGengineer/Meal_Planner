@@ -1636,8 +1636,6 @@ function moveWeek(n){baseDate=new Date(baseDate);baseDate.setDate(baseDate.getDa
 function goToday(){baseDate=new Date();exitAssignmentMode(false);render();const el=document.querySelector(".day.today");if(el)el.scrollIntoView({behavior:"smooth",block:"nearest",inline:"center"});}
 
 // ===== AUTH =====
-const AUTH_REDIRECT_URL="home.html";
-let authRedirected=false;
 let authBusy=false;
 let authProvider=null;
 let boardUnlocked=false;
@@ -1676,12 +1674,6 @@ function unlockBoard(){
   const authScreen=document.getElementById("authScreen");
   if(authScreen)authScreen.classList.add("hidden");
 }
-function redirectToHome(){
-  if(authRedirected)return;
-  authRedirected=true;
-  if(!AUTH_REDIRECT_URL)return;
-  try{window.location.href=AUTH_REDIRECT_URL;}catch(e){console.warn(e);}
-}
 function currentAuthInput(){
   const email=(document.getElementById("authEmail")?.value||"").trim();
   const password=document.getElementById("authPassword")?.value||"";
@@ -1718,10 +1710,8 @@ function initAuth(){
 
   auth.onAuthStateChanged(user=>{
     if(user){
-      setAuthMessage("ログイン成功。ホームへ移動します...","success");
+      setAuthMessage("ログイン成功。献立ボードを表示しました。","success");
       unlockBoard();
-      // Redirect is best-effort; board is already usable even if navigation fails.
-      redirectToHome();
       return;
     }
     boardUnlocked=false;
@@ -1776,9 +1766,8 @@ function initAuth(){
   document.getElementById("registerBtn")?.addEventListener("click",registerWithEmail);
   document.getElementById("guestLoginBtn")?.addEventListener("click",()=>{
     if(authBusy)return;
-    setAuthMessage("ゲストログインで移動します...","success");
+    setAuthMessage("ゲストログインで献立ボードを表示しました。","success");
     unlockBoard();
-    redirectToHome();
   });
 
   document.getElementById("authPassword")?.addEventListener("keydown",e=>{
