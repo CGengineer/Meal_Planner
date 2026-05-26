@@ -152,6 +152,14 @@ body.touch-dnd-active,body.touch-dnd-active *{-webkit-user-select:none!important
 .shop-item label{cursor:pointer;flex:1;font-size:13px;}
 .shop-source{font-size:10px;color:#475569;white-space:nowrap;}
 /* Settings */
+.setting-account{display:flex;align-items:center;gap:10px;padding:10px 0 12px;border-bottom:1px solid #334155;margin-bottom:6px;}
+.setting-avatar{width:44px;height:44px;border-radius:999px;object-fit:cover;border:1px solid #475569;background:#0f172a;flex-shrink:0;display:block;}
+.setting-avatar-fallback{width:44px;height:44px;border-radius:999px;border:1px solid #475569;background:#0f172a;color:#cbd5e1;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:bold;flex-shrink:0;}
+.setting-account-meta{min-width:0;display:flex;flex-direction:column;gap:3px;}
+.setting-account-title{font-size:11px;color:#94a3b8;}
+.setting-account-email{font-size:13px;color:#f1f5f9;word-break:break-all;line-height:1.35;}
+.setting-logout-wrap{padding-top:8px;}
+.setting-logout-btn{width:100%;}
 .setting-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid #1e293b;}
 .setting-row:last-child{border-bottom:none;}
 .toggle{position:relative;width:40px;height:22px;flex-shrink:0;}
@@ -1669,6 +1677,29 @@ function copyShop(){
 // ===== SETTINGS =====
 function showSettings(){
   const c=document.getElementById("settingsContent");c.innerHTML="";
+  const authUser=(typeof firebase!=="undefined"&&firebase.auth)?firebase.auth().currentUser:null;
+  const account=document.createElement("div");account.className="setting-account";
+  if(authUser?.photoURL){
+    const img=document.createElement("img");
+    img.className="setting-avatar";
+    img.alt="アカウント画像";
+    img.src=authUser.photoURL;
+    account.appendChild(img);
+  }else{
+    const fb=document.createElement("div");
+    fb.className="setting-avatar-fallback";
+    const seed=(authUser?.email||"ゲスト").trim();
+    fb.innerText=(seed.charAt(0)||"G").toUpperCase();
+    account.appendChild(fb);
+  }
+  const accountMeta=document.createElement("div");accountMeta.className="setting-account-meta";
+  const accountTitle=document.createElement("div");accountTitle.className="setting-account-title";accountTitle.innerText="ログイン中アカウント";
+  const accountEmail=document.createElement("div");accountEmail.className="setting-account-email";accountEmail.innerText=authUser?.email||"ゲストログイン";
+  accountMeta.appendChild(accountTitle);
+  accountMeta.appendChild(accountEmail);
+  account.appendChild(accountMeta);
+  c.appendChild(account);
+
   const defs=[
     {key:"showCalories",label:"カードにカロリー表示"},
     {key:"showStars",label:"カードにお気に入り★表示"},
@@ -1733,7 +1764,43 @@ function showSettings(){
   ms.value=settings.uiMode||"standard";
   ms.onchange=()=>{applyUIMode(ms.value);save();render();};
   mr.appendChild(ml);mr.appendChild(ms);c.appendChild(mr);
+
+  const logoutWrap=document.createElement("div");logoutWrap.className="setting-logout-wrap";
+  const logoutBtn=document.createElement("button");
+  logoutBtn.className="btn setting-logout-btn";
+  logoutBtn.innerText="ログアウト";
+  logoutBtn.onclick=logoutFromSettings;
+  logoutWrap.appendChild(logoutBtn);
+  c.appendChild(logoutWrap);
+
   document.getElementById("settingsOverlay").classList.add("open");
+}
+
+async function logoutFromSettings(){
+  if(authBusy)return;
+  const auth=(typeof firebase!=="undefined"&&firebase.auth)?firebase.auth():null;
+  const currentUser=auth?.currentUser||null;
+  closeOverlay("settingsOverlay");
+  if(currentUser){
+    try{
+      setAuthBusy(true);
+      await auth.signOut();
+      setAuthMessage("ログアウトしました。","success");
+      showToast("ログアウトしました");
+    }catch(e){
+      setAuthBusy(false);
+      setAuthMessage(authErrJa(e.code,e.message),"error");
+      showToast("ログアウトできませんでした");
+    }
+    return;
+  }
+  stopCloudSync();
+  boardUnlocked=false;
+  document.body.classList.add("auth-locked");
+  const authScreen=document.getElementById("authScreen");
+  if(authScreen)authScreen.classList.remove("hidden");
+  setAuthMessage("ログアウトしました。","success");
+  showToast("ログアウトしました");
 }
 
 // ===== AUTO SUGGEST =====
