@@ -167,6 +167,7 @@ radial-gradient(circle at 12% 20%,rgba(56,189,248,.28),transparent 45%),
 radial-gradient(circle at 85% 12%,rgba(129,140,248,.24),transparent 42%),
 radial-gradient(circle at 50% 88%,rgba(16,185,129,.18),transparent 45%),
 linear-gradient(125deg,#020617 0%,#0b1120 40%,#111827 100%);overflow:auto;}
+.auth-screen.hidden{display:none;}
 .auth-screen::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(148,163,184,.06) 0 1px,transparent 1px 3px);opacity:.18;pointer-events:none;}
 .auth-card{position:relative;width:min(460px,96vw);padding:28px 22px 20px;border-radius:24px;background:linear-gradient(160deg,rgba(15,23,42,.9),rgba(15,23,42,.6));border:1px solid rgba(148,163,184,.38);box-shadow:0 24px 70px rgba(2,6,23,.7),inset 0 1px 0 rgba(226,232,240,.24);backdrop-filter:blur(10px);animation:authIn .55s cubic-bezier(.2,.76,.2,1);}
 .auth-chip{display:inline-flex;align-items:center;gap:8px;background:rgba(30,41,59,.85);border:1px solid rgba(148,163,184,.35);padding:5px 11px;border-radius:999px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#93c5fd;}
@@ -1639,6 +1640,7 @@ const AUTH_REDIRECT_URL="home.html";
 let authRedirected=false;
 let authBusy=false;
 let authProvider=null;
+let boardUnlocked=false;
 
 function authErrJa(code,message){
   const map={
@@ -1667,10 +1669,18 @@ function setAuthBusy(next){
     if(el)el.disabled=authBusy;
   });
 }
+function unlockBoard(){
+  if(boardUnlocked)return;
+  boardUnlocked=true;
+  document.body.classList.remove("auth-locked");
+  const authScreen=document.getElementById("authScreen");
+  if(authScreen)authScreen.classList.add("hidden");
+}
 function redirectToHome(){
   if(authRedirected)return;
   authRedirected=true;
-  window.location.href=AUTH_REDIRECT_URL;
+  if(!AUTH_REDIRECT_URL)return;
+  try{window.location.href=AUTH_REDIRECT_URL;}catch(e){console.warn(e);}
 }
 function currentAuthInput(){
   const email=(document.getElementById("authEmail")?.value||"").trim();
@@ -1709,12 +1719,16 @@ function initAuth(){
   auth.onAuthStateChanged(user=>{
     if(user){
       setAuthMessage("ログイン成功。ホームへ移動します...","success");
-      document.body.classList.remove("auth-locked");
+      unlockBoard();
+      // Redirect is best-effort; board is already usable even if navigation fails.
       redirectToHome();
       return;
     }
+    boardUnlocked=false;
     setAuthBusy(false);
     document.body.classList.add("auth-locked");
+    const authScreen=document.getElementById("authScreen");
+    if(authScreen)authScreen.classList.remove("hidden");
   });
 
   const loginWithGoogle=async()=>{
@@ -1763,6 +1777,7 @@ function initAuth(){
   document.getElementById("guestLoginBtn")?.addEventListener("click",()=>{
     if(authBusy)return;
     setAuthMessage("ゲストログインで移動します...","success");
+    unlockBoard();
     redirectToHome();
   });
 
