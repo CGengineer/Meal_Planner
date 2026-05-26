@@ -839,7 +839,7 @@ function getCloudDb(){
   cloudDb=firebase.firestore();
   return cloudDb;
 }
-function stopCloudSync(){
+function stopCloudSync(preserveRetryState=false){
   if(cloudSaveTimer){
     clearTimeout(cloudSaveTimer);
     cloudSaveTimer=null;
@@ -857,8 +857,10 @@ function stopCloudSync(){
   cloudApplyingRemote=false;
   cloudLastClientWriteAt=0;
   cloudHasInitialSnapshot=false;
-  cloudRetryCount=0;
-  cloudErrorState=null;
+  if(!preserveRetryState){
+    cloudRetryCount=0;
+    cloudErrorState=null;
+  }
   cloudCurrentUser=null;
 }
 function cloudErrorCode(err){
@@ -872,6 +874,7 @@ function isRetryableCloudError(err){
 }
 function cloudErrorMessage(err){
   const code=cloudErrorCode(err);
+  if(code==="failed-precondition")return "Firestore Database を作成してください（Firebase Console > Firestore Database）";
   if(code==="permission-denied")return "クラウド同期権限がありません";
   if(code==="unauthenticated")return "ログイン状態を確認してください";
   if(isRetryableCloudError(err))return "クラウド同期を再試行しています";
@@ -975,13 +978,15 @@ function scheduleCloudSave(){
 }
 async function startCloudSync(user,keepRetryState=false){
   const db=getCloudDb();
-  if(!db)return;
+  if(!db){
+    showToast("Firestore が利用できません。Firebase Console で Firestore Database を有効化してください");
+    return false;
+  }
   if(!keepRetryState){
     cloudRetryCount=0;
     cloudErrorState=null;
   }
-  cloudCurrentUser=user;
-  stopCloudSync();
+  stopCloudSync(keepRetryState);
   cloudCurrentUser=user;
   cloudDocRef=db.collection("users").doc(user.uid).collection("app").doc("board");
 
@@ -998,9 +1003,11 @@ async function startCloudSync(user,keepRetryState=false){
   }catch(e){
     console.warn(e);
     handleCloudError(e,"init");
+    return false;
   }
 
   cloudUnsub=cloudDocRef.onSnapshot(snap=>{
+    cloudReady=true;
     if(!snap.exists)return;
     if(snap.metadata.hasPendingWrites)return;
     const data=snap.data()||{};
@@ -1015,10 +1022,12 @@ async function startCloudSync(user,keepRetryState=false){
     if(!isFirst)showToast("他端末の変更を同期しました");
   },e=>{
     console.warn(e);
+    cloudReady=false;
     handleCloudError(e,"watch");
   });
 
   cloudReady=true;
+  return true;
 }
 
 // ===== UNDO =====
@@ -2245,13 +2254,20 @@ function initAuth(){
 
   auth.onAuthStateChanged(async user=>{
     if(user){
-      setAuthMessage("ログイン成功。献立ボードを表示しました。","success");
+      setAuthMessage("ログイン成功。クラウド同期を開始しています...","success");
       try{
-        await startCloudSync(user);
+        const syncReady=await startCloudSync(user);
+        if(syncReady){
+          setAuthMessage("ログイン成功。クラウド同期が有効です。","success");
+        }else{
+          setAuthMessage("ログイン成功。クラウド同期を開始できなかったため、この端末の保存のみで続行します。","error");
+        }
       }catch(e){
         console.warn(e);
         showToast("クラウド同期を開始できませんでした");
+        setAuthMessage("ログイン成功。クラウド同期を開始できなかったため、この端末の保存のみで続行します。","error");
       }
+      setAuthBusy(false);
       unlockBoard();
       return;
     }
@@ -2308,7 +2324,8 @@ function initAuth(){
   document.getElementById("registerBtn")?.addEventListener("click",registerWithEmail);
   document.getElementById("guestLoginBtn")?.addEventListener("click",()=>{
     if(authBusy)return;
-    setAuthMessage("ゲストログインで献立ボードを表示しました。","success");
+    setAuthMessage("ゲストログインで献立ボードを表示しました（ローカル保存のみ）。","success");
+    showToast("ゲストログイン中はクラウド同期されません");
     unlockBoard();
   });
 
