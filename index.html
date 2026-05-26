@@ -988,7 +988,7 @@ async function ensureCloudImageUrl(image,userUid,kind,itemId){
   if(!image||!userUid)return "";
   if(!String(image).startsWith("data:image/"))return image;
   const contentHash=fnv1aHash(String(image));
-  const cacheKey=`${userUid}|${kind}|${contentHash}`;
+  const cacheKey=`${userUid}|${contentHash}`;
   if(cloudImageUploadCache.has(cacheKey))return cloudImageUploadCache.get(cacheKey);
   const uploadPromise=(async()=>{
     const st=getCloudStorage();
@@ -996,10 +996,16 @@ async function ensureCloudImageUrl(image,userUid,kind,itemId){
     const blob=dataUrlToBlob(image);
     if(!blob)return image;
     const ext=storageExtByMime(blob.type);
-    const safeKind=kind||"items";
     const safeId=itemId||uid();
-    const filePath=`users/${userUid}/meal-images/${safeKind}/${safeId}_${Date.now()}.${ext}`;
+    const filePath=`users/Images/${safeId}_${contentHash}.${ext}`;
     const ref=st.ref().child(filePath);
+    // Reuse existing object when present so we do not create/overwrite duplicates.
+    try{
+      const existingUrl=await ref.getDownloadURL();
+      if(existingUrl)return existingUrl;
+    }catch(_e){
+      // Not found or no permission to read URL: fall through to upload.
+    }
     await ref.put(blob,{contentType:blob.type||"image/jpeg",cacheControl:"public,max-age=31536000"});
     return await ref.getDownloadURL();
   })();
