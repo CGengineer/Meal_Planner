@@ -7,6 +7,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
 <style>
 *{box-sizing:border-box;}
 html,body{height:100%;}
@@ -492,6 +493,7 @@ let editActiveTab="basic";
 let expandedDayKeys={};
 let assignmentDayIndex=null;
 let cloudDb=null;
+let cloudStorage=null;
 let cloudDocRef=null;
 let cloudUnsub=null;
 let cloudReady=false;
@@ -504,6 +506,7 @@ let cloudRetryCount=0;
 let cloudErrorState=null;
 let cloudCurrentUser=null;
 let cloudLastErrorToastAt=0;
+const cloudImageUploadCache=new Map();
 let touchDragState=null;
 let touchDayClickSuppressUntil=0;
 const TOUCH_LONG_PRESS_MS=430;
@@ -847,6 +850,59 @@ function getCloudDb(){
   cloudDb=firebase.firestore();
   return cloudDb;
 }
+function getCloudStorage(){
+  if(cloudStorage)return cloudStorage;
+  if(typeof firebase==="undefined"||!firebase.storage)return null;
+  cloudStorage=firebase.storage();
+  return cloudStorage;
+}
+function dataUrlToBlob(dataUrl){
+  const m=String(dataUrl||"").match(/^data:([^;,]+)?(;base64)?,(.*)$/);
+  if(!m)return null;
+  const mime=m[1]||"application/octet-stream";
+  const encoded=m[3]||"";
+  let bytes;
+  try{
+    bytes=atob(encoded);
+  }catch(_e){
+    return null;
+  }
+  const arr=new Uint8Array(bytes.length);
+  for(let i=0;i<bytes.length;i++)arr[i]=bytes.charCodeAt(i);
+  return new Blob([arr],{type:mime});
+}
+function storageExtByMime(mime){
+  if(mime==="image/png")return "png";
+  if(mime==="image/webp")return "webp";
+  if(mime==="image/gif")return "gif";
+  return "jpg";
+}
+async function ensureCloudImageUrl(image,userUid,kind,itemId){
+  if(!image||!userUid)return "";
+  if(!String(image).startsWith("data:image/"))return image;
+  const cacheKey=`${userUid}|${kind}|${itemId||"item"}|${image.length}|${image.slice(0,72)}`;
+  if(cloudImageUploadCache.has(cacheKey))return cloudImageUploadCache.get(cacheKey);
+  const uploadPromise=(async()=>{
+    const st=getCloudStorage();
+    if(!st)return image;
+    const blob=dataUrlToBlob(image);
+    if(!blob)return image;
+    const ext=storageExtByMime(blob.type);
+    const safeKind=kind||"items";
+    const safeId=itemId||uid();
+    const filePath=`users/${userUid}/meal-images/${safeKind}/${safeId}_${Date.now()}.${ext}`;
+    const ref=st.ref().child(filePath);
+    await ref.put(blob,{contentType:blob.type||"image/jpeg",cacheControl:"public,max-age=31536000"});
+    return await ref.getDownloadURL();
+  })();
+  cloudImageUploadCache.set(cacheKey,uploadPromise);
+  try{
+    return await uploadPromise;
+  }catch(e){
+    cloudImageUploadCache.delete(cacheKey);
+    throw e;
+  }
+}
 function stopCloudSync(preserveRetryState=false){
   if(cloudSaveTimer){
     clearTimeout(cloudSaveTimer);
@@ -891,27 +947,38 @@ function cloudErrorMessage(err){
     return String(err||"クラウド同期に失敗しました");
   }
 }
-function sanitizeForCloud(){
-  function stripImages(data){
+async function sanitizeForCloud(){
+  async function withUploadedImages(data,userUid){
     const result={};
     for(const wk in data){
       result[wk]={};
       for(const meal in data[wk]){
         const days=Array.isArray(data[wk][meal])?data[wk][meal]:[];
         const flat=[];
-        days.forEach((day,di)=>{
-          (day||[]).forEach(item=>{
-            const {image,...rest}=item||{};
-            flat.push({...rest,dayIndex:di});
-          });
-        });
+        for(let di=0;di<days.length;di++){
+          const day=days[di]||[];
+          for(let ii=0;ii<day.length;ii++){
+            const item=day[ii]||{};
+            const {image,...rest}=item;
+            const imageUrl=await ensureCloudImageUrl(image,userUid,"planned",rest?.id||`${wk}_${meal}_${di}_${ii}`);
+            flat.push({...rest,image:imageUrl||"",dayIndex:di});
+          }
+        }
         result[wk][meal]=flat;
       }
     }
     return result;
   }
-  const safePool=(pool||[]).map(item=>{const{image,...rest}=item||{};return rest;});
-  return JSON.parse(JSON.stringify({allData:stripImages(allData),pool:safePool,settings}));
+  const userUid=cloudCurrentUser?.uid||"";
+  const safeAllData=await withUploadedImages(allData,userUid);
+  const safePool=[];
+  for(let i=0;i<(pool||[]).length;i++){
+    const item=pool[i]||{};
+    const {image,...rest}=item;
+    const imageUrl=await ensureCloudImageUrl(image,userUid,"pool",rest?.id||`pool_${i}`);
+    safePool.push({...rest,image:imageUrl||""});
+  }
+  return JSON.parse(JSON.stringify({allData:safeAllData,pool:safePool,settings}));
 }
 function clearCloudErrorState(){
   const hadError=!!cloudErrorState;
@@ -1003,7 +1070,7 @@ function applyRemoteState(data){
 }
 async function pushCurrentStateToCloud(){
   if(!cloudDocRef)return;
-  const safe=sanitizeForCloud();
+  const safe=await sanitizeForCloud();
   cloudLastClientWriteAt=Date.now();
   await cloudDocRef.set({
     allData:safe.allData,
