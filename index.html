@@ -32,7 +32,7 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif
 .pool-assign-hint .btn{padding:4px 8px;font-size:11px;min-height:28px;}
 .day.today{background:#1a2332;}.day.sun .day-header{color:#f87171;}.day.sat .day-header{color:#60a5fa;}
 /* Card */
-.card{background:#1e293b;border-radius:8px;padding:7px 7px 5px;cursor:grab;position:relative;border-left:3px solid #475569;font-size:12px;transition:background .1s;user-select:none;}
+.card{background:#1e293b;border-radius:8px;padding:7px 7px 5px;cursor:grab;position:relative;border-left:3px solid #475569;font-size:12px;transition:background .1s,transform .16s ease,opacity .16s ease,background-color .1s;user-select:none;touch-action:pan-y;}
 .card:hover{background:#263348;}
 .card-img-wrap{position:relative;margin-top:6px;border-radius:6px;overflow:hidden;}
 .card-img{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:6px;display:block;}
@@ -605,6 +605,15 @@ function getSheetSnapPoints(){
   const snapF=snapLevels[Math.min(level+2,10)];
   return{level,snapC,snapE,snapF,snapLevels};
 }
+function removePlannedCard(target){
+  const day=allData[target.wk]?.[target.meal]?.[target.di];
+  if(!day||target.ii<0||target.ii>=day.length)return;
+  pushUndo();
+  day.splice(target.ii,1);
+  save();
+  render();
+  showToast("予定を削除しました");
+}
 function render(){
   const cal=document.getElementById("cal");cal.innerHTML="";
   document.body.dataset.cardDensity=settings.cardDensity||"standard";
@@ -729,6 +738,69 @@ function mkCardEl(item,target){
   }
 
   c.addEventListener("dragstart",e=>e.dataTransfer.setData("text",JSON.stringify(target)));
+
+  if(target.wk&&target.meal!==undefined){
+    let startX=0,startY=0,swiping=false,hLocked=false,pointerId=null;
+    const maxSwipe=120,deleteThreshold=90;
+
+    const mixBg=dx=>{
+      const p=Math.min(1,Math.abs(dx)/deleteThreshold);
+      const r=Math.round(30+(239-30)*p);
+      const g=Math.round(41+(68-41)*p);
+      const b=Math.round(59+(68-59)*p);
+      c.style.backgroundColor=`rgb(${r},${g},${b})`;
+    };
+    const reset=()=>{
+      c.style.transform="translateX(0)";
+      c.style.backgroundColor="";
+      c.style.opacity="1";
+    };
+
+    c.addEventListener("pointerdown",e=>{
+      if(e.pointerType==="mouse")return;
+      if(e.target.closest(".card-edit-btn"))return;
+      startX=e.clientX;startY=e.clientY;
+      swiping=true;hLocked=false;pointerId=e.pointerId;
+      c.setPointerCapture?.(pointerId);
+    });
+
+    c.addEventListener("pointermove",e=>{
+      if(!swiping||e.pointerId!==pointerId)return;
+      const dx=e.clientX-startX;
+      const dy=e.clientY-startY;
+
+      if(!hLocked){
+        if(Math.abs(dx)<=8&&Math.abs(dy)<=8)return;
+        if(Math.abs(dx)<=Math.abs(dy)){swiping=false;reset();return;}
+        hLocked=true;
+      }
+
+      if(dx>=0){reset();return;}
+      const clamped=Math.max(-maxSwipe,dx);
+      e.preventDefault();
+      c.style.transform=`translateX(${clamped}px)`;
+      mixBg(clamped);
+    });
+
+    const finish=e=>{
+      if(!swiping||e.pointerId!==pointerId)return;
+      const dx=e.clientX-startX;
+      swiping=false;
+      c.releasePointerCapture?.(pointerId);
+
+      if(dx<=-deleteThreshold){
+        c.style.transform="translateX(-120%)";
+        c.style.opacity="0";
+        setTimeout(()=>removePlannedCard(target),140);
+      }else{
+        reset();
+      }
+    };
+
+    c.addEventListener("pointerup",finish);
+    c.addEventListener("pointercancel",finish);
+  }
+
   return c;
 }
 
