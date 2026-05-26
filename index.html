@@ -897,7 +897,15 @@ function sanitizeForCloud(){
     for(const wk in data){
       result[wk]={};
       for(const meal in data[wk]){
-        result[wk][meal]=(data[wk][meal]||[]).map(day=>(day||[]).map(item=>{const{image,...rest}=item||{};return rest;}));
+        const days=Array.isArray(data[wk][meal])?data[wk][meal]:[];
+        const flat=[];
+        days.forEach((day,di)=>{
+          (day||[]).forEach(item=>{
+            const {image,...rest}=item||{};
+            flat.push({...rest,dayIndex:di});
+          });
+        });
+        result[wk][meal]=flat;
       }
     }
     return result;
@@ -944,16 +952,47 @@ function handleCloudError(err,source){
   }
 }
 function applyRemoteState(data){
-  const remoteAllData=(data&&data.allData)||{};
-  // ローカルの画像データをリモートデータにマージ（画像はローカル保持）
-  for(const wk in remoteAllData){
-    for(const meal in remoteAllData[wk]){
-      remoteAllData[wk][meal]=(remoteAllData[wk][meal]||[]).map((day,di)=>(day||[]).map((remoteItem,ii)=>{
-        const localImg=allData[wk]?.[meal]?.[di]?.[ii]?.image||"";
-        return{...remoteItem,image:remoteItem?.image||localImg};
+  const sourceAllData=(data&&data.allData)||{};
+  const remoteAllData={};
+
+  const localImageById={};
+  for(const wk in allData){
+    for(const meal in (allData[wk]||{})){
+      const days=Array.isArray(allData[wk][meal])?allData[wk][meal]:[];
+      days.forEach(day=>(day||[]).forEach(item=>{
+        if(item?.id&&item?.image)localImageById[item.id]=item.image;
       }));
     }
   }
+
+  for(const wk in sourceAllData){
+    remoteAllData[wk]={};
+    for(const meal in (sourceAllData[wk]||{})){
+      const raw=sourceAllData[wk][meal];
+      // Legacy shape fallback: Array<Array<Item>>
+      if(Array.isArray(raw)&&raw.some(Array.isArray)){
+        remoteAllData[wk][meal]=raw.map(day=>(day||[]).map(remoteItem=>{
+          const localImg=(remoteItem?.id&&localImageById[remoteItem.id])||"";
+          return {...remoteItem,image:remoteItem?.image||localImg};
+        }));
+        continue;
+      }
+
+      // Cloud shape: Array<Item & {dayIndex:number}>
+      const days=Array.from({length:7},()=>[]);
+      if(Array.isArray(raw)){
+        raw.forEach(remoteItem=>{
+          const parsedDay=parseInt(remoteItem?.dayIndex,10);
+          const di=Number.isFinite(parsedDay)?Math.max(0,Math.min(6,parsedDay)):0;
+          const {dayIndex,image,...rest}=remoteItem||{};
+          const localImg=(rest?.id&&localImageById[rest.id])||"";
+          days[di].push({...rest,image:image||localImg});
+        });
+      }
+      remoteAllData[wk][meal]=days;
+    }
+  }
+
   const remotePool=Array.isArray(data?.pool)?data.pool:[];
   const mergedPool=remotePool.map((item,i)=>({...item,image:item?.image||pool[i]?.image||""}));
   allData=remoteAllData;
