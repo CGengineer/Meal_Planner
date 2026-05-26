@@ -38,6 +38,9 @@ body.no-x-nav{overscroll-behavior-x:none;touch-action:pan-y;}
 /* Card */
 .card{background:#1e293b;border-radius:8px;padding:7px 7px 5px;cursor:grab;position:relative;border-left:3px solid #475569;font-size:12px;transition:background .1s,transform .16s ease,opacity .16s ease,background-color .1s;user-select:none;touch-action:pan-y;min-height:88px;}
 .card:hover{background:#263348;}
+.card-drag-handle{display:inline-flex;align-items:center;gap:4px;font-size:10px;line-height:1;padding:3px 7px;border-radius:999px;background:#0f172a;border:1px solid #334155;color:#94a3b8;cursor:grab;user-select:none;touch-action:none;margin-bottom:4px;max-width:fit-content;}
+.card-drag-handle:active{cursor:grabbing;}
+.pool-card .card-drag-handle{background:#1e293b;border-color:#475569;color:#cbd5e1;}
 .card-img-wrap{position:relative;margin-top:6px;border-radius:6px;overflow:hidden;}
 .card-img{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:6px;display:block;}
 .card.has-image,.pool-card.has-image{display:flex;align-items:flex-start;gap:8px;}
@@ -87,9 +90,10 @@ body[data-card-density="detailed"] .card.has-image .card-img{width:80px;height:8
 .pool-empty{grid-column:1/-1;text-align:center;color:#475569;font-size:12px;padding:20px 0;}
 .pool-card{background:#334155;border-radius:8px;padding:7px 26px 6px 9px;cursor:grab;position:relative;font-size:12px;border-left:3px solid #475569;user-select:none;min-height:88px;}
 .pool-card:hover{background:#3d4f65;}.pool-card .card-edit-btn{opacity:0;transition:opacity .15s;}.pool-card:hover .card-edit-btn{opacity:1;}
+.card:not(.is-draggable),.pool-card:not(.is-draggable){cursor:default;}
 .card,.pool-card,.card-text{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;}
 body.touch-dnd-active,body.touch-dnd-active *{-webkit-user-select:none!important;user-select:none!important;-webkit-touch-callout:none!important;}
-.touch-drag-ghost{position:fixed;left:0;top:0;pointer-events:none;z-index:820;opacity:.88;filter:drop-shadow(0 14px 24px rgba(2,6,23,.45));transform:translate3d(-9999px,-9999px,0) scale(1.02);}
+.touch-drag-ghost{position:fixed;left:0;top:0;pointer-events:none;z-index:820;opacity:.88;filter:drop-shadow(0 14px 24px rgba(2,6,23,.45));transform:translate3d(-9999px,-9999px,0) scale(.8);transform-origin:top left;}
 /* Trash */
 .trash-bin{position:fixed;bottom:90px;right:12px;width:40px;height:40px;background:#334155;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;z-index:200;border:2px solid #475569;transition:background .15s,transform .15s,border-color .15s;}.trash-bin.drag-over{background:#ef4444;border-color:#f87171;transform:scale(1.2);}
 .trash-bin.drag-over{background:#ef4444;border-color:#f87171;transform:scale(1.2);}
@@ -639,7 +643,7 @@ function startTouchDrag(sourceEl,payload,clientX,clientY){
   const ghost=sourceEl.cloneNode(true);
   ghost.classList.add("touch-drag-ghost");
   ghost.querySelectorAll(".card-edit-btn").forEach(btn=>btn.remove());
-  ghost.style.width=Math.max(120,Math.round(rect.width))+"px";
+  ghost.style.width=Math.max(72,Math.round(rect.width))+"px";
   document.body.appendChild(ghost);
   sourceEl.style.opacity=".45";
   document.body.classList.add("touch-dnd-active");
@@ -656,7 +660,7 @@ function startTouchDrag(sourceEl,payload,clientX,clientY){
 }
 function updateTouchDrag(clientX,clientY){
   if(!touchDragState)return;
-  touchDragState.ghostEl.style.transform=`translate3d(${Math.round(clientX-touchDragState.offsetX)}px,${Math.round(clientY-touchDragState.offsetY)}px,0)`;
+  touchDragState.ghostEl.style.transform=`translate3d(${Math.round(clientX-touchDragState.offsetX)}px,${Math.round(clientY-touchDragState.offsetY)}px,0) scale(.8)`;
   touchDragState.hoverCol=updateTouchDropHighlight(clientX,clientY);
 }
 function endTouchDrag(clientX,clientY){
@@ -746,8 +750,9 @@ function openAssignmentMode(dayIndex){
   const sheet=document.getElementById("bottomSheet");
   if(sheet){
     const {snapE}=getSheetSnapPoints();
-    sheet.style.height=snapE+"px";
-    settings.sheetHeight=snapE;
+    const assignmentHeight=Math.min(snapE,getHalfSheetCapHeight());
+    sheet.style.height=assignmentHeight+"px";
+    settings.sheetHeight=assignmentHeight;
     save();
   }
   showToast(`${assignmentDateLabel(dayIndex)} に割り当て: カードをタップ`);
@@ -1091,6 +1096,9 @@ function levelToSheetHeight(level){
   const cap=Math.round(minCap+((maxCap-minCap)*lv/10));
   return Math.min(Math.round(window.innerHeight*ratio),cap);
 }
+function getHalfSheetCapHeight(){
+  return Math.max(220,Math.round(window.innerHeight*0.5));
+}
 function getSheetSnapPoints(){
   const level=clampSheetLevel(settings.sheetLevel);
   const snapLevels=Array.from({length:11},(_,lv)=>levelToSheetHeight(lv));
@@ -1098,6 +1106,14 @@ function getSheetSnapPoints(){
   const snapE=snapLevels[level];
   const snapF=snapLevels[Math.min(level+2,10)];
   return{level,snapC,snapE,snapF,snapLevels};
+}
+function calcDayMinHeight(itemCount){
+  const base=isTouchLikeDevice()?300:250;
+  const perCard=84;
+  const count=Math.max(0,Number(itemCount)||0);
+  const dynamic=base+(count*perCard);
+  const cap=Math.max(460,Math.round(window.innerHeight*1.25));
+  return Math.min(dynamic,cap);
 }
 function removePlannedCard(target){
   const day=allData[target.wk]?.[target.meal]?.[target.di];
@@ -1120,6 +1136,7 @@ function render(){
     const d=new Date(start);d.setDate(start.getDate()+i);
     const col=document.createElement("div");col.className="day";
     col.dataset.dayIndex=String(i);
+    col.style.minHeight=calcDayMinHeight(wd[i]?.length||0)+"px";
     if(i===0)col.classList.add("sun");if(i===6)col.classList.add("sat");if(isToday(d))col.classList.add("today");
     if(assignmentDayIndex===i)col.classList.add("assignment-target");
     col.addEventListener("dragover",e=>{
@@ -1171,13 +1188,25 @@ function render(){
   renderPool();
 }
 
+function createDragHandle(label){
+  const handle=document.createElement("div");
+  handle.className="card-drag-handle";
+  handle.innerText=label||"ドラッグ";
+  return handle;
+}
+
 function mkCardEl(item,target){
   const c=document.createElement("div");c.className="card";
-  c.style.borderLeftColor=cardBorderColor(item);c.draggable=canUseDragDrop()&&assignmentDayIndex==null;
+  c.style.borderLeftColor=cardBorderColor(item);
+  const isDraggable=canUseDragDrop()&&assignmentDayIndex==null;
+  c.draggable=false;
+  c.classList.toggle("is-draggable",isDraggable);
   const hasImage=settings.showPlannedCardImage&&item.image;
   if(hasImage)c.classList.add("has-image");
 
   const main=document.createElement("div");main.className="card-main";
+  const dragHandle=createDragHandle("⇅ ドラッグ");
+  main.appendChild(dragHandle);
 
   const textEl=document.createElement("div");textEl.className="card-text";textEl.innerText=item.text;main.appendChild(textEl);
 
@@ -1238,10 +1267,11 @@ function mkCardEl(item,target){
     c.appendChild(main);
   }
 
-  if(c.draggable){
-    c.addEventListener("dragstart",e=>e.dataTransfer.setData("text",JSON.stringify(target)));
+  if(isDraggable){
+    dragHandle.draggable=true;
+    dragHandle.addEventListener("dragstart",e=>e.dataTransfer.setData("text",JSON.stringify(target)));
   }
-  bindLongPressTouchDrag(c,()=>({...target}));
+  bindLongPressTouchDrag(dragHandle,()=>({...target}));
 
   if(target.wk&&target.meal!==undefined){
     let startX=0,startY=0,swiping=false,hLocked=false,pointerId=null;
@@ -1262,7 +1292,7 @@ function mkCardEl(item,target){
 
     c.addEventListener("pointerdown",e=>{
       if(e.pointerType==="mouse")return;
-      if(e.target.closest(".card-edit-btn"))return;
+      if(e.target.closest(".card-edit-btn,.card-drag-handle"))return;
       startX=e.clientX;startY=e.clientY;
       swiping=true;hLocked=false;pointerId=e.pointerId;
       c.setPointerCapture?.(pointerId);
@@ -1837,9 +1867,13 @@ function renderPool(){
     const c=document.createElement("div");
     c.className="pool-card"+(hasImage?" has-image":"");
     c.style.borderLeftColor=cardBorderColor(item);
-    c.draggable=canUseDragDrop()&&assignmentDayIndex==null;
+    const isDraggable=canUseDragDrop()&&assignmentDayIndex==null;
+    c.draggable=false;
+    c.classList.toggle("is-draggable",isDraggable);
 
     const main=document.createElement("div");main.className="card-main";
+    const dragHandle=createDragHandle("⇅ ドラッグ");
+    main.appendChild(dragHandle);
     const span=document.createElement("div");span.className="card-text";span.innerText=item.text;main.appendChild(span);
     if(settings.showStars&&item.favorite>0){
       const s=document.createElement("span");s.style.cssText="font-size:9px;color:#f59e0b;display:block;margin-top:2px;";
@@ -1884,10 +1918,11 @@ function renderPool(){
     if(assignmentDayIndex==null){
       const eb=document.createElement("button");eb.className="card-edit-btn";eb.innerText="✏️";
       eb.onclick=e=>{e.stopPropagation();openEdit({type:"pool",pidx});};c.appendChild(eb);
-      if(c.draggable){
-        c.addEventListener("dragstart",e=>e.dataTransfer.setData("text",JSON.stringify({fromPool:true,pidx})));
+      if(isDraggable){
+        dragHandle.draggable=true;
+        dragHandle.addEventListener("dragstart",e=>e.dataTransfer.setData("text",JSON.stringify({fromPool:true,pidx})));
       }
-      bindLongPressTouchDrag(c,()=>({fromPool:true,pidx}));
+      bindLongPressTouchDrag(dragHandle,()=>({fromPool:true,pidx}));
     }else{
       c.style.cursor="pointer";
       c.addEventListener("click",e=>{e.preventDefault();assignPoolItemToSelectedDay(pidx);});
