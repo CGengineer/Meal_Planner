@@ -11,6 +11,7 @@
 *{box-sizing:border-box;}
 html,body{height:100%;}
 body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#0f172a;color:#f1f5f9;height:100svh;min-height:100svh;overflow:hidden;}
+body.no-x-nav{overscroll-behavior-x:none;touch-action:pan-y;}
 .header{display:flex;justify-content:space-between;align-items:center;padding:8px 14px;gap:8px;flex-wrap:wrap;border-bottom:1px solid #334155;background:#0f172a;position:sticky;top:0;z-index:100;}
 .title{font-size:16px;font-weight:bold;white-space:nowrap;}
 .actions{display:flex;gap:5px;align-items:center;flex-wrap:nowrap;min-width:0;}
@@ -62,6 +63,7 @@ body[data-card-density="detailed"] .card.has-image .card-img{width:80px;height:8
 /* Bottom Sheet */
 .bottom-sheet{position:fixed;bottom:0;left:0;right:0;background:#1e293b;border-radius:16px 16px 0 0;border-top:1px solid #334155;z-index:150;height:80px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 -4px 20px rgba(0,0,0,.45);}
 .bs-anim{transition:height .3s cubic-bezier(.32,.72,0,1);}
+.bottom-sheet.fully-hidden{transform:translateY(calc(100% + env(safe-area-inset-bottom)));pointer-events:none;transition:transform .28s cubic-bezier(.32,.72,0,1);}
 .sheet-handle{display:flex;justify-content:center;align-items:center;padding:12px 0 7px;flex-shrink:0;touch-action:none;cursor:grab;user-select:none;}
 .sheet-handle:active{cursor:grabbing;}
 .handle-bar{width:52px;height:6px;background:#475569;border-radius:3px;pointer-events:none;}
@@ -156,6 +158,8 @@ body[data-card-density="detailed"] .card.has-image .card-img{width:80px;height:8
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 .mobile-nav{display:none;position:fixed;left:0;right:0;bottom:0;background:#111b2f;border-top:1px solid #334155;z-index:350;padding:6px 6px calc(6px + env(safe-area-inset-bottom));grid-template-columns:repeat(4,1fr);gap:6px;}
 .mobile-nav button{background:#1e293b;border:1px solid #334155;color:#e2e8f0;border-radius:8px;padding:8px 5px;font-size:12px;cursor:pointer;font-family:inherit;min-height:38px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.1;}
+.sheet-restore-btn{display:none;position:fixed;right:max(12px,env(safe-area-inset-right));bottom:calc(76px + env(safe-area-inset-bottom));z-index:360;background:#1d4ed8;color:#f8fafc;border:none;border-radius:999px;min-width:44px;min-height:44px;padding:0 14px;font-size:16px;cursor:pointer;box-shadow:0 10px 28px rgba(15,23,42,.45);}
+.sheet-restore-btn.show{display:inline-flex;align-items:center;justify-content:center;}
 body.ui-focus .header .title{opacity:.8;}
 body.ui-focus .trash-bin,body.ui-focus .header .actions .meal-select{display:none;}
 body.ui-edit #bottomSheet{min-height:100px;}
@@ -296,6 +300,7 @@ linear-gradient(125deg,#020617 0%,#0b1120 40%,#111827 100%);overflow:auto;}
   <div class="sheet-tag-filter" id="sheetTagFilter"></div>
   <div id="pool" class="pool-grid"></div>
 </div>
+<button id="sheetRestoreBtn" class="sheet-restore-btn" type="button" aria-label="検索パネルを開く">🔍</button>
 <div id="trash" class="trash-bin">🗑️</div>
 
 <!-- ===== Edit Modal ===== -->
@@ -459,7 +464,7 @@ let currentMeal="昼";
 let settings={
   showCalories:true,showStars:true,showDifficulty:true,
   showCost:true,showNutritionColor:true,showPlannedCardImage:true,currency:"円",
-  cardDensity:"standard",uiMode:"standard",sheetLevel:4,sheetScale:10,sheetHeight:null
+  cardDensity:"standard",uiMode:"standard",sheetLevel:4,sheetScale:10,sheetHeight:null,sheetHidden:false
 };
 let activeTagFilter=null;
 let activeCostFilter=null;
@@ -479,6 +484,11 @@ let cloudApplyingRemote=false;
 let cloudLastClientWriteAt=0;
 let cloudSaveTimer=null;
 let cloudHasInitialSnapshot=false;
+let cloudRetryTimer=null;
+let cloudRetryCount=0;
+let cloudErrorState=null;
+let cloudCurrentUser=null;
+let cloudLastErrorToastAt=0;
 
 // ===== ITEM FACTORY =====
 function uid(){return Math.random().toString(36).slice(2)+Date.now().toString(36);}
@@ -515,12 +525,39 @@ function assignmentDateLabel(dayIndex){
   d.setDate(start.getDate()+dayIndex);
   return `${d.getMonth()+1}/${d.getDate()}(${DAYS[d.getDay()]})`;
 }
+function isTouchLikeDevice(){
+  return window.matchMedia("(pointer: coarse)").matches||("ontouchstart" in window);
+}
+function canUseDragDrop(){
+  return !isTouchLikeDevice();
+}
+function getSheetElement(){
+  return document.getElementById("bottomSheet");
+}
+function updateSheetRestoreButton(){
+  const btn=document.getElementById("sheetRestoreBtn");
+  if(!btn)return;
+  btn.classList.toggle("show",!!settings.sheetHidden);
+}
+function setSheetHidden(hidden,saveState=true){
+  settings.sheetHidden=!!hidden;
+  const sheet=getSheetElement();
+  if(sheet){
+    sheet.classList.toggle("fully-hidden",settings.sheetHidden);
+  }
+  updateSheetRestoreButton();
+  if(saveState)save();
+}
+function ensureSheetVisible(saveState=true){
+  if(settings.sheetHidden)setSheetHidden(false,saveState);
+}
 function openAssignmentMode(dayIndex){
   if(assignmentDayIndex===dayIndex){
     exitAssignmentMode();
     return;
   }
   assignmentDayIndex=dayIndex;
+  ensureSheetVisible(false);
   const sheet=document.getElementById("bottomSheet");
   if(sheet){
     const {snapE}=getSheetSnapPoints();
@@ -561,6 +598,7 @@ function normalizeCurrentState(parsedSettings){
   settings.sheetScale=10;
   settings.sheetLevel=clampSheetLevel(settings.sheetLevel);
   settings.sheetHeight=Number.isFinite(Number(settings.sheetHeight))?Math.max(80,Math.round(Number(settings.sheetHeight))):null;
+  settings.sheetHidden=!!settings.sheetHidden;
   for(const k in allData){
     const week=allData[k];
     if(Array.isArray(week)){
@@ -616,6 +654,10 @@ function stopCloudSync(){
     clearTimeout(cloudSaveTimer);
     cloudSaveTimer=null;
   }
+  if(cloudRetryTimer){
+    clearTimeout(cloudRetryTimer);
+    cloudRetryTimer=null;
+  }
   if(cloudUnsub){
     cloudUnsub();
     cloudUnsub=null;
@@ -625,6 +667,66 @@ function stopCloudSync(){
   cloudApplyingRemote=false;
   cloudLastClientWriteAt=0;
   cloudHasInitialSnapshot=false;
+  cloudRetryCount=0;
+  cloudErrorState=null;
+  cloudCurrentUser=null;
+}
+function cloudErrorCode(err){
+  return String(err?.code||"").replace(/^firestore\//,"").toLowerCase();
+}
+function isRetryableCloudError(err){
+  const code=cloudErrorCode(err);
+  if(["unavailable","deadline-exceeded","aborted","resource-exhausted","internal","cancelled"].includes(code))return true;
+  const msg=String(err?.message||"").toLowerCase();
+  return msg.includes("network")||msg.includes("offline")||msg.includes("timeout")||msg.includes("failed to get document");
+}
+function cloudErrorMessage(err){
+  const code=cloudErrorCode(err);
+  if(code==="permission-denied")return "クラウド同期権限がありません";
+  if(code==="unauthenticated")return "ログイン状態を確認してください";
+  if(isRetryableCloudError(err))return "クラウド同期を再試行しています";
+  return "クラウド同期に失敗しました";
+}
+function sanitizeForCloud(){
+  return JSON.parse(JSON.stringify({allData,pool,settings}));
+}
+function clearCloudErrorState(){
+  const hadError=!!cloudErrorState;
+  cloudErrorState=null;
+  cloudRetryCount=0;
+  if(cloudRetryTimer){
+    clearTimeout(cloudRetryTimer);
+    cloudRetryTimer=null;
+  }
+  if(hadError)showToast("クラウド同期が復旧しました");
+}
+function scheduleCloudReconnect(reason){
+  if(!cloudCurrentUser||cloudRetryTimer)return;
+  const delay=Math.min(30000,Math.max(1000,Math.round(1200*Math.pow(1.8,cloudRetryCount))));
+  cloudRetryTimer=setTimeout(async()=>{
+    cloudRetryTimer=null;
+    if(!cloudCurrentUser)return;
+    try{
+      await startCloudSync(cloudCurrentUser,true);
+      clearCloudErrorState();
+    }catch(e){
+      handleCloudError(e,reason||"reconnect");
+    }
+  },delay);
+}
+function handleCloudError(err,source){
+  cloudErrorState={source,code:cloudErrorCode(err)||"unknown",message:String(err?.message||""),at:Date.now()};
+  const now=Date.now();
+  if(now-cloudLastErrorToastAt>4500){
+    showToast(cloudErrorMessage(err));
+    cloudLastErrorToastAt=now;
+  }
+  if(isRetryableCloudError(err)){
+    cloudRetryCount=Math.min(cloudRetryCount+1,8);
+    scheduleCloudReconnect(source);
+  }else{
+    cloudRetryCount=0;
+  }
 }
 function applyRemoteState(data){
   allData=(data&&data.allData)||{};
@@ -635,11 +737,12 @@ function applyRemoteState(data){
 }
 async function pushCurrentStateToCloud(){
   if(!cloudDocRef)return;
+  const safe=sanitizeForCloud();
   cloudLastClientWriteAt=Date.now();
   await cloudDocRef.set({
-    allData,
-    pool,
-    settings,
+    allData:safe.allData,
+    pool:safe.pool,
+    settings:safe.settings,
     clientUpdatedAt:cloudLastClientWriteAt,
     updatedAt:firebase.firestore.FieldValue.serverTimestamp()
   },{merge:true});
@@ -650,16 +753,23 @@ function scheduleCloudSave(){
   cloudSaveTimer=setTimeout(async()=>{
     try{
       await pushCurrentStateToCloud();
+      clearCloudErrorState();
     }catch(e){
       console.warn(e);
-      showToast("クラウド同期に失敗しました");
+      handleCloudError(e,"save");
     }
   },350);
 }
-async function startCloudSync(user){
+async function startCloudSync(user,keepRetryState=false){
   const db=getCloudDb();
   if(!db)return;
+  if(!keepRetryState){
+    cloudRetryCount=0;
+    cloudErrorState=null;
+  }
+  cloudCurrentUser=user;
   stopCloudSync();
+  cloudCurrentUser=user;
   cloudDocRef=db.collection("users").doc(user.uid).collection("app").doc("board");
 
   try{
@@ -671,9 +781,10 @@ async function startCloudSync(user){
     }else{
       await pushCurrentStateToCloud();
     }
+    clearCloudErrorState();
   }catch(e){
     console.warn(e);
-    showToast("クラウド初期化に失敗しました");
+    handleCloudError(e,"init");
   }
 
   cloudUnsub=cloudDocRef.onSnapshot(snap=>{
@@ -687,10 +798,11 @@ async function startCloudSync(user){
     cloudApplyingRemote=true;
     applyRemoteState(data);
     cloudApplyingRemote=false;
+    clearCloudErrorState();
     if(!isFirst)showToast("他端末の変更を同期しました");
   },e=>{
     console.warn(e);
-    showToast("クラウド監視に失敗しました");
+    handleCloudError(e,"watch");
   });
 
   cloudReady=true;
@@ -809,12 +921,40 @@ function render(){
     col.addEventListener("drop",e=>{
       col.classList.remove("drag-over");
       const raw=e.dataTransfer.getData("text");if(!raw)return;
-      const obj=JSON.parse(raw);pushUndo();
-      let item;
-      if(obj.fromPool){item={...pool[obj.pidx],id:uid()};}
-      else{const src=allData[obj.wk]?.[obj.meal];if(src&&src[obj.di])item=src[obj.di].splice(obj.ii,1)[0];}
-      if(item)wd[i].push(item);
-      save();render();
+      const obj=JSON.parse(raw);
+      const rect=col.getBoundingClientRect();
+      const shouldCopy=e.clientX>=rect.left+(rect.width/2);
+      let item=null;
+      let changed=false;
+
+      if(obj.fromPool){
+        const src=pool[obj.pidx];
+        if(src){
+          pushUndo();
+          item=shouldCopy?{...src,id:uid()}:src;
+          if(!shouldCopy)pool.splice(obj.pidx,1);
+          changed=true;
+        }
+      }else{
+        const srcDays=allData[obj.wk]?.[obj.meal];
+        const srcDay=srcDays?.[obj.di];
+        const srcItem=srcDay?.[obj.ii];
+        if(srcItem){
+          pushUndo();
+          if(shouldCopy){
+            item={...srcItem,id:uid()};
+          }else{
+            item=srcDay.splice(obj.ii,1)[0];
+          }
+          changed=true;
+        }
+      }
+
+      if(item&&changed){
+        wd[i].push(item);
+        save();render();
+        showToast(shouldCopy?"コピーしました":"移動しました");
+      }
     });
     const hdr=document.createElement("div");hdr.className="day-header";
     const text=document.createElement("span");
@@ -849,7 +989,7 @@ function render(){
 
 function mkCardEl(item,target){
   const c=document.createElement("div");c.className="card";
-  c.style.borderLeftColor=cardBorderColor(item);c.draggable=true;
+  c.style.borderLeftColor=cardBorderColor(item);c.draggable=canUseDragDrop()&&assignmentDayIndex==null;
   const hasImage=settings.showPlannedCardImage&&item.image;
   if(hasImage)c.classList.add("has-image");
 
@@ -914,7 +1054,9 @@ function mkCardEl(item,target){
     c.appendChild(main);
   }
 
-  c.addEventListener("dragstart",e=>e.dataTransfer.setData("text",JSON.stringify(target)));
+  if(c.draggable){
+    c.addEventListener("dragstart",e=>e.dataTransfer.setData("text",JSON.stringify(target)));
+  }
 
   if(target.wk&&target.meal!==undefined){
     let startX=0,startY=0,swiping=false,hLocked=false,pointerId=null;
@@ -1505,7 +1647,7 @@ function renderPool(){
   filtered.forEach(item=>{
     const pidx=pool.indexOf(item);
     const c=document.createElement("div");c.className="pool-card";
-    c.style.borderLeftColor=cardBorderColor(item);c.draggable=assignmentDayIndex==null;
+    c.style.borderLeftColor=cardBorderColor(item);c.draggable=canUseDragDrop()&&assignmentDayIndex==null;
     const span=document.createElement("div");span.className="card-text";span.innerText=item.text;c.appendChild(span);
     if(showCardField("favorite")&&settings.showStars&&item.favorite>0){
       const s=document.createElement("span");s.style.cssText="font-size:9px;color:#f59e0b;display:block;margin-top:2px;";
@@ -1525,7 +1667,9 @@ function renderPool(){
     if(assignmentDayIndex==null){
       const eb=document.createElement("button");eb.className="card-edit-btn";eb.innerText="✏️";
       eb.onclick=e=>{e.stopPropagation();openEdit({type:"pool",pidx});};c.appendChild(eb);
-      c.addEventListener("dragstart",e=>e.dataTransfer.setData("text",JSON.stringify({fromPool:true,pidx})));
+      if(c.draggable){
+        c.addEventListener("dragstart",e=>e.dataTransfer.setData("text",JSON.stringify({fromPool:true,pidx})));
+      }
     }else{
       c.style.cursor="pointer";
       c.addEventListener("click",e=>{e.preventDefault();assignPoolItemToSelectedDay(pidx);});
@@ -1554,13 +1698,16 @@ function initBottomSheet(){
   const sheet=document.getElementById("bottomSheet");
   const handle=document.getElementById("sheetHandle");
   const search=document.getElementById("poolSearch");
+  const restoreBtn=document.getElementById("sheetRestoreBtn");
   if(!sheet||!handle||!search)return;
   let drag=false,startY=0,startH=0;
+  let lastTapAt=0,lastTapX=0,lastTapY=0;
   function clampSheetHeight(h){
     const{snapLevels}=getSheetSnapPoints();
     return Math.max(snapLevels[0],Math.min(snapLevels[10],Math.round(h)));
   }
   function snapTo(h,persist){
+    ensureSheetVisible(false);
     const next=clampSheetHeight(h);
     sheet.classList.add("bs-anim");
     sheet.style.height=next+"px";
@@ -1571,6 +1718,7 @@ function initBottomSheet(){
     setTimeout(()=>sheet.classList.remove("bs-anim"),340);
   }
   function startDrag(clientY){
+    ensureSheetVisible(false);
     drag=true;startY=clientY;startH=sheet.offsetHeight;
     sheet.classList.remove("bs-anim");
   }
@@ -1589,6 +1737,16 @@ function initBottomSheet(){
     settings.sheetHeight=settledHeight;
     save();
   }
+  function toggleHiddenByDoubleTap(clientX,clientY){
+    const now=Date.now();
+    const isDouble=(now-lastTapAt)<=320&&Math.abs(clientX-lastTapX)<=24&&Math.abs(clientY-lastTapY)<=24;
+    lastTapAt=now;
+    lastTapX=clientX;
+    lastTapY=clientY;
+    if(!isDouble)return false;
+    setSheetHidden(!settings.sheetHidden);
+    return true;
+  }
 
   if("PointerEvent" in window){
     const onPointerMove=e=>moveDrag(e.clientY);
@@ -1600,6 +1758,7 @@ function initBottomSheet(){
     };
     handle.addEventListener("pointerdown",e=>{
       if(e.target.closest("input,button"))return;
+      if(toggleHiddenByDoubleTap(e.clientX,e.clientY)){e.preventDefault();return;}
       startDrag(e.clientY);
       window.addEventListener("pointermove",onPointerMove);
       window.addEventListener("pointerup",onPointerEnd);
@@ -1615,6 +1774,7 @@ function initBottomSheet(){
     };
     handle.addEventListener("mousedown",e=>{
       if(e.target.closest("input,button"))return;
+      if(toggleHiddenByDoubleTap(e.clientX,e.clientY)){e.preventDefault();return;}
       startDrag(e.clientY);
       window.addEventListener("mousemove",onMouseMove);
       window.addEventListener("mouseup",onMouseUp);
@@ -1634,6 +1794,8 @@ function initBottomSheet(){
     };
     handle.addEventListener("touchstart",e=>{
       if(e.target.closest("input,button")||!e.touches.length)return;
+      const t=e.touches[0];
+      if(toggleHiddenByDoubleTap(t.clientX,t.clientY)){e.preventDefault();return;}
       startDrag(e.touches[0].clientY);
       window.addEventListener("touchmove",onTouchMove,{passive:false});
       window.addEventListener("touchend",onTouchEnd);
@@ -1642,7 +1804,16 @@ function initBottomSheet(){
     },{passive:false});
   }
 
+  if(restoreBtn){
+    restoreBtn.addEventListener("click",()=>{
+      setSheetHidden(false);
+      const current=Number(settings.sheetHeight)||sheet.offsetHeight||levelToSheetHeight(clampSheetLevel(settings.sheetLevel));
+      sheet.style.height=clampSheetHeight(current)+"px";
+    });
+  }
+
   search.addEventListener("focus",()=>{
+    ensureSheetVisible(false);
     const focusHeight=clampSheetHeight(sheet.offsetHeight+120);
     if(focusHeight>sheet.offsetHeight+2)snapTo(focusHeight,false);
   });
@@ -1653,11 +1824,14 @@ function initBottomSheet(){
     const{snapLevels}=getSheetSnapPoints();
     sheet.style.height=snapLevels[initLevel]+"px";
   }
+  sheet.classList.toggle("fully-hidden",!!settings.sheetHidden);
+  updateSheetRestoreButton();
 }
 
 function toggleTagFilter(){
   const panel=document.getElementById("sheetTagFilter");
   const sheet=document.getElementById("bottomSheet");
+  ensureSheetVisible(false);
   const isVisible=panel.style.display==="flex";
   if(isVisible){panel.style.display="none";return;}
 
@@ -1892,6 +2066,26 @@ function initAuth(){
     if(e.key==="Enter")loginWithEmail();
   });
 }
+
+// モバイルで割り当て操作中に横スワイプによるブラウザ遷移を抑止
+(function setupMobileAssignmentGestureGuard(){
+  let startX=0,startY=0;
+  document.body.classList.add("no-x-nav");
+  document.addEventListener("touchstart",e=>{
+    if(!e.touches?.length)return;
+    const t=e.touches[0];
+    startX=t.clientX;
+    startY=t.clientY;
+  },{passive:true});
+  document.addEventListener("touchmove",e=>{
+    if(assignmentDayIndex==null)return;
+    if(!e.touches?.length)return;
+    const t=e.touches[0];
+    const dx=t.clientX-startX;
+    const dy=t.clientY-startY;
+    if(Math.abs(dx)>Math.abs(dy)&&Math.abs(dx)>14)e.preventDefault();
+  },{passive:false});
+})();
 
 // ===== INIT =====
 load();
