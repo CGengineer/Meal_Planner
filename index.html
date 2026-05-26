@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>🍱 献立ボード</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <style>
 *{box-sizing:border-box;}
 html,body{height:100%;}
@@ -156,6 +158,41 @@ body[data-card-density="detailed"] .card.has-image .card-img{width:80px;height:8
 body.ui-focus .header .title{opacity:.8;}
 body.ui-focus .trash-bin,body.ui-focus .header .actions .meal-select{display:none;}
 body.ui-edit #bottomSheet{min-height:100px;}
+
+/* Auth Screen */
+body.auth-locked .header,body.auth-locked .calendar,body.auth-locked .bottom-sheet,body.auth-locked .trash-bin,body.auth-locked .mobile-nav{pointer-events:none;filter:blur(1px) brightness(.6);}
+body.auth-busy .auth-btn{opacity:.75;cursor:wait;}
+.auth-screen{position:fixed;inset:0;z-index:900;display:flex;align-items:center;justify-content:center;padding:20px;background:
+radial-gradient(circle at 12% 20%,rgba(56,189,248,.28),transparent 45%),
+radial-gradient(circle at 85% 12%,rgba(129,140,248,.24),transparent 42%),
+radial-gradient(circle at 50% 88%,rgba(16,185,129,.18),transparent 45%),
+linear-gradient(125deg,#020617 0%,#0b1120 40%,#111827 100%);overflow:auto;}
+.auth-screen::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(148,163,184,.06) 0 1px,transparent 1px 3px);opacity:.18;pointer-events:none;}
+.auth-card{position:relative;width:min(460px,96vw);padding:28px 22px 20px;border-radius:24px;background:linear-gradient(160deg,rgba(15,23,42,.9),rgba(15,23,42,.6));border:1px solid rgba(148,163,184,.38);box-shadow:0 24px 70px rgba(2,6,23,.7),inset 0 1px 0 rgba(226,232,240,.24);backdrop-filter:blur(10px);animation:authIn .55s cubic-bezier(.2,.76,.2,1);}
+.auth-chip{display:inline-flex;align-items:center;gap:8px;background:rgba(30,41,59,.85);border:1px solid rgba(148,163,184,.35);padding:5px 11px;border-radius:999px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#93c5fd;}
+.auth-title{margin:12px 0 5px;font-size:27px;line-height:1.2;font-weight:800;letter-spacing:.03em;}
+.auth-subtitle{margin:0 0 16px;color:#cbd5e1;font-size:13px;line-height:1.6;}
+.auth-grid{display:grid;gap:10px;}
+.auth-input{width:100%;background:#020617;border:1px solid rgba(148,163,184,.4);border-radius:12px;color:#f8fafc;padding:12px 13px;font-size:15px;outline:none;font-family:inherit;transition:border-color .2s,box-shadow .2s;}
+.auth-input:focus{border-color:#38bdf8;box-shadow:0 0 0 3px rgba(56,189,248,.2);}
+.auth-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:2px;}
+.auth-btn{border:none;border-radius:12px;padding:11px 12px;font-family:inherit;font-weight:700;font-size:13px;color:#e2e8f0;background:#1e293b;cursor:pointer;min-height:44px;transition:transform .12s,background .15s,box-shadow .15s,opacity .15s;}
+.auth-btn:hover{background:#334155;}
+.auth-btn:active{transform:scale(.98);}
+.auth-btn.primary{background:linear-gradient(135deg,#0284c7,#2563eb);box-shadow:0 8px 22px rgba(37,99,235,.35);}
+.auth-btn.primary:hover{background:linear-gradient(135deg,#0ea5e9,#2563eb);}
+.auth-btn.google{background:#f8fafc;color:#0f172a;}
+.auth-btn.google:hover{background:#e2e8f0;}
+.auth-divider{display:flex;align-items:center;gap:10px;margin:12px 0 10px;color:#94a3b8;font-size:11px;}
+.auth-divider::before,.auth-divider::after{content:"";height:1px;flex:1;background:rgba(148,163,184,.35);}
+.auth-message{min-height:20px;margin:12px 0 0;font-size:12px;color:#fca5a5;}
+.auth-message.success{color:#86efac;}
+.auth-foot{margin-top:14px;display:flex;justify-content:flex-end;}
+.auth-foot .auth-btn{font-size:12px;padding:9px 12px;min-height:36px;background:#0f172a;border:1px solid rgba(148,163,184,.35);}
+@keyframes authIn{
+  from{opacity:0;transform:translateY(12px) scale(.98);}
+  to{opacity:1;transform:translateY(0) scale(1);}
+}
 @media(hover:none){.card-edit-btn{opacity:1;background:#33415599;color:#e2e8f0;}}
 @media(max-width:760px){
   .calendar{grid-template-columns:1fr;overflow-x:hidden;}
@@ -177,10 +214,38 @@ body.ui-edit #bottomSheet{min-height:100px;}
   .toast{bottom:calc(70px + env(safe-area-inset-bottom));}
   .trash-bin{bottom:calc(102px + env(safe-area-inset-bottom));right:max(12px,env(safe-area-inset-right));}
   #bottomSheet{padding-bottom:env(safe-area-inset-bottom);}
+  .auth-card{padding:24px 16px 16px;border-radius:20px;}
+  .auth-title{font-size:24px;}
 }
 </style>
 </head>
-<body>
+<body class="auth-locked">
+
+<div class="auth-screen" id="authScreen" role="dialog" aria-labelledby="authTitle" aria-modal="true">
+  <div class="auth-card">
+    <div class="auth-chip">Secure Access</div>
+    <h1 class="auth-title" id="authTitle">Meal Board Login</h1>
+    <p class="auth-subtitle">献立の管理を続けるにはログインしてください。Googleまたはメールアドレスで利用できます。</p>
+
+    <div class="auth-grid">
+      <button class="auth-btn google" id="googleLoginBtn" type="button">Googleでログイン</button>
+      <div class="auth-divider">またはメールで続行</div>
+      <input class="auth-input" id="authEmail" type="email" autocomplete="email" placeholder="メールアドレス">
+      <input class="auth-input" id="authPassword" type="password" autocomplete="current-password" placeholder="パスワード">
+    </div>
+
+    <div class="auth-row">
+      <button class="auth-btn primary" id="loginBtn" type="button">ログイン</button>
+      <button class="auth-btn" id="registerBtn" type="button">新規登録</button>
+    </div>
+
+    <p class="auth-message" id="authMessage" aria-live="polite"></p>
+
+    <div class="auth-foot">
+      <button class="auth-btn" id="guestLoginBtn" type="button">ゲストでログイン</button>
+    </div>
+  </div>
+</div>
 
 <div class="header">
   <div class="title">🍱 献立ボード</div>
@@ -1569,6 +1634,143 @@ function renderFilterPanel(){
 function moveWeek(n){baseDate=new Date(baseDate);baseDate.setDate(baseDate.getDate()+n*7);exitAssignmentMode(false);requestAnimationFrame(render);}
 function goToday(){baseDate=new Date();exitAssignmentMode(false);render();const el=document.querySelector(".day.today");if(el)el.scrollIntoView({behavior:"smooth",block:"nearest",inline:"center"});}
 
+// ===== AUTH =====
+const AUTH_REDIRECT_URL="home.html";
+let authRedirected=false;
+let authBusy=false;
+let authProvider=null;
+
+function authErrJa(code,message){
+  const map={
+    "auth/invalid-email":"メールアドレスの形式が正しくありません。",
+    "auth/user-not-found":"このメールアドレスのユーザーは見つかりません。",
+    "auth/wrong-password":"パスワードが正しくありません。",
+    "auth/invalid-credential":"メールアドレスまたはパスワードが正しくありません。",
+    "auth/email-already-in-use":"このメールアドレスは既に使用されています。",
+    "auth/weak-password":"パスワードは6文字以上で入力してください。",
+    "auth/popup-closed-by-user":"ログインポップアップが閉じられました。",
+    "auth/network-request-failed":"ネットワーク接続を確認してください。"
+  };
+  return map[code]||message||"ログインに失敗しました。時間をおいて再試行してください。";
+}
+function setAuthMessage(msg,type){
+  const el=document.getElementById("authMessage");
+  if(!el)return;
+  el.innerText=msg||"";
+  el.classList.toggle("success",type==="success");
+}
+function setAuthBusy(next){
+  authBusy=!!next;
+  document.body.classList.toggle("auth-busy",authBusy);
+  ["googleLoginBtn","loginBtn","registerBtn","guestLoginBtn"].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el)el.disabled=authBusy;
+  });
+}
+function redirectToHome(){
+  if(authRedirected)return;
+  authRedirected=true;
+  window.location.href=AUTH_REDIRECT_URL;
+}
+function currentAuthInput(){
+  const email=(document.getElementById("authEmail")?.value||"").trim();
+  const password=document.getElementById("authPassword")?.value||"";
+  return {email,password};
+}
+function guardAuthInput(){
+  const {email,password}=currentAuthInput();
+  if(!email||!password){
+    setAuthMessage("メールアドレスとパスワードを入力してください。","error");
+    return null;
+  }
+  return {email,password};
+}
+function initAuth(){
+  if(typeof firebase==="undefined"){
+    setAuthMessage("認証ライブラリの読み込みに失敗しました。再読み込みしてください。","error");
+    return;
+  }
+
+  if(!firebase.apps.length){
+    firebase.initializeApp({
+      apiKey:"AIzaSyBnWWLB176zLN1_-w-FG9FqlwqVNW97IK0",
+      authDomain:"mealplanner-169aa.firebaseapp.com",
+      projectId:"mealplanner-169aa",
+      storageBucket:"mealplanner-169aa.firebasestorage.app",
+      messagingSenderId:"560723711434",
+      appId:"1:560723711434:web:b63509eccb808abe1cab33",
+      measurementId:"G-1KWZY2JPP3"
+    });
+  }
+
+  const auth=firebase.auth();
+  authProvider=new firebase.auth.GoogleAuthProvider();
+
+  auth.onAuthStateChanged(user=>{
+    if(user){
+      setAuthMessage("ログイン成功。ホームへ移動します...","success");
+      document.body.classList.remove("auth-locked");
+      redirectToHome();
+      return;
+    }
+    setAuthBusy(false);
+    document.body.classList.add("auth-locked");
+  });
+
+  const loginWithGoogle=async()=>{
+    if(authBusy)return;
+    setAuthMessage("");
+    setAuthBusy(true);
+    try{
+      await auth.signInWithPopup(authProvider);
+    }catch(e){
+      setAuthMessage(authErrJa(e.code,e.message),"error");
+      setAuthBusy(false);
+    }
+  };
+
+  const loginWithEmail=async()=>{
+    if(authBusy)return;
+    const v=guardAuthInput();
+    if(!v)return;
+    setAuthMessage("");
+    setAuthBusy(true);
+    try{
+      await auth.signInWithEmailAndPassword(v.email,v.password);
+    }catch(e){
+      setAuthMessage(authErrJa(e.code,e.message),"error");
+      setAuthBusy(false);
+    }
+  };
+
+  const registerWithEmail=async()=>{
+    if(authBusy)return;
+    const v=guardAuthInput();
+    if(!v)return;
+    setAuthMessage("");
+    setAuthBusy(true);
+    try{
+      await auth.createUserWithEmailAndPassword(v.email,v.password);
+    }catch(e){
+      setAuthMessage(authErrJa(e.code,e.message),"error");
+      setAuthBusy(false);
+    }
+  };
+
+  document.getElementById("googleLoginBtn")?.addEventListener("click",loginWithGoogle);
+  document.getElementById("loginBtn")?.addEventListener("click",loginWithEmail);
+  document.getElementById("registerBtn")?.addEventListener("click",registerWithEmail);
+  document.getElementById("guestLoginBtn")?.addEventListener("click",()=>{
+    if(authBusy)return;
+    setAuthMessage("ゲストログインで移動します...","success");
+    redirectToHome();
+  });
+
+  document.getElementById("authPassword")?.addEventListener("keydown",e=>{
+    if(e.key==="Enter")loginWithEmail();
+  });
+}
+
 // ===== INIT =====
 load();
 applyUIMode(settings.uiMode||"standard");
@@ -1577,6 +1779,7 @@ if(!pool.length){
 }
 render();
 initBottomSheet();
+initAuth();
 </script>
 </body>
 </html>
