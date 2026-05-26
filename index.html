@@ -2573,6 +2573,13 @@ function guardAuthInput(){
   return {email,password};
 }
 function initAuth(){
+  document.getElementById("guestLoginBtn")?.addEventListener("click",()=>{
+    if(authBusy)return;
+    setAuthMessage("ゲストログインで献立ボードを表示しました（ローカル保存のみ）。","success");
+    showToast("ゲストログイン中はクラウド同期されません");
+    unlockBoard();
+  });
+
   if(typeof firebase==="undefined"){
     setAuthMessage("認証ライブラリの読み込みに失敗しました。再読み込みしてください。","error");
     return;
@@ -2663,12 +2670,6 @@ function initAuth(){
   document.getElementById("googleLoginBtn")?.addEventListener("click",loginWithGoogle);
   document.getElementById("loginBtn")?.addEventListener("click",loginWithEmail);
   document.getElementById("registerBtn")?.addEventListener("click",registerWithEmail);
-  document.getElementById("guestLoginBtn")?.addEventListener("click",()=>{
-    if(authBusy)return;
-    setAuthMessage("ゲストログインで献立ボードを表示しました（ローカル保存のみ）。","success");
-    showToast("ゲストログイン中はクラウド同期されません");
-    unlockBoard();
-  });
 
   document.getElementById("authPassword")?.addEventListener("keydown",e=>{
     if(e.key==="Enter")loginWithEmail();
