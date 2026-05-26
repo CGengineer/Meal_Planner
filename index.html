@@ -525,18 +525,51 @@ function migrateItem(it){
   if(!it) return mkItem("");
   if(typeof it==="string") return mkItem(it);
   const migrated={favorite:0,difficulty:0,calories:0,protein:0,carbs:0,fat:0,cost:0,steps:"",image:"",imageId:"",ingredientInventory:{},...it};
-  if(!migrated.imageId&&migrated.image)migrated.imageId=migrated.id||uid();
+  if(!migrated.imageId&&migrated.image)migrated.imageId=buildImageIdFromValue(migrated.image);
   return migrated;
 }
 function isValidImageValue(v){
   return typeof v==="string"&&v.trim().length>0;
+}
+function isRemoteImageUrl(v){
+  return typeof v==="string"&&/^https?:\/\//i.test(v.trim());
+}
+function fnv1aHash(str){
+  let h=0x811c9dc5;
+  for(let i=0;i<str.length;i++){
+    h^=str.charCodeAt(i);
+    h=Math.imul(h,0x01000193);
+  }
+  return (h>>>0).toString(16).padStart(8,"0");
+}
+function buildImageIdFromValue(image){
+  if(!isValidImageValue(image))return "";
+  const raw=String(image);
+  const commaIdx=raw.indexOf(",");
+  const payload=commaIdx>=0?raw.slice(commaIdx+1):raw;
+  return "img_"+fnv1aHash(payload);
+}
+function findImageIdByImageValue(image){
+  if(!isValidImageValue(image))return "";
+  for(const key in imageRegistry){
+    if(imageRegistry[key]===image)return key;
+  }
+  return "";
+}
+function resolveOrCreateImageId(image,preferredId=""){
+  const pref=String(preferredId||"").trim();
+  if(pref)return pref;
+  if(!isValidImageValue(image))return "";
+  const existed=findImageIdByImageValue(String(image));
+  if(existed)return existed;
+  return buildImageIdFromValue(String(image));
 }
 function ensureItemImageId(item){
   if(!item||typeof item!=="object")return "";
   const existing=typeof item.imageId==="string"?item.imageId.trim():"";
   if(existing)return existing;
   if(isValidImageValue(item.image)){
-    const next=String(item.id||uid());
+    const next=resolveOrCreateImageId(item.image,"");
     item.imageId=next;
     return next;
   }
@@ -954,7 +987,8 @@ function storageExtByMime(mime){
 async function ensureCloudImageUrl(image,userUid,kind,itemId){
   if(!image||!userUid)return "";
   if(!String(image).startsWith("data:image/"))return image;
-  const cacheKey=`${userUid}|${kind}|${itemId||"item"}|${image.length}|${image.slice(0,72)}`;
+  const contentHash=fnv1aHash(String(image));
+  const cacheKey=`${userUid}|${kind}|${contentHash}`;
   if(cloudImageUploadCache.has(cacheKey))return cloudImageUploadCache.get(cacheKey);
   const uploadPromise=(async()=>{
     const st=getCloudStorage();
@@ -1023,10 +1057,14 @@ function cloudErrorMessage(err){
 }
 async function sanitizeForCloud(){
   const cloudImageRegistry={...cloudKnownImageRegistry};
+  for(const id in imageRegistry){
+    const value=imageRegistry[id];
+    if(isRemoteImageUrl(value))cloudImageRegistry[id]=value;
+  }
   async function ensureImageUrlById(imageId,image,kind,fallbackId){
     const id=String(imageId||"").trim();
     if(!id)return "";
-    if(isValidImageValue(cloudImageRegistry[id]))return cloudImageRegistry[id];
+    if(isRemoteImageUrl(cloudImageRegistry[id]))return cloudImageRegistry[id];
     const source=isValidImageValue(image)?String(image):"";
     if(!source)return "";
     const imageUrl=await ensureCloudImageUrl(source,userUid,kind,id||fallbackId);
@@ -1619,7 +1657,7 @@ function handleImageUpload(ev){
       canvas.width=w;canvas.height=h;
       canvas.getContext("2d").drawImage(img,0,0,w,h);
       currentImage=canvas.toDataURL("image/jpeg",0.7);
-      if(!currentImageId)currentImageId=uid();
+      currentImageId=resolveOrCreateImageId(currentImage,"");
       const pv=document.getElementById("eImagePreview");
       pv.src=currentImage;pv.style.display="block";
       document.getElementById("eImageClear").style.display="inline-block";
@@ -1658,7 +1696,7 @@ function openEdit(target){
   (item?.ingredients||[]).forEach(v=>addIngRow(v,(item?.ingredientInventory||{})[v]===true));
   currentImageId=item?.imageId||"";
   currentImage=resolveItemImage(item)||"";
-  if(currentImage&&!currentImageId)currentImageId=item?.id||uid();
+  if(currentImage&&!currentImageId)currentImageId=resolveOrCreateImageId(currentImage,"");
   const pv=document.getElementById("eImagePreview");
   if(currentImage){pv.src=currentImage;pv.style.display="block";document.getElementById("eImageClear").style.display="inline-block";}
   else{pv.src="";pv.style.display="none";document.getElementById("eImageClear").style.display="none";}
@@ -1722,7 +1760,7 @@ function saveEdit(){
   const isPoolTarget=editTarget.type==="pool";
   let nextImageId=(currentImageId||"").trim();
   if(currentImage){
-    if(!nextImageId)nextImageId=uid();
+    nextImageId=resolveOrCreateImageId(currentImage,nextImageId);
     imageRegistry[nextImageId]=currentImage;
   }else{
     nextImageId="";
