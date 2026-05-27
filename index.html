@@ -292,8 +292,8 @@ linear-gradient(125deg,#020617 0%,#0b1120 40%,#111827 100%);overflow:auto;}
 </div>
 
 <div class="guest-banner" id="guestBanner">
-  <span>⚠️ ゲストモード：このデバイスのみ保存されます。別端末では見えません。</span>
-  <button onclick="logoutFromSettings()">ログインする</button>
+  <span>⚠️ ゲストモード：データはこのセッションのみです。ブラウザを閉じると消えます。</span>
+  <button onclick="guestGoToLogin()">ログインして保存</button>
   <button class="dismiss" onclick="document.getElementById('guestBanner').classList.remove('show')">✕</button>
 </div>
 <div class="header">
@@ -592,6 +592,8 @@ const cloudImageUploadCache=new Map();
 let activeBoardId=null;
 let activeBoardName="個人ボード";
 let joinedBoards=[];
+let isGuestMode=false;      // ゲストモード中はローカル保存・ロードしない
+let guestDataToUpload=null; // ゲスト→ログイン時に引き継ぐスナップショット
 let touchDragState=null;
 let touchDayClickSuppressUntil=0;
 const TOUCH_LONG_PRESS_MS=430;
@@ -998,6 +1000,7 @@ function normalizeCurrentState(parsedSettings){
   rebuildImageRegistry(imageRegistry);
 }
 function saveLocalOnly(){
+  if(isGuestMode)return; // ゲストモードではローカルストレージに保存しない
   try{
     localStorage.setItem("kb_v2",JSON.stringify({allData,pool,imageRegistry,dayPresets}));
     localStorage.setItem("kb_settings",JSON.stringify(settings));
@@ -3023,6 +3026,118 @@ function renderFilterPanel(){
 function moveWeek(n){baseDate=new Date(baseDate);baseDate.setDate(baseDate.getDate()+n*7);exitAssignmentMode(false);requestAnimationFrame(render);}
 function goToday(){baseDate=new Date();exitAssignmentMode(false);render();const el=document.querySelector(".day.today");if(el)el.scrollIntoView({behavior:"smooth",block:"nearest",inline:"center"});}
 
+// ===== GUEST DATA MIGRATION =====
+
+/** ゲストモード中の現在の状態をスナップショットとして保存する */
+function captureGuestDataIfNeeded(){
+  if(!isGuestMode)return;
+  guestDataToUpload={
+    allData:JSON.parse(JSON.stringify(allData)),
+    pool:JSON.parse(JSON.stringify(pool)),
+    dayPresets:JSON.parse(JSON.stringify(dayPresets)),
+    imageRegistry:JSON.parse(JSON.stringify(imageRegistry))
+  };
+}
+
+/** ゲストがデフォルト以外のデータを持っているか判定 */
+function hasGuestMeaningfulData(snap){
+  if(!snap)return false;
+  const def=new Set(["カレー","パスタ","ラーメン","ハンバーグ","サラダ","唐揚げ","肉じゃが","チャーハン","焼き魚","餃子"]);
+  const hasCustomPool=(snap.pool||[]).some(i=>!def.has(i.text)||i.calories>0||i.image||(i.ingredients||[]).length>0);
+  const hasScheduled=Object.values(snap.allData||{}).some(w=>
+    Object.values(w||{}).some(days=>(days||[]).some(d=>(d||[]).length>0))
+  );
+  return hasCustomPool||hasScheduled;
+}
+
+/**
+ * ゲスト時のデータをサーバーに引き継ぐ。
+ * - サーバーに既存データなし → ゲストデータをそのままアップロード（画像含む）
+ * - サーバーに既存データあり → 空き日枠・未登録献立だけマージしてアップロード
+ */
+async function mergeGuestDataToCloud(user,guestSnap){
+  if(!guestSnap||!cloudDocRef)return;
+  const hadData=hasGuestMeaningfulData(guestSnap);
+
+  const serverSnap=await cloudDocRef.get();
+
+  // ── サーバーにデータなし（= 新規アカウント or startCloudSync が直前にアップロード済み） ──
+  if(!serverSnap.exists){
+    // 万一 startCloudSync のアップロードが間に合わなかった場合の保険
+    allData=guestSnap.allData;
+    pool=guestSnap.pool;
+    dayPresets=guestSnap.dayPresets;
+    for(const id in (guestSnap.imageRegistry||{}))imageRegistry[id]=guestSnap.imageRegistry[id];
+    normalizeCurrentState(null);
+    rebuildImageRegistry(imageRegistry);
+    render();
+    await pushCurrentStateToCloud(); // 画像(dataURL)もここで Storage にアップロードされる
+    if(hadData)showToast("ゲスト時のデータをアカウントに引き継ぎました ✓");
+    return;
+  }
+
+  const serverData=serverSnap.data()||{};
+
+  // startCloudSync がゲストデータを既にアップロード済みかチェック
+  const serverClientAt=Number(serverData.clientUpdatedAt)||0;
+  if(serverClientAt>0&&serverClientAt===cloudLastClientWriteAt){
+    if(hadData)showToast("ゲスト時のデータをアカウントに引き継ぎました ✓");
+    return;
+  }
+
+  // ── 既存アカウントとのマージ ──
+  // まずサーバーデータを適用（ベース）
+  cloudApplyingRemote=true;
+  applyRemoteState(serverData);
+  cloudApplyingRemote=false;
+
+  let mergedPool=0,mergedDays=0;
+
+  // 献立プール: サーバーに同名がないアイテムだけ追加
+  const serverTexts=new Set(pool.map(i=>(i.text||"").trim()));
+  const newItems=(guestSnap.pool||[]).filter(i=>i.text&&!serverTexts.has(i.text.trim()));
+  if(newItems.length>0){
+    pool=[...pool,...newItems.map(i=>({...i,id:uid()}))];
+    mergedPool=newItems.length;
+  }
+
+  // カレンダー: サーバー側が空の日枠だけゲストデータで埋める
+  for(const wk in (guestSnap.allData||{})){
+    if(!allData[wk])allData[wk]={};
+    MEALS.forEach(meal=>{
+      if(!allData[wk][meal])allData[wk][meal]=Array.from({length:7},()=>[]);
+      for(let i=0;i<7;i++){
+        const gd=(guestSnap.allData[wk]?.[meal]?.[i])||[];
+        const sd=allData[wk][meal][i]||[];
+        if(sd.length===0&&gd.length>0){allData[wk][meal][i]=[...gd];mergedDays++;}
+      }
+    });
+  }
+
+  // 画像レジストリをマージ（dataURLがあれば Storage にアップロードされる）
+  for(const id in (guestSnap.imageRegistry||{})){
+    if(!imageRegistry[id])imageRegistry[id]=guestSnap.imageRegistry[id];
+  }
+  rebuildImageRegistry(imageRegistry);
+
+  if(mergedPool>0||mergedDays>0){
+    render();
+    await pushCurrentStateToCloud();
+    showToast(`ゲスト時のデータを引き継ぎました（献立${mergedPool}件）✓`);
+  }else if(hadData){
+    showToast("サーバーのデータを使用中（追加データなし）");
+  }
+}
+
+/** ゲストモードのまま認証画面に戻る（セッションデータは保持） */
+function guestGoToLogin(){
+  boardUnlocked=false;
+  document.body.classList.add("auth-locked");
+  const authScreen=document.getElementById("authScreen");
+  if(authScreen)authScreen.classList.remove("hidden");
+  setAuthMessage("ログインするとゲスト時のデータをアカウントに保存できます。","success");
+}
+
 // ===== AUTH =====
 let authBusy=false;
 let authProvider=null;
@@ -3079,8 +3194,14 @@ function guardAuthInput(){
 function initAuth(){
   document.getElementById("guestLoginBtn")?.addEventListener("click",()=>{
     if(authBusy)return;
-    setAuthMessage("ゲストログインで献立ボードを表示しました（ローカル保存のみ）。","success");
-    showToast("ゲストログイン中はクラウド同期されません");
+    // ゲストモード開始: ローカルデータを使わず完全新規スタート
+    isGuestMode=true;
+    guestDataToUpload=null;
+    allData={};pool=[];dayPresets=[];imageRegistry={};
+    pool=["カレー","パスタ","ラーメン","ハンバーグ","サラダ","唐揚げ","肉じゃが","チャーハン","焼き魚","餃子"].map(t=>mkItem(t));
+    render();
+    setAuthMessage("ゲストモードで開始しました。ログインするとデータを保存できます。","success");
+    showToast("ゲストモード: ブラウザを閉じるとデータは消えます");
     document.getElementById("guestBanner")?.classList.add("show");
     unlockBoard();
   });
@@ -3110,12 +3231,28 @@ function initAuth(){
       setAuthMessage("ログイン成功。クラウド同期を開始しています...","success");
       try{
         const syncReady=await startCloudSync(user);
+        // ゲストモードを解除（ここから先はサーバーデータを使う）
+        isGuestMode=false;
+        // ゲスト時のデータをサーバーに引き継ぐ
+        if(guestDataToUpload){
+          try{
+            setAuthMessage("ゲスト時のデータを引き継ぎ中...","success");
+            await mergeGuestDataToCloud(user,guestDataToUpload);
+          }catch(mergeErr){
+            console.warn("Guest merge error:",mergeErr);
+            showToast("ゲストデータの引き継ぎに失敗しました");
+          }finally{
+            guestDataToUpload=null;
+          }
+        }
         if(syncReady){
           setAuthMessage("ログイン成功。クラウド同期が有効です。","success");
         }else{
           setAuthMessage("ログイン成功。クラウド同期を開始できなかったため、この端末の保存のみで続行します。","error");
         }
       }catch(e){
+        guestDataToUpload=null;
+        isGuestMode=false;
         console.warn(e);
         showToast("クラウド同期を開始できませんでした");
         setAuthMessage("ログイン成功。クラウド同期を開始できなかったため、この端末の保存のみで続行します。","error");
@@ -3138,6 +3275,8 @@ function initAuth(){
       return;
     }
     stopCloudSync();
+    isGuestMode=false;
+    guestDataToUpload=null;
     boardUnlocked=false;
     setAuthBusy(false);
     document.body.classList.add("auth-locked");
@@ -3148,11 +3287,13 @@ function initAuth(){
 
   const loginWithGoogle=async()=>{
     if(authBusy)return;
+    captureGuestDataIfNeeded(); // ゲストデータをスナップショット保存
     setAuthMessage("");
     setAuthBusy(true);
     try{
       await auth.signInWithPopup(authProvider);
     }catch(e){
+      guestDataToUpload=null; // 失敗時はスナップショットを破棄
       setAuthMessage(authErrJa(e.code,e.message),"error");
       setAuthBusy(false);
     }
@@ -3162,11 +3303,13 @@ function initAuth(){
     if(authBusy)return;
     const v=guardAuthInput();
     if(!v)return;
+    captureGuestDataIfNeeded(); // ゲストデータをスナップショット保存
     setAuthMessage("");
     setAuthBusy(true);
     try{
       await auth.signInWithEmailAndPassword(v.email,v.password);
     }catch(e){
+      guestDataToUpload=null; // 失敗時はスナップショットを破棄
       setAuthMessage(authErrJa(e.code,e.message),"error");
       setAuthBusy(false);
     }
@@ -3176,11 +3319,13 @@ function initAuth(){
     if(authBusy)return;
     const v=guardAuthInput();
     if(!v)return;
+    captureGuestDataIfNeeded(); // ゲストデータをスナップショット保存
     setAuthMessage("");
     setAuthBusy(true);
     try{
       await auth.createUserWithEmailAndPassword(v.email,v.password);
     }catch(e){
+      guestDataToUpload=null; // 失敗時はスナップショットを破棄
       setAuthMessage(authErrJa(e.code,e.message),"error");
       setAuthBusy(false);
     }
