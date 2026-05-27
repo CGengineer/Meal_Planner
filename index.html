@@ -317,6 +317,7 @@ linear-gradient(125deg,#020617 0%,#0b1120 40%,#111827 100%);overflow:auto;}
       <div class="more-panel" id="morePanel">
         <button class="more-item" onclick="autoSuggest();closeMoreMenu();">🎲 おまかせ</button>
         <button class="more-item" onclick="cycleUIMode();closeMoreMenu();">👁 表示モード切替</button>
+        <button class="more-item" onclick="showBoardManager();closeMoreMenu();">👥 共有ボード管理</button>
       </div>
     </div>
   </div>
@@ -1429,10 +1430,22 @@ function updateBoardBadge(){
   const badge=document.getElementById("boardBadge");
   if(!badge)return;
   if(activeBoardId){
-    badge.innerText=activeBoardName+" ▾";
+    badge.innerText="📋 "+activeBoardName+" ▾";
     badge.style.display="inline-flex";
+    badge.style.background="";
+    badge.style.borderColor="";
+    badge.style.color="";
+  }else if(cloudCurrentUser){
+    badge.innerText="👥 共有";
+    badge.style.display="inline-flex";
+    badge.style.background="#1e293b";
+    badge.style.borderColor="#334155";
+    badge.style.color="#64748b";
   }else{
     badge.style.display="none";
+    badge.style.background="";
+    badge.style.borderColor="";
+    badge.style.color="";
   }
 }
 async function switchToBoard(boardId,name){
@@ -1550,6 +1563,9 @@ function showBoardManager(){
   // 新規作成
   const createSec=document.createElement("div");createSec.className="msec";
   const createTitle=document.createElement("div");createTitle.className="msec-title";createTitle.innerText="新しい共有ボードを作成";createSec.appendChild(createTitle);
+  const createHint=document.createElement("p");createHint.className="msec-hint";
+  createHint.innerText="ボードを作成してコードやリンクを家族・友人に共有すると、リアルタイムで献立を一緒に管理できます。";
+  createSec.appendChild(createHint);
   const createRow=document.createElement("div");createRow.style.cssText="display:flex;gap:6px;";
   const nameInput=document.createElement("input");nameInput.className="form-input";nameInput.placeholder="ボード名（例: 家族の献立）";nameInput.style.fontSize="14px";
   const createBtn=document.createElement("button");createBtn.className="btn primary";createBtn.style.cssText="white-space:nowrap;";createBtn.innerText="作成";
@@ -1564,6 +1580,9 @@ function showBoardManager(){
   // 招待コードで参加
   const joinSec=document.createElement("div");joinSec.className="msec";
   const joinTitle=document.createElement("div");joinTitle.className="msec-title";joinTitle.innerText="招待コードで参加";joinSec.appendChild(joinTitle);
+  const joinHint=document.createElement("p");joinHint.className="msec-hint";
+  joinHint.innerText="共有リンクを開くと自動参加できます。リンクが使えない場合は8文字のコードを直接入力してください。";
+  joinSec.appendChild(joinHint);
   const joinRow=document.createElement("div");joinRow.style.cssText="display:flex;gap:6px;";
   const codeInput=document.createElement("input");codeInput.className="form-input";codeInput.placeholder="8文字のコードを入力";codeInput.style.cssText="font-size:14px;letter-spacing:.08em;";
   const joinBtn=document.createElement("button");joinBtn.className="btn primary";joinBtn.style.cssText="white-space:nowrap;";joinBtn.innerText="参加";
@@ -2500,6 +2519,21 @@ function showSettings(){
   goalWrap.appendChild(goalI);goalWrap.appendChild(goalUnit);
   goalRow.appendChild(goalL);goalRow.appendChild(goalWrap);c.appendChild(goalRow);
 
+  // 共有ボード管理セクション（ログイン済みの場合のみ）
+  if(cloudCurrentUser){
+    const brdSec=document.createElement("div");brdSec.className="msec";
+    const brdTitle=document.createElement("div");brdTitle.className="msec-title";brdTitle.innerText="共有ボード";brdSec.appendChild(brdTitle);
+    const brdRow=document.createElement("div");brdRow.className="setting-row";
+    const brdL=document.createElement("span");brdL.style.fontSize="13px";
+    brdL.innerText=activeBoardId?"現在: "+activeBoardName:"個人ボードを使用中";
+    const brdBtn=document.createElement("button");brdBtn.className="btn primary";
+    brdBtn.style.cssText="padding:4px 10px;font-size:12px;";
+    brdBtn.innerText="ボード管理";
+    brdBtn.onclick=()=>{closeOverlay("settingsOverlay");showBoardManager();};
+    brdRow.appendChild(brdL);brdRow.appendChild(brdBtn);brdSec.appendChild(brdRow);
+    c.appendChild(brdSec);
+  }
+
   const logoutWrap=document.createElement("div");logoutWrap.className="setting-logout-wrap";
   const logoutBtn=document.createElement("button");
   logoutBtn.className="btn setting-logout-btn";
@@ -2534,6 +2568,7 @@ async function logoutFromSettings(){
   document.body.classList.add("auth-locked");
   const authScreen=document.getElementById("authScreen");
   if(authScreen)authScreen.classList.remove("hidden");
+  updateBoardBadge();
   setAuthMessage("ログアウトしました。","success");
   showToast("ログアウトしました");
 }
@@ -3099,6 +3134,7 @@ function initAuth(){
           }
         }
       }catch(e){console.warn(e);}
+      updateBoardBadge();
       return;
     }
     stopCloudSync();
@@ -3107,6 +3143,7 @@ function initAuth(){
     document.body.classList.add("auth-locked");
     const authScreen=document.getElementById("authScreen");
     if(authScreen)authScreen.classList.remove("hidden");
+    updateBoardBadge();
   });
 
   const loginWithGoogle=async()=>{
