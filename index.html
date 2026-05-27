@@ -543,6 +543,39 @@ body[data-theme="pink"] .cal-progress-bar-wrap{background:#fce7f3;}
 body[data-theme="pink"] .guest-banner{background:#fce7f3;border-color:#f9a8d4;color:#831843;}
 body[data-theme="pink"] .guest-banner button{background:#db2777;}
 body[data-theme="pink"] .guest-banner .dismiss{color:#f9a8d4;}
+/* ===== MONTH VIEW ===== */
+.calendar.month-view{display:block;height:calc(100svh - 140px);overflow-y:auto;overflow-x:hidden;}
+.month-weekday-row{display:grid;grid-template-columns:repeat(7,1fr);border-bottom:1px solid #334155;background:#0f172a;position:sticky;top:0;z-index:10;}
+.month-weekday-cell{font-size:9px;text-align:center;padding:4px 2px;font-weight:bold;color:#64748b;letter-spacing:.3px;}
+.month-weekday-cell.sun{color:#f87171;}.month-weekday-cell.sat{color:#60a5fa;}
+.month-week-row{display:grid;grid-template-columns:repeat(7,1fr);}
+.month-day{border-right:1px solid #334155;border-bottom:1px solid #334155;padding:3px 3px 14px;min-height:72px;cursor:pointer;transition:background .1s;position:relative;overflow:hidden;}
+.month-day:nth-child(7n){border-right:none;}.month-day:hover{background:#1e293b;}
+.month-day.today .month-day-num{background:#1d4ed8;color:#fff;border-radius:50%;width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;}
+.month-day.sun .month-day-num{color:#f87171;}.month-day.sat .month-day-num{color:#60a5fa;}
+.month-day.other-month{opacity:.3;}
+.month-day-num{font-size:11px;font-weight:bold;line-height:1.6;display:inline-block;width:18px;text-align:center;}
+.month-meal-chips{display:flex;flex-direction:column;gap:1px;margin-top:1px;}
+.month-meal-chip{font-size:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:1px 3px;border-radius:3px;line-height:1.35;}
+.month-day-cost{font-size:8px;color:#22c55e;position:absolute;bottom:2px;right:3px;font-weight:bold;}
+.month-summary-row{display:flex;align-items:center;gap:10px;padding:5px 12px;background:#0f172a;border-top:1px solid #334155;font-size:11px;color:#94a3b8;flex-wrap:wrap;}
+.month-summary-row .ms-chip{background:#1e293b;border-radius:6px;padding:3px 8px;color:#e2e8f0;font-size:11px;}
+/* ===== BUDGET BAR ===== */
+.budget-bar-wrap{display:none;padding:4px 14px 5px;background:#0f172a;border-bottom:1px solid #1e293b;gap:5px;flex-direction:column;}
+.budget-bar-wrap.show{display:flex;}
+.budget-bar-row{display:flex;align-items:center;gap:8px;}
+.budget-bar-label{font-size:9px;color:#64748b;white-space:nowrap;width:40px;flex-shrink:0;}
+.budget-bar-track{flex:1;background:#1e293b;border-radius:3px;height:6px;overflow:hidden;}
+.budget-bar-fill{height:100%;border-radius:3px;transition:width .4s;}
+.budget-bar-val{font-size:9px;white-space:nowrap;min-width:90px;text-align:right;font-weight:bold;}
+body[data-theme="light"] .month-day{border-color:#e2e8f0;}body[data-theme="light"] .month-day:hover{background:#f8fafc;}
+body[data-theme="light"] .month-weekday-row{background:#fff;border-color:#e2e8f0;}body[data-theme="light"] .month-weekday-cell{color:#94a3b8;}
+body[data-theme="light"] .month-summary-row{background:#f8fafc;border-color:#e2e8f0;color:#475569;}body[data-theme="light"] .month-summary-row .ms-chip{background:#e2e8f0;color:#0f172a;}
+body[data-theme="light"] .budget-bar-wrap{background:#fff;border-color:#e2e8f0;}body[data-theme="light"] .budget-bar-track{background:#f1f5f9;}
+body[data-theme="pink"] .month-day{border-color:#f9a8d4;}body[data-theme="pink"] .month-day:hover{background:#fff5f9;}
+body[data-theme="pink"] .month-weekday-row{background:#ffe4ef;border-color:#f9a8d4;}
+body[data-theme="pink"] .month-summary-row{background:#ffe4ef;border-color:#f9a8d4;}body[data-theme="pink"] .month-summary-row .ms-chip{background:#fce7f3;color:#831843;}
+body[data-theme="pink"] .budget-bar-wrap{background:#ffe4ef;border-color:#f9a8d4;}body[data-theme="pink"] .budget-bar-track{background:#fff0f5;}
 </style>
 </head>
 <body class="auth-locked">
@@ -603,24 +636,21 @@ body[data-theme="pink"] .guest-banner .dismiss{color:#f9a8d4;}
   <button class="bd-open-btn" id="bdOpenBtn" onclick="openBoardDrawer()" title="ボード管理">☰</button>
   <div class="title" id="headerTitle">🍱 献立ボード</div>
   <div class="actions">
-    <button class="btn" onclick="moveWeek(-1)">⬅週</button>
+    <button class="btn" id="navPrevBtn" onclick="navPrev()">⬅週</button>
     <span id="label" style="font-size:12px;white-space:nowrap;"></span>
-    <button class="btn" onclick="moveWeek(1)">週➡</button>
+    <button class="btn" id="navNextBtn" onclick="navNext()">週➡</button>
     <button class="btn" onclick="goToday()" style="background:#0f766e">📅 今日</button>
+    <button class="btn" id="viewToggleBtn" onclick="toggleCalView()" title="週/月 切替" style="padding:5px 9px;font-size:13px;">月</button>
     <select class="meal-select" id="mealSelect" onchange="changeMeal(this.value)">
       <option value="朝">🌅 朝</option>
       <option value="昼" selected>☀️ 昼</option>
       <option value="夜">🌙 夜</option>
       <option value="全">📋 全食</option>
     </select>
-    <div class="more-menu">
-      <button class="btn" id="moreBtn" onclick="toggleMoreMenu(event)">⋯</button>
-      <div class="more-panel" id="morePanel">
-        <button class="more-item" onclick="autoSuggest();closeMoreMenu();">🧠 週おまかせ</button>
-      </div>
-    </div>
+    <button class="btn" onclick="autoSuggest()">🧠 週おまかせ</button>
   </div>
 </div>
+<div class="budget-bar-wrap" id="budgetBarWrap"></div>
 
 <div id="cal" class="calendar"></div>
 
@@ -700,6 +730,10 @@ body[data-theme="pink"] .guest-banner .dismiss{color:#f9a8d4;}
 
     <!-- 栄養・費用 -->
     <div class="msec edit-panel" data-tab="nutrition">
+      <div id="nutritionSearchArea" style="margin-bottom:8px;">
+        <button class="btn" type="button" id="nutritionSearchBtn" onclick="fetchNutritionFromApi()">🔍 栄養を自動取得</button>
+        <div id="nutritionSearchResult" style="margin-top:6px;font-size:11px;color:#94a3b8;"></div>
+      </div>
       <p class="msec-hint">入力した内容は📊グラフや🛒買い物リストに自動で反映されます</p>
       <div class="msec-title">栄養・費用</div>
       <div class="form-row">
@@ -870,8 +904,9 @@ let settings={
   showCalories:true,showStars:true,showDifficulty:true,
   showCost:true,showNutritionColor:true,showPlannedCardImage:true,currency:"円",
   cardDensity:"standard",uiMode:"standard",sheetLevel:4,sheetScale:10,sheetHeight:null,sheetHidden:false,
-  dailyCalorieGoal:0,weekStartMonday:false,theme:"dark"
+  dailyCalorieGoal:0,weekStartMonday:false,theme:"dark",weeklyBudget:0,monthlyBudget:0
 };
+let calView="week"; // "week" | "month"
 let weekdayMode=false;
 let activeTagFilter=null;
 let activeCostFilter=null;
@@ -1764,8 +1799,9 @@ async function switchToBoard(boardId,name){
   try{localStorage.setItem("kb_activeBoard",activeBoardId||"");}catch(e){}
   updateBoardBadge();
   if(cloudCurrentUser){
+    const user=cloudCurrentUser; // stopCloudSync() が cloudCurrentUser を null にする前に保存
     stopCloudSync();
-    await startCloudSync(cloudCurrentUser);
+    await startCloudSync(user);
   }
 }
 async function createSharedBoard(name,emoji="📋"){
@@ -2344,13 +2380,18 @@ function deletePreset(presetId,dayIndex,wk){
   openPresetMenu(dayIndex,wk);
 }
 function render(){
+  updateBudgetBar();
+  if(calView==="month"){renderMonth();renderPool();return;}
   const cal=document.getElementById("cal");cal.innerHTML="";
+  cal.className="calendar";
   document.body.dataset.cardDensity=settings.cardDensity||"standard";
   const isAllMeals=currentMeal==="全";
   const wd=isAllMeals?Array.from({length:7},()=>[]):weekData();const k=curKey();
   const start=getWeekStart(baseDate);
   const end=new Date(start);end.setDate(start.getDate()+6);
   document.getElementById("label").innerText=`${start.getMonth()+1}/${start.getDate()}〜${end.getMonth()+1}/${end.getDate()}`;
+  const _pB=document.getElementById("navPrevBtn");const _nB=document.getElementById("navNextBtn");
+  if(_pB)_pB.innerText="⬅週";if(_nB)_nB.innerText="週➡";
 
   for(let i=0;i<7;i++){
     const d=new Date(start);d.setDate(start.getDate()+i);
@@ -2768,6 +2809,63 @@ function addIngRow(val){
   row.appendChild(inp);row.appendChild(stockWrap);row.appendChild(del);list.appendChild(row);
 }
 
+async function fetchNutritionFromApi(){
+  const query=(document.getElementById("eText").value||"").trim();
+  if(!query){showToast("基本タブで料理名を入力してください");return;}
+  const btn=document.getElementById("nutritionSearchBtn");
+  const resultEl=document.getElementById("nutritionSearchResult");
+  if(!btn||!resultEl)return;
+  btn.disabled=true;btn.innerText="🔍 検索中...";
+  resultEl.innerHTML="";
+  try{
+    const url=`https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}&search_simple=1&action=process&json=1&fields=product_name,nutriments,serving_size&page_size=5&lc=ja`;
+    const res=await fetch(url,{signal:AbortSignal.timeout(8000)});
+    const data=await res.json();
+    const products=(data.products||[]).filter(p=>p.nutriments&&(
+      p.nutriments["energy-kcal_serving"]||p.nutriments["energy-kcal_100g"]
+    ));
+    if(!products.length){
+      resultEl.innerText="見つかりませんでした。手動で入力してください。";
+      return;
+    }
+    if(products.length===1){
+      applyNutritionData(products[0].nutriments);
+      resultEl.innerHTML="<span style='color:#4ade80'>✓ 栄養値を自動適用しました</span>";
+      return;
+    }
+    const wrap=document.createElement("div");wrap.style.cssText="display:flex;flex-direction:column;gap:5px;";
+    products.slice(0,3).forEach(p=>{
+      const nm=p.nutriments;
+      const kcal=Math.round(nm["energy-kcal_serving"]||nm["energy-kcal_100g"]||0);
+      const row=document.createElement("div");
+      row.style.cssText="display:flex;align-items:center;justify-content:space-between;gap:6px;background:#0f172a;border-radius:6px;padding:5px 8px;";
+      const lbl=document.createElement("span");
+      lbl.style.cssText="font-size:11px;color:#cbd5e1;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;";
+      lbl.innerText=(p.product_name||query)+(kcal?" ("+kcal+"kcal)":"");
+      const ab=document.createElement("button");ab.className="btn primary";
+      ab.style.cssText="padding:3px 9px;font-size:10px;flex-shrink:0;";
+      ab.innerText="適用";
+      ab.onclick=()=>{applyNutritionData(nm);resultEl.innerHTML="<span style='color:#4ade80'>✓ 栄養値を適用しました</span>";};
+      row.appendChild(lbl);row.appendChild(ab);wrap.appendChild(row);
+    });
+    resultEl.appendChild(wrap);
+  }catch(e){
+    resultEl.innerText="通信エラーが発生しました。手動で入力してください。";
+  }finally{
+    btn.disabled=false;btn.innerText="🔍 栄養を自動取得";
+  }
+}
+function applyNutritionData(nm){
+  const get=(k1,k2)=>Math.round((nm[k1]||nm[k2]||0)*10)/10;
+  document.getElementById("eCalories").value=Math.round(nm["energy-kcal_serving"]||nm["energy-kcal_100g"]||0)||"";
+  document.getElementById("eProtein").value=get("proteins_serving","proteins_100g")||"";
+  document.getElementById("eCarbs").value=get("carbohydrates_serving","carbohydrates_100g")||"";
+  document.getElementById("eFat").value=get("fat_serving","fat_100g")||"";
+  document.getElementById("eFiber").value=get("fiber_serving","fiber_100g")||"";
+  document.getElementById("eSugar").value=get("sugars_serving","sugars_100g")||"";
+  document.getElementById("eSalt").value=get("salt_serving","salt_100g")||"";
+}
+
 function saveEdit(){
   const text=document.getElementById("eText").value.trim();
   if(!text){document.getElementById("eText").focus();return;}
@@ -3105,6 +3203,32 @@ function showSettings(){
   const goalUnit=document.createElement("span");goalUnit.style.cssText="font-size:11px;color:#94a3b8;";goalUnit.innerText="kcal（0で無効）";
   goalWrap.appendChild(goalI);goalWrap.appendChild(goalUnit);
   goalRow.appendChild(goalL);goalRow.appendChild(goalWrap);c.appendChild(goalRow);
+
+  // 予算管理
+  const budgetSec=document.createElement("div");budgetSec.className="msec";
+  const budgetTitle=document.createElement("div");budgetTitle.className="msec-title";budgetTitle.innerText="予算管理";budgetSec.appendChild(budgetTitle);
+
+  const wBudgetRow=document.createElement("div");wBudgetRow.className="setting-row";
+  const wBudgetL=document.createElement("span");wBudgetL.style.fontSize="13px";wBudgetL.innerText="週間予算";
+  const wBudgetWrap=document.createElement("div");wBudgetWrap.style.cssText="display:flex;align-items:center;gap:5px;";
+  const wBudgetI=document.createElement("input");wBudgetI.className="form-input";wBudgetI.type="number";wBudgetI.min="0";wBudgetI.inputMode="numeric";
+  wBudgetI.style.cssText="width:90px;padding:4px 6px;";wBudgetI.value=settings.weeklyBudget||"";wBudgetI.placeholder="0";
+  wBudgetI.oninput=()=>{settings.weeklyBudget=parseInt(wBudgetI.value,10)||0;save();updateBudgetBar();};
+  const wBudgetUnit=document.createElement("span");wBudgetUnit.style.cssText="font-size:11px;color:#94a3b8;";wBudgetUnit.innerText=(settings.currency||"円")+"（0で無効）";
+  wBudgetWrap.appendChild(wBudgetI);wBudgetWrap.appendChild(wBudgetUnit);
+  wBudgetRow.appendChild(wBudgetL);wBudgetRow.appendChild(wBudgetWrap);budgetSec.appendChild(wBudgetRow);
+
+  const mBudgetRow=document.createElement("div");mBudgetRow.className="setting-row";
+  const mBudgetL=document.createElement("span");mBudgetL.style.fontSize="13px";mBudgetL.innerText="月間予算";
+  const mBudgetWrap=document.createElement("div");mBudgetWrap.style.cssText="display:flex;align-items:center;gap:5px;";
+  const mBudgetI=document.createElement("input");mBudgetI.className="form-input";mBudgetI.type="number";mBudgetI.min="0";mBudgetI.inputMode="numeric";
+  mBudgetI.style.cssText="width:90px;padding:4px 6px;";mBudgetI.value=settings.monthlyBudget||"";mBudgetI.placeholder="0";
+  mBudgetI.oninput=()=>{settings.monthlyBudget=parseInt(mBudgetI.value,10)||0;save();updateBudgetBar();};
+  const mBudgetUnit=document.createElement("span");mBudgetUnit.style.cssText="font-size:11px;color:#94a3b8;";mBudgetUnit.innerText=(settings.currency||"円")+"（0で無効）";
+  mBudgetWrap.appendChild(mBudgetI);mBudgetWrap.appendChild(mBudgetUnit);
+  mBudgetRow.appendChild(mBudgetL);mBudgetRow.appendChild(mBudgetWrap);budgetSec.appendChild(mBudgetRow);
+
+  c.appendChild(budgetSec);
 
   // 共有ボード管理セクション（ログイン済みの場合のみ）
   if(cloudCurrentUser){
@@ -3712,7 +3836,164 @@ function renderFilterPanel(){
 
 // ===== WEEK NAV =====
 function moveWeek(n){baseDate=new Date(baseDate);baseDate.setDate(baseDate.getDate()+n*7);exitAssignmentMode(false);requestAnimationFrame(render);}
-function goToday(){baseDate=new Date();exitAssignmentMode(false);render();const el=document.querySelector(".day.today");if(el)el.scrollIntoView({behavior:"smooth",block:"nearest",inline:"center"});}
+function moveMonth(n){const d=new Date(baseDate.getFullYear(),baseDate.getMonth()+n,1);baseDate=d;exitAssignmentMode(false);render();}
+function navPrev(){if(calView==="month")moveMonth(-1);else moveWeek(-1);}
+function navNext(){if(calView==="month")moveMonth(1);else moveWeek(1);}
+function goToday(){baseDate=new Date();exitAssignmentMode(false);render();const el=document.querySelector(".day.today,.month-day.today");if(el)el.scrollIntoView({behavior:"smooth",block:"nearest",inline:"center"});}
+function toggleCalView(){
+  calView=calView==="week"?"month":"week";
+  const btn=document.getElementById("viewToggleBtn");
+  if(btn)btn.innerText=calView==="week"?"月":"週";
+  render();
+}
+// ===== MONTH VIEW HELPERS =====
+function getAllItemsForDate(d){
+  const wk=weekKey(d);
+  const ws=getWeekStart(new Date(d.getTime()));
+  const di=Math.max(0,Math.min(6,Math.round((d.getTime()-ws.getTime())/(1000*60*60*24))));
+  return MEALS.flatMap(m=>allData[wk]?.[m]?.[di]||[]);
+}
+function calcMonthCost(year,month){
+  let total=0;
+  const last=new Date(year,month+1,0).getDate();
+  for(let day=1;day<=last;day++){total+=getAllItemsForDate(new Date(year,month,day)).reduce((s,it)=>s+(it.cost||0),0);}
+  return total;
+}
+function calcMonthCalories(year,month){
+  let total=0;
+  const last=new Date(year,month+1,0).getDate();
+  for(let day=1;day<=last;day++){total+=getAllItemsForDate(new Date(year,month,day)).reduce((s,it)=>s+(it.calories||0),0);}
+  return total;
+}
+function updateBudgetBar(){
+  const wrap=document.getElementById("budgetBarWrap");if(!wrap)return;
+  const wB=Number(settings.weeklyBudget)||0;
+  const mB=Number(settings.monthlyBudget)||0;
+  if(!wB&&!mB){wrap.classList.remove("show");return;}
+  wrap.innerHTML="";wrap.classList.add("show");
+  const cur=settings.currency||"円";
+  const mkRow=(label,spent,budget)=>{
+    const row=document.createElement("div");row.className="budget-bar-row";
+    const lbl=document.createElement("span");lbl.className="budget-bar-label";lbl.innerText=label;
+    const track=document.createElement("div");track.className="budget-bar-track";
+    const fill=document.createElement("div");fill.className="budget-bar-fill";
+    const ratio=budget>0?spent/budget:0;
+    const pct=Math.min(ratio*100,100);
+    const color=ratio>1?"#ef4444":ratio>0.8?"#f59e0b":"#22c55e";
+    fill.style.cssText=`width:${pct}%;background:${color};`;
+    track.appendChild(fill);
+    const val=document.createElement("span");val.className="budget-bar-val";
+    val.style.color=color;
+    const pctStr=budget>0?` (${Math.round(ratio*100)}%)`:"";
+    val.innerText=`${spent.toLocaleString()}${cur} / ${budget.toLocaleString()}${cur}${pctStr}`;
+    row.appendChild(lbl);row.appendChild(track);row.appendChild(val);wrap.appendChild(row);
+  };
+  if(wB>0){
+    const spent=allMealData(curKey()).reduce((s,day)=>s+day.reduce((s2,it)=>s2+(it.cost||0),0),0);
+    mkRow("今週",spent,wB);
+  }
+  if(mB>0){
+    mkRow("今月",calcMonthCost(baseDate.getFullYear(),baseDate.getMonth()),mB);
+  }
+}
+function renderMonth(){
+  const cal=document.getElementById("cal");
+  cal.innerHTML="";cal.className="calendar month-view";
+  document.body.dataset.cardDensity=settings.cardDensity||"standard";
+  const year=baseDate.getFullYear(),month=baseDate.getMonth();
+  document.getElementById("label").innerText=`${year}年${month+1}月`;
+  const pB=document.getElementById("navPrevBtn");const nB=document.getElementById("navNextBtn");
+  if(pB)pB.innerText="⬅月";if(nB)nB.innerText="月➡";
+  const dayOrder=settings.weekStartMonday?[1,2,3,4,5,6,0]:[0,1,2,3,4,5,6];
+  // Weekday header
+  const wRow=document.createElement("div");wRow.className="month-weekday-row";
+  dayOrder.forEach(dow=>{
+    const cell=document.createElement("div");
+    cell.className="month-weekday-cell"+(dow===0?" sun":dow===6?" sat":"");
+    cell.innerText=DAYS[dow];wRow.appendChild(cell);
+  });
+  cal.appendChild(wRow);
+  // Grid
+  const firstOfMonth=new Date(year,month,1);
+  const lastOfMonth=new Date(year,month+1,0);
+  let gridStart=getWeekStart(firstOfMonth);
+  // Make sure we cover the whole month
+  const today=new Date();
+  let d=new Date(gridStart.getTime());
+  let monthCostTotal=0;
+  while(true){
+    const weekRow=document.createElement("div");weekRow.className="month-week-row";
+    for(let i=0;i<7;i++){
+      const date=new Date(d.getTime());
+      const isThisMonth=date.getMonth()===month&&date.getFullYear()===year;
+      const cell=document.createElement("div");
+      cell.className="month-day"+(date.toDateString()===today.toDateString()?" today":"")+(isThisMonth?"":" other-month");
+      const dow=date.getDay();
+      if(dow===0)cell.classList.add("sun");if(dow===6)cell.classList.add("sat");
+      // Day number
+      const num=document.createElement("span");num.className="month-day-num";num.innerText=date.getDate();
+      cell.appendChild(num);
+      // Meal chips
+      const wk=weekKey(date);
+      const ws=getWeekStart(new Date(date.getTime()));
+      const dayIdx=Math.max(0,Math.min(6,Math.round((date.getTime()-ws.getTime())/(1000*60*60*24))));
+      const mealColors={"朝":"#f59e0b","昼":"#3b82f6","夜":"#8b5cf6"};
+      const chipsDiv=document.createElement("div");chipsDiv.className="month-meal-chips";
+      let dayCost=0;
+      if(currentMeal==="全"){
+        MEALS.forEach(meal=>{
+          const items=allData[wk]?.[meal]?.[dayIdx]||[];
+          items.slice(0,2).forEach(item=>{
+            dayCost+=(item.cost||0);
+            const chip=document.createElement("div");chip.className="month-meal-chip";
+            chip.style.cssText=`background:${mealColors[meal]}22;color:${mealColors[meal]};`;
+            chip.innerText=item.text;chipsDiv.appendChild(chip);
+          });
+          if(items.length>2){const more=document.createElement("div");more.className="month-meal-chip";more.style.color="#64748b";more.innerText=`+${items.length-2}`;chipsDiv.appendChild(more);}
+        });
+      }else{
+        const items=allData[wk]?.[currentMeal]?.[dayIdx]||[];
+        items.forEach(item=>dayCost+=(item.cost||0));
+        items.slice(0,3).forEach(item=>{
+          const chip=document.createElement("div");chip.className="month-meal-chip";
+          chip.style.cssText=`background:${TC[item.tag]||"#475569"}22;color:${TC[item.tag]||"#94a3b8"};`;
+          chip.innerText=item.text;chipsDiv.appendChild(chip);
+        });
+        if(items.length>3){const more=document.createElement("div");more.className="month-meal-chip";more.style.color="#64748b";more.innerText=`+${items.length-3}件`;chipsDiv.appendChild(more);}
+      }
+      cell.appendChild(chipsDiv);
+      if(isThisMonth)monthCostTotal+=dayCost;
+      if(dayCost>0){const costEl=document.createElement("div");costEl.className="month-day-cost";costEl.innerText=dayCost.toLocaleString()+(settings.currency||"円");cell.appendChild(costEl);}
+      // Click → go to that week
+      cell.addEventListener("click",()=>{
+        baseDate=new Date(date.getTime());calView="week";
+        const btn=document.getElementById("viewToggleBtn");if(btn)btn.innerText="月";
+        render();
+      });
+      weekRow.appendChild(cell);
+      d.setDate(d.getDate()+1);
+    }
+    cal.appendChild(weekRow);
+    if(d.getFullYear()>year||(d.getFullYear()===year&&d.getMonth()>month))break;
+  }
+  // Monthly summary bar
+  const sumRow=document.createElement("div");sumRow.className="month-summary-row";
+  const cur=settings.currency||"円";
+  const mBudget=Number(settings.monthlyBudget)||0;
+  let costTxt=`💰 月計: ${monthCostTotal.toLocaleString()}${cur}`;
+  if(mBudget>0){
+    const ratio=monthCostTotal/mBudget;
+    const color=ratio>1?"#ef4444":ratio>0.8?"#f59e0b":"#22c55e";
+    const pct=Math.round(ratio*100);
+    costTxt+=` / 予算 ${mBudget.toLocaleString()}${cur} (${pct}%)`;
+    const chip=document.createElement("span");chip.className="ms-chip";chip.style.color=color;chip.innerText=costTxt;sumRow.appendChild(chip);
+  }else{
+    const chip=document.createElement("span");chip.className="ms-chip";chip.innerText=costTxt;sumRow.appendChild(chip);
+  }
+  const monthlyCal=calcMonthCalories(year,month);
+  if(monthlyCal>0){const calChip=document.createElement("span");calChip.className="ms-chip";calChip.innerText=`🔥 月計: ${monthlyCal.toLocaleString()}kcal`;sumRow.appendChild(calChip);}
+  cal.appendChild(sumRow);
+}
 
 // ===== GUEST DATA MIGRATION =====
 
