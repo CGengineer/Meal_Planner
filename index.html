@@ -34,11 +34,13 @@ body.no-x-nav{overscroll-behavior-x:none;touch-action:pan-y;}
 .day-assign-btn.active{background:#0f766e;}
 .day-preset-btn{position:absolute;left:0;top:50%;transform:translateY(-50%);width:22px;height:22px;border:none;border-radius:999px;background:transparent;color:#475569;font-size:12px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;}
 .day-preset-btn:hover{color:#fbbf24;}.day-preset-btn.has-presets{color:#f59e0b;}
+.day-suggest-btn{position:absolute;right:24px;top:50%;transform:translateY(-50%);width:22px;height:22px;border:none;border-radius:999px;background:transparent;color:#475569;font-size:12px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;}
+.day-suggest-btn:hover{color:#a78bfa;}
 .preset-list{display:flex;flex-direction:column;gap:6px;margin-top:8px;}
 .preset-row{display:flex;align-items:center;gap:6px;background:#0f172a;border-radius:7px;padding:6px 8px;}
 .preset-row-name{flex:1;font-size:12px;color:#e2e8f0;min-width:0;word-break:break-all;}
 .preset-save-area{display:flex;gap:6px;margin-bottom:4px;}.preset-save-area input{flex:1;}
-.meal-dots{display:flex;gap:3px;position:absolute;bottom:-9px;left:50%;transform:translateX(-50%);}
+.meal-dots{display:flex;gap:3px;position:absolute;bottom:3px;left:50%;transform:translateX(-50%);}
 .meal-dot{width:5px;height:5px;border-radius:50%;background:#334155;}
 .day-header{padding-bottom:14px;}
 .weekday-mode-btn.active{background:#f59e0b!important;color:#0f172a!important;}
@@ -261,6 +263,286 @@ linear-gradient(125deg,#020617 0%,#0b1120 40%,#111827 100%);overflow:auto;}
 }
 .board-badge{display:none;align-items:center;gap:4px;background:#1e3a5f;border:1px solid #2563eb;color:#93c5fd;border-radius:8px;padding:4px 9px;font-size:11px;cursor:pointer;font-family:inherit;white-space:nowrap;line-height:1.2;min-height:28px;}
 .board-badge:hover{background:#1d4ed8;color:#f8fafc;}
+/* ===== BOARD DRAWER ===== */
+.board-drawer{position:fixed;top:0;left:0;bottom:0;width:min(320px,88vw);background:#0f172a;border-right:1px solid #334155;z-index:410;transform:translateX(-100%);transition:transform .3s cubic-bezier(.32,.72,0,1);display:flex;flex-direction:column;overflow:hidden;box-shadow:4px 0 24px rgba(0,0,0,.5);}
+.board-drawer.open{transform:translateX(0);}
+.bd-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:409;opacity:0;pointer-events:none;transition:opacity .3s;}
+.bd-overlay.open{opacity:1;pointer-events:auto;}
+.bd-open-btn{font-size:16px;padding:6px 10px;background:transparent;border:1px solid #334155;color:#94a3b8;border-radius:7px;cursor:pointer;font-family:inherit;flex-shrink:0;}
+.bd-open-btn:hover{background:#1e293b;color:#f1f5f9;}
+.bd-head{display:flex;align-items:center;gap:8px;padding:12px 12px;border-bottom:1px solid #334155;flex-shrink:0;}
+.bd-head-title{flex:1;font-size:14px;font-weight:bold;color:#f1f5f9;}
+.bd-back-btn,.bd-close-btn{background:transparent;border:none;color:#94a3b8;font-size:16px;cursor:pointer;padding:4px 6px;border-radius:6px;font-family:inherit;}
+.bd-back-btn:hover,.bd-close-btn:hover{background:#1e293b;color:#f1f5f9;}
+.bd-back-btn.hidden{visibility:hidden;}
+.bd-item{display:flex;align-items:center;gap:10px;padding:11px 14px;cursor:pointer;border-bottom:1px solid #1e293b;transition:background .1s;}
+.bd-item:hover{background:#1e293b;}
+.bd-item.active{background:#172036;border-left:3px solid #3b82f6;}
+.bd-item-emoji{font-size:20px;line-height:1;flex-shrink:0;width:28px;text-align:center;}
+.bd-item-info{flex:1;min-width:0;}
+.bd-item-name{font-size:13px;font-weight:bold;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#f1f5f9;}
+.bd-item-sub{font-size:10px;color:#64748b;margin-top:2px;}
+.bd-item-share{background:transparent;border:none;color:#475569;font-size:14px;padding:6px 8px;cursor:pointer;border-radius:6px;flex-shrink:0;}
+.bd-item-share:hover{background:#1e293b;color:#93c5fd;}
+.bd-panel-root,.bd-panel-create,.bd-panel-share,.bd-panel-join{flex:1;overflow-y:auto;display:flex;flex-direction:column;padding:0;}
+.bd-section-title{font-size:10px;color:#64748b;font-weight:bold;letter-spacing:.5px;padding:10px 14px 4px;text-transform:uppercase;}
+.bd-footer{padding:10px 12px;border-top:1px solid #334155;display:flex;flex-direction:column;gap:6px;flex-shrink:0;}
+.bd-action-btn{background:#1e293b;border:1px solid #334155;color:#e2e8f0;border-radius:8px;padding:9px 12px;font-size:12px;cursor:pointer;font-family:inherit;text-align:left;transition:background .1s;}
+.bd-action-btn:hover{background:#334155;}
+.bd-action-btn.primary{background:#1d4ed8;border-color:#2563eb;color:#f8fafc;}
+.bd-action-btn.primary:hover{background:#2563eb;}
+.bd-action-btn.danger{background:#450a0a;border-color:#7f1d1d;color:#fca5a5;}
+.bd-action-btn.danger:hover{background:#7f1d1d;}
+.bd-preset-grid{display:flex;gap:8px;flex-wrap:wrap;padding:10px 14px;}
+.bd-preset-item{display:flex;flex-direction:column;align-items:center;gap:4px;background:#1e293b;border:2px solid transparent;border-radius:10px;padding:8px 10px;cursor:pointer;min-width:60px;font-family:inherit;transition:background .1s,border-color .1s;}
+.bd-preset-item:hover{background:#334155;}
+.bd-preset-item.selected{border-color:#3b82f6;background:#172036;}
+.bd-preset-item .pico{font-size:22px;}
+.bd-preset-item .plabel{font-size:9px;color:#94a3b8;}
+.bd-form-group{padding:8px 14px;}
+.bd-form-label{font-size:11px;color:#94a3b8;margin-bottom:4px;display:block;}
+.bd-input{width:100%;background:#0f172a;border:1px solid #334155;color:#f1f5f9;border-radius:8px;padding:9px 11px;font-size:13px;font-family:inherit;box-sizing:border-box;outline:none;}
+.bd-input:focus{border-color:#3b82f6;}
+.bd-code-box{font-family:monospace;font-size:18px;letter-spacing:.15em;background:#020617;border:1px solid #334155;border-radius:8px;padding:12px 16px;color:#93c5fd;text-align:center;margin:8px 14px;word-break:break-all;}
+.bd-info-row{padding:6px 14px;font-size:12px;color:#94a3b8;}
+.bd-board-header{display:flex;align-items:center;gap:10px;padding:14px;border-bottom:1px solid #1e293b;}
+.bd-board-header .pico{font-size:28px;}
+.bd-board-header .bname{font-size:15px;font-weight:bold;color:#f1f5f9;}
+/* ===== LIGHT THEME ===== */
+body[data-theme="light"]{background:#f1f5f9;color:#0f172a;}
+body[data-theme="light"] .header{background:#ffffff;border-color:#e2e8f0;}
+body[data-theme="light"] .title{color:#0f172a;}
+body[data-theme="light"] .btn{background:#e2e8f0;color:#0f172a;}
+body[data-theme="light"] .btn:hover{background:#cbd5e1;}
+body[data-theme="light"] .btn:active{background:#f1f5f9;}
+body[data-theme="light"] .btn.primary{background:#2563eb;color:#fff;}
+body[data-theme="light"] .btn.primary:hover{background:#3b82f6;}
+body[data-theme="light"] .more-panel{background:#ffffff;border-color:#e2e8f0;box-shadow:0 8px 24px rgba(0,0,0,.12);}
+body[data-theme="light"] .more-item{background:#f1f5f9;color:#0f172a;}
+body[data-theme="light"] .more-item:hover{background:#e2e8f0;}
+body[data-theme="light"] .calendar{border-color:#e2e8f0;}
+body[data-theme="light"] .day{border-color:#e2e8f0;}
+body[data-theme="light"] .day.today{background:#eff6ff;}
+body[data-theme="light"] .day-header{color:#0f172a;}
+body[data-theme="light"] .day.sun .day-header{color:#ef4444;}
+body[data-theme="light"] .day.sat .day-header{color:#2563eb;}
+body[data-theme="light"] .meal-dot{background:#cbd5e1;}
+body[data-theme="light"] .day-assign-btn{background:#1d4ed8;}
+body[data-theme="light"] .day-preset-btn{color:#94a3b8;}
+body[data-theme="light"] .day.assignment-target{background:#eff6ff;box-shadow:inset 0 0 0 1px #22d3ee;}
+body[data-theme="light"] .card{background:#ffffff;border-left-color:#cbd5e1;}
+body[data-theme="light"] .card:hover{background:#f8fafc;}
+body[data-theme="light"] .card-badge{background:#f1f5f9;}
+body[data-theme="light"] .card-overlay .card-badge,body[data-theme="light"] .card-overlay .card-tag,body[data-theme="light"] .card-overlay .card-stars{background:rgba(248,250,252,.88);backdrop-filter:blur(2px);}
+body[data-theme="light"] .card-edit-btn{color:#94a3b8;}
+body[data-theme="light"] .card-edit-btn:hover{background:#e2e8f0;color:#0f172a;}
+body[data-theme="light"] .card-dup-btn{color:#94a3b8;}
+body[data-theme="light"] .card-dup-btn:hover{background:#e2e8f0;color:#0f172a;}
+body[data-theme="light"] .pool-card{background:#f1f5f9;border-left-color:#cbd5e1;}
+body[data-theme="light"] .pool-card:hover{background:#e2e8f0;}
+body[data-theme="light"] .pool-empty{color:#94a3b8;}
+body[data-theme="light"] .pool-assign-hint{background:#ffffff;border-color:#e2e8f0;color:#334155;}
+body[data-theme="light"] .bottom-sheet{background:#ffffff;border-color:#e2e8f0;box-shadow:0 -4px 20px rgba(0,0,0,.08);}
+body[data-theme="light"] .handle-bar{background:#cbd5e1;}
+body[data-theme="light"] .sheet-hint-text{color:#94a3b8;}
+body[data-theme="light"] .search-wrap{background:#f1f5f9;border-color:#e2e8f0;}
+body[data-theme="light"] .search-input{color:#0f172a;}
+body[data-theme="light"] .search-input::placeholder{color:#94a3b8;}
+body[data-theme="light"] .filter-chip{background:#ffffff;border-color:#e2e8f0;color:#334155;}
+body[data-theme="light"] .filter-chip button{color:#94a3b8;}
+body[data-theme="light"] .sheet-tag-filter{border-color:#e2e8f0;}
+body[data-theme="light"] .filter-accordion{background:#f8fafc;border-color:#e2e8f0;}
+body[data-theme="light"] .filter-acc-head{background:#f1f5f9;color:#334155;border-color:#e2e8f0;}
+body[data-theme="light"] .filter-acc-head.active{background:#eff6ff;color:#0f172a;}
+body[data-theme="light"] .modal{background:#ffffff;border-color:#e2e8f0;}
+body[data-theme="light"] .modal h2{color:#0f172a;}
+body[data-theme="light"] .msec{border-color:#e2e8f0;}
+body[data-theme="light"] .msec-title{color:#94a3b8;}
+body[data-theme="light"] .msec-hint{color:#94a3b8;}
+body[data-theme="light"] .form-input{background:#f8fafc;border-color:#e2e8f0;color:#0f172a;}
+body[data-theme="light"] .form-input:focus{border-color:#3b82f6;}
+body[data-theme="light"] .form-group label{color:#475569;}
+body[data-theme="light"] .edit-tab-btn{background:#e2e8f0;border-color:#cbd5e1;color:#334155;}
+body[data-theme="light"] .edit-tab-btn.active{background:#2563eb;border-color:#3b82f6;color:#fff;}
+body[data-theme="light"] .edit-actions{background:linear-gradient(to top,#ffffff 70%,rgba(255,255,255,0));border-color:#e2e8f0;}
+body[data-theme="light"] .star-rating span{color:#e2e8f0;}
+body[data-theme="light"] .star-rating span.on{color:#f59e0b;}
+body[data-theme="light"] .ing-row button{background:#e2e8f0;color:#ef4444;}
+body[data-theme="light"] .img-clear-btn{background:#e2e8f0;}
+body[data-theme="light"] .macro-track{background:#f1f5f9;}
+body[data-theme="light"] .graph-box{background:#f1f5f9;}
+body[data-theme="light"] .shop-item{background:#f8fafc;}
+body[data-theme="light"] .preset-row{background:#f1f5f9;}
+body[data-theme="light"] .mobile-nav{background:#ffffff;border-color:#e2e8f0;}
+body[data-theme="light"] .mobile-nav button{background:#f1f5f9;border-color:#e2e8f0;color:#0f172a;}
+body[data-theme="light"] .meal-select{background:#ffffff;border-color:#e2e8f0;color:#0f172a;}
+body[data-theme="light"] .trash-bin{background:#e2e8f0;border-color:#cbd5e1;}
+body[data-theme="light"] .toast{background:#ffffff;border-color:#e2e8f0;color:#0f172a;}
+body[data-theme="light"] .setting-account{border-color:#e2e8f0;}
+body[data-theme="light"] .setting-account-title{color:#94a3b8;}
+body[data-theme="light"] .setting-account-email{color:#0f172a;}
+body[data-theme="light"] .setting-row{border-color:#f1f5f9;}
+body[data-theme="light"] .toggle-slider{background:#cbd5e1;}
+body[data-theme="light"] .toggle-slider:before{background:#94a3b8;}
+body[data-theme="light"] .setting-avatar-fallback{background:#f1f5f9;border-color:#e2e8f0;color:#334155;}
+body[data-theme="light"] .board-badge{background:#eff6ff;border-color:#93c5fd;color:#1d4ed8;}
+body[data-theme="light"] .board-drawer{background:#ffffff;border-color:#e2e8f0;}
+body[data-theme="light"] .bd-overlay{background:rgba(0,0,0,.35);}
+body[data-theme="light"] .bd-head{border-color:#e2e8f0;}
+body[data-theme="light"] .bd-head-title{color:#0f172a;}
+body[data-theme="light"] .bd-back-btn,body[data-theme="light"] .bd-close-btn{color:#475569;}
+body[data-theme="light"] .bd-back-btn:hover,body[data-theme="light"] .bd-close-btn:hover{background:#f1f5f9;color:#0f172a;}
+body[data-theme="light"] .bd-item{border-color:#f1f5f9;}
+body[data-theme="light"] .bd-item:hover{background:#f8fafc;}
+body[data-theme="light"] .bd-item.active{background:#eff6ff;border-left-color:#3b82f6;}
+body[data-theme="light"] .bd-item-name{color:#0f172a;}
+body[data-theme="light"] .bd-item-sub{color:#94a3b8;}
+body[data-theme="light"] .bd-section-title{color:#94a3b8;}
+body[data-theme="light"] .bd-footer{border-color:#e2e8f0;}
+body[data-theme="light"] .bd-action-btn{background:#f1f5f9;border-color:#e2e8f0;color:#0f172a;}
+body[data-theme="light"] .bd-action-btn:hover{background:#e2e8f0;}
+body[data-theme="light"] .bd-action-btn.primary{background:#1d4ed8;border-color:#2563eb;color:#fff;}
+body[data-theme="light"] .bd-action-btn.primary:hover{background:#2563eb;}
+body[data-theme="light"] .bd-input{background:#f8fafc;border-color:#e2e8f0;color:#0f172a;}
+body[data-theme="light"] .bd-code-box{background:#f8fafc;border-color:#e2e8f0;color:#1d4ed8;}
+body[data-theme="light"] .bd-info-row{color:#475569;}
+body[data-theme="light"] .bd-board-header{border-color:#f1f5f9;}
+body[data-theme="light"] .bd-board-header .bname{color:#0f172a;}
+body[data-theme="light"] .bd-preset-item{background:#f1f5f9;}
+body[data-theme="light"] .bd-preset-item:hover{background:#e2e8f0;}
+body[data-theme="light"] .bd-preset-item.selected{border-color:#3b82f6;background:#eff6ff;}
+body[data-theme="light"] .bd-preset-item .plabel{color:#475569;}
+body[data-theme="light"] .meal-section-label{border-color:#e2e8f0;color:#94a3b8;}
+body[data-theme="light"] .open-btn,.bd-open-btn{color:#475569;}
+body[data-theme="light"] .bd-open-btn{border-color:#e2e8f0;color:#475569;}
+body[data-theme="light"] .bd-open-btn:hover{background:#f1f5f9;color:#0f172a;}
+body[data-theme="light"] .weekday-mode-btn.active{background:#f59e0b!important;color:#0f172a!important;}
+body[data-theme="light"] .day.drag-over-move{background:rgba(202,138,4,.12)!important;}
+body[data-theme="light"] .day.drag-over-copy{background:rgba(22,163,74,.12)!important;}
+body[data-theme="light"] .touch-drag-ghost{filter:drop-shadow(0 14px 24px rgba(0,0,0,.2));}
+body[data-theme="light"] .cal-progress-bar-wrap{background:#e2e8f0;}
+/* ===== PINK THEME ===== */
+body[data-theme="pink"]{background:#fff0f5;color:#1a0a14;}
+body[data-theme="pink"] .header{background:#ffe4ef;border-color:#f9a8d4;}
+body[data-theme="pink"] .title{color:#831843;}
+body[data-theme="pink"] .btn{background:#fce7f3;color:#831843;}
+body[data-theme="pink"] .btn:hover{background:#fbcfe8;}
+body[data-theme="pink"] .btn:active{background:#ffe4ef;}
+body[data-theme="pink"] .btn.primary{background:#db2777;color:#fff;box-shadow:0 4px 14px rgba(219,39,119,.35);}
+body[data-theme="pink"] .btn.primary:hover{background:#ec4899;}
+body[data-theme="pink"] .more-panel{background:#ffe4ef;border-color:#f9a8d4;box-shadow:0 8px 24px rgba(100,0,50,.12);}
+body[data-theme="pink"] .more-item{background:#fce7f3;color:#831843;}
+body[data-theme="pink"] .more-item:hover{background:#fbcfe8;}
+body[data-theme="pink"] .calendar{border-color:#f9a8d4;}
+body[data-theme="pink"] .day{border-color:#f9a8d4;}
+body[data-theme="pink"] .day.today{background:#fff5f9;}
+body[data-theme="pink"] .day-header{color:#831843;}
+body[data-theme="pink"] .day.sun .day-header{color:#e11d48;}
+body[data-theme="pink"] .day.sat .day-header{color:#db2777;}
+body[data-theme="pink"] .meal-dot{background:#f9a8d4;}
+body[data-theme="pink"] .day-assign-btn{background:#db2777;}
+body[data-theme="pink"] .day-assign-btn:hover{background:#ec4899;}
+body[data-theme="pink"] .day-assign-btn.active{background:#be185d;}
+body[data-theme="pink"] .day-preset-btn{color:#f9a8d4;}
+body[data-theme="pink"] .day-preset-btn:hover{color:#db2777;}
+body[data-theme="pink"] .day-preset-btn.has-presets{color:#db2777;}
+body[data-theme="pink"] .day.assignment-target{background:#fce7f3;box-shadow:inset 0 0 0 1px #f472b6;}
+body[data-theme="pink"] .card{background:#fff5f9;border-left-color:#f9a8d4;}
+body[data-theme="pink"] .card:hover{background:#ffe4ef;}
+body[data-theme="pink"] .card-badge{background:#fce7f3;color:#831843;}
+body[data-theme="pink"] .card-overlay .card-badge,body[data-theme="pink"] .card-overlay .card-tag,body[data-theme="pink"] .card-overlay .card-stars{background:rgba(255,228,239,.88);backdrop-filter:blur(2px);}
+body[data-theme="pink"] .card-edit-btn{color:#f9a8d4;}
+body[data-theme="pink"] .card-edit-btn:hover{background:#fce7f3;color:#831843;}
+body[data-theme="pink"] .card-dup-btn{color:#f9a8d4;}
+body[data-theme="pink"] .card-dup-btn:hover{background:#fce7f3;color:#831843;}
+body[data-theme="pink"] .pool-card{background:#fce7f3;border-left-color:#f9a8d4;}
+body[data-theme="pink"] .pool-card:hover{background:#fbcfe8;}
+body[data-theme="pink"] .pool-empty{color:#f9a8d4;}
+body[data-theme="pink"] .pool-assign-hint{background:#fff0f5;border-color:#f9a8d4;color:#831843;}
+body[data-theme="pink"] .bottom-sheet{background:#ffe4ef;border-color:#f9a8d4;box-shadow:0 -4px 20px rgba(219,39,119,.15);}
+body[data-theme="pink"] .handle-bar{background:#f9a8d4;}
+body[data-theme="pink"] .sheet-hint-text{color:#f9a8d4;}
+body[data-theme="pink"] .search-wrap{background:#fff0f5;border-color:#f9a8d4;}
+body[data-theme="pink"] .search-input{color:#1a0a14;}
+body[data-theme="pink"] .search-input::placeholder{color:#f9a8d4;}
+body[data-theme="pink"] .filter-chip{background:#fce7f3;border-color:#f9a8d4;color:#831843;}
+body[data-theme="pink"] .filter-chip button{color:#f9a8d4;}
+body[data-theme="pink"] .sheet-tag-filter{border-color:#f9a8d4;}
+body[data-theme="pink"] .filter-accordion{background:#fff5f9;border-color:#f9a8d4;}
+body[data-theme="pink"] .filter-acc-head{background:#fce7f3;color:#831843;border-color:#f9a8d4;}
+body[data-theme="pink"] .filter-acc-head.active{background:#fbcfe8;color:#1a0a14;}
+body[data-theme="pink"] .modal{background:#ffe4ef;border-color:#f9a8d4;}
+body[data-theme="pink"] .modal h2{color:#831843;}
+body[data-theme="pink"] .msec{border-color:#f9a8d4;}
+body[data-theme="pink"] .msec-title{color:#be185d;}
+body[data-theme="pink"] .msec-hint{color:#f9a8d4;}
+body[data-theme="pink"] .form-input{background:#fff0f5;border-color:#f9a8d4;color:#1a0a14;}
+body[data-theme="pink"] .form-input:focus{border-color:#db2777;}
+body[data-theme="pink"] .form-group label{color:#9d174d;}
+body[data-theme="pink"] .edit-tab-btn{background:#fce7f3;border-color:#f9a8d4;color:#831843;}
+body[data-theme="pink"] .edit-tab-btn.active{background:#db2777;border-color:#ec4899;color:#fff;}
+body[data-theme="pink"] .edit-actions{background:linear-gradient(to top,#ffe4ef 70%,rgba(255,228,239,0));border-color:#f9a8d4;}
+body[data-theme="pink"] .star-rating span{color:#fce7f3;}
+body[data-theme="pink"] .star-rating span.on{color:#f59e0b;}
+body[data-theme="pink"] .ing-row button{background:#fce7f3;color:#e11d48;}
+body[data-theme="pink"] .img-clear-btn{background:#fce7f3;color:#e11d48;}
+body[data-theme="pink"] .macro-track{background:#fff0f5;}
+body[data-theme="pink"] .graph-box{background:#fff0f5;}
+body[data-theme="pink"] .graph-bar{background:#ec4899;}
+body[data-theme="pink"] .shop-item{background:#fff5f9;}
+body[data-theme="pink"] .preset-row{background:#fff0f5;}
+body[data-theme="pink"] .mobile-nav{background:#ffe4ef;border-color:#f9a8d4;}
+body[data-theme="pink"] .mobile-nav button{background:#fce7f3;border-color:#f9a8d4;color:#831843;}
+body[data-theme="pink"] .meal-select{background:#fce7f3;border-color:#f9a8d4;color:#831843;}
+body[data-theme="pink"] .trash-bin{background:#fce7f3;border-color:#f9a8d4;}
+body[data-theme="pink"] .trash-bin.drag-over{background:#e11d48;border-color:#f87171;}
+body[data-theme="pink"] .toast{background:#ffe4ef;border-color:#f9a8d4;color:#1a0a14;}
+body[data-theme="pink"] .setting-account{border-color:#f9a8d4;}
+body[data-theme="pink"] .setting-account-title{color:#be185d;}
+body[data-theme="pink"] .setting-account-email{color:#1a0a14;}
+body[data-theme="pink"] .setting-row{border-color:#fce7f3;}
+body[data-theme="pink"] .toggle-slider{background:#f9a8d4;}
+body[data-theme="pink"] .toggle-slider:before{background:#fce7f3;}
+body[data-theme="pink"] .toggle input:checked+.toggle-slider{background:#db2777;}
+body[data-theme="pink"] .toggle input:checked+.toggle-slider:before{background:#fff;}
+body[data-theme="pink"] .setting-avatar-fallback{background:#fce7f3;border-color:#f9a8d4;color:#831843;}
+body[data-theme="pink"] .board-badge{background:#fce7f3;border-color:#f9a8d4;color:#831843;}
+body[data-theme="pink"] .board-drawer{background:#ffe4ef;border-color:#f9a8d4;}
+body[data-theme="pink"] .bd-overlay{background:rgba(80,0,40,.45);}
+body[data-theme="pink"] .bd-head{border-color:#f9a8d4;}
+body[data-theme="pink"] .bd-head-title{color:#831843;}
+body[data-theme="pink"] .bd-back-btn,body[data-theme="pink"] .bd-close-btn{color:#f9a8d4;}
+body[data-theme="pink"] .bd-back-btn:hover,body[data-theme="pink"] .bd-close-btn:hover{background:#fce7f3;color:#831843;}
+body[data-theme="pink"] .bd-item{border-color:#fce7f3;}
+body[data-theme="pink"] .bd-item:hover{background:#fff0f5;}
+body[data-theme="pink"] .bd-item.active{background:#fce7f3;border-left-color:#db2777;}
+body[data-theme="pink"] .bd-item-name{color:#1a0a14;}
+body[data-theme="pink"] .bd-item-sub{color:#f9a8d4;}
+body[data-theme="pink"] .bd-section-title{color:#be185d;}
+body[data-theme="pink"] .bd-footer{border-color:#f9a8d4;}
+body[data-theme="pink"] .bd-action-btn{background:#fce7f3;border-color:#f9a8d4;color:#831843;}
+body[data-theme="pink"] .bd-action-btn:hover{background:#fbcfe8;}
+body[data-theme="pink"] .bd-action-btn.primary{background:#db2777;border-color:#ec4899;color:#fff;}
+body[data-theme="pink"] .bd-action-btn.primary:hover{background:#ec4899;}
+body[data-theme="pink"] .bd-input{background:#fff0f5;border-color:#f9a8d4;color:#1a0a14;}
+body[data-theme="pink"] .bd-code-box{background:#fff5f9;border-color:#f9a8d4;color:#db2777;}
+body[data-theme="pink"] .bd-info-row{color:#9d174d;}
+body[data-theme="pink"] .bd-board-header{border-color:#fce7f3;}
+body[data-theme="pink"] .bd-board-header .bname{color:#831843;}
+body[data-theme="pink"] .bd-preset-item{background:#fce7f3;}
+body[data-theme="pink"] .bd-preset-item:hover{background:#fbcfe8;}
+body[data-theme="pink"] .bd-preset-item.selected{border-color:#db2777;background:#ffe4ef;}
+body[data-theme="pink"] .bd-preset-item .plabel{color:#9d174d;}
+body[data-theme="pink"] .meal-section-label{border-color:#fce7f3;color:#be185d;}
+body[data-theme="pink"] .bd-open-btn{border-color:#f9a8d4;color:#9d174d;}
+body[data-theme="pink"] .bd-open-btn:hover{background:#fce7f3;color:#831843;}
+body[data-theme="pink"] .weekday-mode-btn.active{background:#db2777!important;color:#fff!important;}
+body[data-theme="pink"] .day.drag-over-move{background:rgba(251,191,36,.14)!important;}
+body[data-theme="pink"] .day.drag-over-copy{background:rgba(219,39,119,.12)!important;}
+body[data-theme="pink"] .cal-progress-bar-wrap{background:#fce7f3;}
+body[data-theme="pink"] .guest-banner{background:#fce7f3;border-color:#f9a8d4;color:#831843;}
+body[data-theme="pink"] .guest-banner button{background:#db2777;}
+body[data-theme="pink"] .guest-banner .dismiss{color:#f9a8d4;}
 </style>
 </head>
 <body class="auth-locked">
@@ -296,9 +578,30 @@ linear-gradient(125deg,#020617 0%,#0b1120 40%,#111827 100%);overflow:auto;}
   <button onclick="guestGoToLogin()">ログインして保存</button>
   <button class="dismiss" onclick="document.getElementById('guestBanner').classList.remove('show')">✕</button>
 </div>
+
+<!-- ドロワー背景オーバーレイ -->
+<div class="bd-overlay" id="bdOverlay" onclick="closeBoardDrawer()"></div>
+
+<!-- 左スライドドロワー -->
+<div class="board-drawer" id="boardDrawer">
+  <div class="bd-head">
+    <button class="bd-back-btn hidden" id="bdBackBtn" onclick="bdShowRoot()">←</button>
+    <span class="bd-head-title" id="bdHeadTitle">📋 ボード一覧</span>
+    <button class="bd-close-btn" onclick="closeBoardDrawer()">✕</button>
+  </div>
+  <!-- ルートパネル: ボードリスト -->
+  <div class="bd-panel-root" id="bdPanelRoot"></div>
+  <!-- 作成パネル -->
+  <div class="bd-panel-create" id="bdPanelCreate" style="display:none"></div>
+  <!-- 共有詳細パネル -->
+  <div class="bd-panel-share" id="bdPanelShare" style="display:none"></div>
+  <!-- コード参加パネル -->
+  <div class="bd-panel-join" id="bdPanelJoin" style="display:none"></div>
+</div>
+
 <div class="header">
-  <div class="title">🍱 献立ボード</div>
-  <button class="board-badge" id="boardBadge" type="button" onclick="showBoardManager()"></button>
+  <button class="bd-open-btn" id="bdOpenBtn" onclick="openBoardDrawer()" title="ボード管理">☰</button>
+  <div class="title" id="headerTitle">🍱 献立ボード</div>
   <div class="actions">
     <button class="btn" onclick="moveWeek(-1)">⬅週</button>
     <span id="label" style="font-size:12px;white-space:nowrap;"></span>
@@ -310,14 +613,10 @@ linear-gradient(125deg,#020617 0%,#0b1120 40%,#111827 100%);overflow:auto;}
       <option value="夜">🌙 夜</option>
       <option value="全">📋 全食</option>
     </select>
-    <button class="btn" onclick="showShop()" title="買い物リスト">🛒</button>
-    <button class="btn" onclick="showGraph()" title="栄養グラフ">📊</button>
     <div class="more-menu">
       <button class="btn" id="moreBtn" onclick="toggleMoreMenu(event)">⋯</button>
       <div class="more-panel" id="morePanel">
-        <button class="more-item" onclick="autoSuggest();closeMoreMenu();">🎲 おまかせ</button>
-        <button class="more-item" onclick="cycleUIMode();closeMoreMenu();">👁 表示モード切替</button>
-        <button class="more-item" onclick="showBoardManager();closeMoreMenu();">👥 共有ボード管理</button>
+        <button class="more-item" onclick="autoSuggest();closeMoreMenu();">🧠 週おまかせ</button>
       </div>
     </div>
   </div>
@@ -370,7 +669,18 @@ linear-gradient(125deg,#020617 0%,#0b1120 40%,#111827 100%);overflow:auto;}
 
     <div class="form-group edit-panel" data-tab="basic">
       <label>調理時間（分）</label>
-      <input class="form-input" id="eCookTime" type="number" min="0" placeholder="0（未設定）" style="max-width:140px;">
+      <input class="form-input" id="eCookTime" type="number" min="0" placeholder="0（未設定）" style="max-width:140px;" list="dlCookTime">
+      <datalist id="dlCookTime">
+        <option value="5">5分</option>
+        <option value="10">10分</option>
+        <option value="15">15分</option>
+        <option value="20">20分</option>
+        <option value="30">30分</option>
+        <option value="45">45分</option>
+        <option value="60">60分</option>
+        <option value="90">90分</option>
+        <option value="120">120分</option>
+      </datalist>
     </div>
 
     <!-- 評価 -->
@@ -560,7 +870,7 @@ let settings={
   showCalories:true,showStars:true,showDifficulty:true,
   showCost:true,showNutritionColor:true,showPlannedCardImage:true,currency:"円",
   cardDensity:"standard",uiMode:"standard",sheetLevel:4,sheetScale:10,sheetHeight:null,sheetHidden:false,
-  dailyCalorieGoal:0
+  dailyCalorieGoal:0,weekStartMonday:false,theme:"dark"
 };
 let weekdayMode=false;
 let activeTagFilter=null;
@@ -703,7 +1013,17 @@ function createPlannedItemFromSource(src,newId){
 }
 
 // ===== WEEK UTILS =====
-function weekKey(d){const x=new Date(d);x.setDate(x.getDate()-x.getDay());return x.toISOString().slice(0,10);}
+function getWeekStart(d){
+  const x=new Date(d);
+  if(settings.weekStartMonday){
+    const dow=x.getDay();
+    x.setDate(x.getDate()-(dow===0?6:dow-1));
+  }else{
+    x.setDate(x.getDate()-x.getDay());
+  }
+  return x;
+}
+function weekKey(d){return getWeekStart(d).toISOString().slice(0,10);}
 function curKey(){return weekKey(baseDate);}
 const MEALS=["朝","昼","夜"];
 function weekData(){
@@ -720,8 +1040,7 @@ function changeMeal(m){currentMeal=m;exitAssignmentMode(false);render();}
 function isToday(d){return d.toDateString()===new Date().toDateString();}
 
 function assignmentDateLabel(dayIndex){
-  const start=new Date(baseDate);
-  start.setDate(start.getDate()-start.getDay());
+  const start=getWeekStart(baseDate);
   const d=new Date(start);
   d.setDate(start.getDate()+dayIndex);
   return `${d.getMonth()+1}/${d.getDate()}(${DAYS[d.getDay()]})`;
@@ -1430,25 +1749,13 @@ function getBoardShareLink(boardId){
   return url.toString();
 }
 function updateBoardBadge(){
-  const badge=document.getElementById("boardBadge");
-  if(!badge)return;
+  const title=document.getElementById("headerTitle");
+  if(!title)return;
   if(activeBoardId){
-    badge.innerText="📋 "+activeBoardName+" ▾";
-    badge.style.display="inline-flex";
-    badge.style.background="";
-    badge.style.borderColor="";
-    badge.style.color="";
-  }else if(cloudCurrentUser){
-    badge.innerText="👥 共有";
-    badge.style.display="inline-flex";
-    badge.style.background="#1e293b";
-    badge.style.borderColor="#334155";
-    badge.style.color="#64748b";
+    const emoji=(joinedBoards.find(b=>b.boardId===activeBoardId)||{}).emoji||"📋";
+    title.innerText=emoji+" "+activeBoardName;
   }else{
-    badge.style.display="none";
-    badge.style.background="";
-    badge.style.borderColor="";
-    badge.style.color="";
+    title.innerText="🍱 献立ボード";
   }
 }
 async function switchToBoard(boardId,name){
@@ -1461,28 +1768,28 @@ async function switchToBoard(boardId,name){
     await startCloudSync(cloudCurrentUser);
   }
 }
-async function createSharedBoard(name){
+async function createSharedBoard(name,emoji="📋"){
   const db=getCloudDb();
   if(!db||!cloudCurrentUser){showToast("ログインが必要です");return;}
   const boardId=generateBoardId();
   const userUid=cloudCurrentUser.uid;
-  const safe=await sanitizeForCloud();
   await db.collection("sharedBoards").doc(boardId).set({
     ownerUid:userUid,
     members:[userUid],
     name:name,
-    allData:safe.allData,
-    pool:safe.pool,
-    dayPresets:safe.dayPresets||[],
-    imageRegistry:safe.imageRegistry,
+    emoji:emoji,
+    allData:{},
+    pool:[],
+    dayPresets:[],
+    imageRegistry:{},
     clientUpdatedAt:0,
     createdAt:firebase.firestore.FieldValue.serverTimestamp(),
     updatedAt:firebase.firestore.FieldValue.serverTimestamp()
   });
-  joinedBoards.push({boardId,name,ownerUid:userUid});
+  joinedBoards.push({boardId,name,ownerUid:userUid,emoji});
   saveJoinedBoards();
   await switchToBoard(boardId,name);
-  showToast(`「${name}」を作成しました`);
+  return boardId;
 }
 async function joinSharedBoard(boardId){
   const db=getCloudDb();
@@ -1495,11 +1802,12 @@ async function joinSharedBoard(boardId){
   if(!(data.members||[]).includes(userUid)){
     await ref.update({members:firebase.firestore.FieldValue.arrayUnion(userUid)});
   }
-  const entry={boardId,name:data.name,ownerUid:data.ownerUid};
-  if(!joinedBoards.find(b=>b.boardId===boardId)){
-    joinedBoards.push(entry);
-    saveJoinedBoards();
-  }
+  const emoji=data.emoji||"📋";
+  const entry={boardId,name:data.name,ownerUid:data.ownerUid,emoji};
+  const existing=joinedBoards.find(b=>b.boardId===boardId);
+  if(existing){existing.emoji=emoji;existing.name=data.name;}
+  else{joinedBoards.push(entry);}
+  saveJoinedBoards();
   await switchToBoard(boardId,data.name);
   showToast(`「${data.name}」に参加しました`);
 }
@@ -1514,9 +1822,12 @@ async function leaveSharedBoard(boardId){
   saveJoinedBoards();
   if(activeBoardId===boardId)await switchToBoard(null,"個人ボード");
   showToast("ボードから退出しました");
-  showBoardManager();
 }
 function showBoardManager(){
+  if(!cloudCurrentUser){showToast("ログインが必要です");return;}
+  openBoardDrawer();
+}
+function _showBoardManagerLegacy(){
   if(!cloudCurrentUser){showToast("ログインが必要です");return;}
   const c=document.getElementById("boardContent");
   if(!c)return;
@@ -1600,6 +1911,261 @@ function showBoardManager(){
   document.getElementById("boardOverlay").classList.add("open");
 }
 
+// ===== BOARD DRAWER =====
+function openBoardDrawer(){
+  bdShowRoot();
+  document.getElementById("boardDrawer").classList.add("open");
+  document.getElementById("bdOverlay").classList.add("open");
+}
+function closeBoardDrawer(){
+  document.getElementById("boardDrawer").classList.remove("open");
+  document.getElementById("bdOverlay").classList.remove("open");
+}
+function _bdSetPanel(showId){
+  ["bdPanelRoot","bdPanelCreate","bdPanelShare","bdPanelJoin"].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el)el.style.display=(id===showId?"flex":"none");
+  });
+}
+function _bdSetHead(title,showBack){
+  const t=document.getElementById("bdHeadTitle");
+  const b=document.getElementById("bdBackBtn");
+  if(t)t.innerText=title;
+  if(b)b.classList.toggle("hidden",!showBack);
+}
+function bdShowRoot(){
+  _bdSetPanel("bdPanelRoot");
+  _bdSetHead("📋 ボード一覧",false);
+  const root=document.getElementById("bdPanelRoot");
+  if(!root)return;
+  root.innerHTML="";
+
+  // 個人ボード
+  const personal=document.createElement("div");
+  personal.className="bd-item"+(activeBoardId===null?" active":"");
+  personal.innerHTML=`<div class="bd-item-emoji">🍱</div><div class="bd-item-info"><div class="bd-item-name">個人ボード</div><div class="bd-item-sub">個人用・共有なし</div></div>`;
+  personal.onclick=async()=>{closeBoardDrawer();if(activeBoardId!==null)await switchToBoard(null,"個人ボード");};
+  root.appendChild(personal);
+
+  // 参加中共有ボード
+  if(joinedBoards.length>0){
+    const sec=document.createElement("div");sec.className="bd-section-title";sec.innerText="共有ボード";root.appendChild(sec);
+    joinedBoards.forEach(board=>{
+      const item=document.createElement("div");
+      item.className="bd-item"+(activeBoardId===board.boardId?" active":"");
+      const emoji=board.emoji||"📋";
+      const isOwner=cloudCurrentUser&&board.ownerUid===cloudCurrentUser.uid;
+      item.innerHTML=`<div class="bd-item-emoji">${emoji}</div><div class="bd-item-info"><div class="bd-item-name">${escHtml(board.name)}</div><div class="bd-item-sub">${isOwner?"オーナー":"メンバー"}</div></div><button class="bd-item-share" title="共有・設定" onclick="event.stopPropagation();bdShowShare('${board.boardId}')">🔗</button>`;
+      item.onclick=async()=>{
+        if(activeBoardId!==board.boardId){closeBoardDrawer();await switchToBoard(board.boardId,board.name);}
+        else closeBoardDrawer();
+      };
+      root.appendChild(item);
+    });
+  }
+
+  // フッター
+  const footer=document.createElement("div");footer.className="bd-footer";
+  if(cloudCurrentUser){
+    const createBtn=document.createElement("button");createBtn.className="bd-action-btn primary";createBtn.innerText="＋ 新しいボードを作成";createBtn.onclick=()=>bdShowCreate();
+    const joinBtn=document.createElement("button");joinBtn.className="bd-action-btn";joinBtn.innerText="🔑 コードで参加";joinBtn.onclick=()=>bdShowJoin();
+    footer.appendChild(createBtn);footer.appendChild(joinBtn);
+  }else{
+    const note=document.createElement("div");note.style.cssText="font-size:11px;color:#64748b;text-align:center;padding:4px;";note.innerText="共有機能はログイン後に利用できます";footer.appendChild(note);
+  }
+  root.appendChild(footer);
+}
+function bdShowCreate(){
+  _bdSetPanel("bdPanelCreate");
+  _bdSetHead("＋ 新しいボードを作成",true);
+  const panel=document.getElementById("bdPanelCreate");
+  if(!panel)return;
+  const presets=[
+    {emoji:"🏠",label:"個人"},
+    {emoji:"👨‍👩‍👧",label:"家族"},
+    {emoji:"❤️",label:"恋人"},
+    {emoji:"👫",label:"友達"},
+    {emoji:"💼",label:"仕事"},
+    {emoji:"🍽️",label:"その他"}
+  ];
+  let selectedEmoji=presets[0].emoji;
+  let selectedName=presets[0].label+"の献立";
+
+  panel.innerHTML=`
+    <div class="bd-section-title">ボードのテーマ</div>
+    <div class="bd-preset-grid" id="bdPresetGrid"></div>
+    <div class="bd-form-group">
+      <label class="bd-form-label">ボード名</label>
+      <input class="bd-input" id="bdCreateName" type="text" placeholder="例: 家族の献立" maxlength="30">
+    </div>
+    <div class="bd-footer">
+      <button class="bd-action-btn primary" id="bdCreateBtn">作成する</button>
+    </div>`;
+
+  const grid=panel.querySelector("#bdPresetGrid");
+  presets.forEach((p,i)=>{
+    const btn=document.createElement("button");
+    btn.className="bd-preset-item"+(i===0?" selected":"");
+    btn.innerHTML=`<span class="pico">${p.emoji}</span><span class="plabel">${p.label}</span>`;
+    btn.onclick=()=>{
+      grid.querySelectorAll(".bd-preset-item").forEach(b=>b.classList.remove("selected"));
+      btn.classList.add("selected");
+      selectedEmoji=p.emoji;
+      const ni=panel.querySelector("#bdCreateName");
+      if(ni&&(!ni.value||presets.some(px=>ni.value===px.label+"の献立")))ni.value=p.label+"の献立";
+      selectedName=ni?ni.value:p.label+"の献立";
+    };
+    grid.appendChild(btn);
+  });
+
+  const nameInput=panel.querySelector("#bdCreateName");
+  if(nameInput)nameInput.value=selectedName;
+
+  const createBtn=panel.querySelector("#bdCreateBtn");
+  if(createBtn){
+    createBtn.onclick=async()=>{
+      const n=(nameInput?nameInput.value.trim():null)||selectedName;
+      if(!n){if(nameInput)nameInput.focus();return;}
+      createBtn.disabled=true;createBtn.innerText="作成中...";
+      try{
+        const boardId=await createSharedBoard(n,selectedEmoji);
+        closeBoardDrawer();
+        showToast(`「${n}」を作成しました`);
+        // 作成直後に共有パネルを開く
+        setTimeout(()=>{openBoardDrawer();if(boardId)bdShowShare(boardId);},400);
+      }catch(e){
+        showToast("作成に失敗しました");
+        createBtn.disabled=false;createBtn.innerText="作成する";
+      }
+    };
+  }
+}
+function bdShowShare(boardId){
+  _bdSetPanel("bdPanelShare");
+  const board=joinedBoards.find(b=>b.boardId===boardId)||{boardId,name:"ボード",emoji:"📋"};
+  const isOwner=cloudCurrentUser&&board.ownerUid===cloudCurrentUser.uid;
+  _bdSetHead((board.emoji||"📋")+" "+board.name,true);
+  const panel=document.getElementById("bdPanelShare");
+  if(!panel)return;
+  const link=getBoardShareLink(boardId);
+  panel.innerHTML=`
+    <div class="bd-board-header">
+      <span class="pico">${board.emoji||"📋"}</span>
+      <span class="bname">${escHtml(board.name)}</span>
+    </div>
+    <div class="bd-section-title">招待コード</div>
+    <div class="bd-code-box" id="bdCodeBox">${escHtml(boardId)}</div>
+    <div class="bd-info-row">このコードをメンバーに伝えてください。</div>
+    <div class="bd-footer">
+      <button class="bd-action-btn" id="bdCopyCode">📋 コードをコピー</button>
+      <button class="bd-action-btn primary" id="bdCopyLink">🔗 招待リンクをコピー</button>
+      ${activeBoardId===boardId?`<button class="bd-action-btn" id="bdPersonalBtn">🍱 個人ボードに切替</button>`:""}
+      ${isOwner
+        ?`<button class="bd-action-btn danger" id="bdDeleteBtn">🗑 ボードを削除</button>`
+        :`<button class="bd-action-btn danger" id="bdLeaveBtn">🚪 退出する</button>`
+      }
+    </div>`;
+
+  panel.querySelector("#bdCopyCode").onclick=()=>
+    navigator.clipboard.writeText(boardId).then(()=>showToast("コードをコピーしました"));
+  panel.querySelector("#bdCopyLink").onclick=()=>
+    navigator.clipboard.writeText(link).then(()=>showToast("招待リンクをコピーしました"));
+
+  const perBtn=panel.querySelector("#bdPersonalBtn");
+  if(perBtn)perBtn.onclick=async()=>{closeBoardDrawer();await switchToBoard(null,"個人ボード");};
+
+  const delBtn=panel.querySelector("#bdDeleteBtn");
+  if(delBtn){
+    delBtn.onclick=async()=>{
+      if(!confirm(`「${board.name}」を削除しますか？この操作は取り消せません。`))return;
+      const db=getCloudDb();if(!db)return;
+      delBtn.disabled=true;delBtn.innerText="削除中...";
+      try{
+        await db.collection("sharedBoards").doc(boardId).delete();
+        joinedBoards=joinedBoards.filter(b=>b.boardId!==boardId);
+        saveJoinedBoards();
+        if(activeBoardId===boardId)await switchToBoard(null,"個人ボード");
+        closeBoardDrawer();
+        showToast("ボードを削除しました");
+      }catch(e){showToast("削除に失敗しました");delBtn.disabled=false;delBtn.innerText="🗑 ボードを削除";}
+    };
+  }
+  const leaveBtn=panel.querySelector("#bdLeaveBtn");
+  if(leaveBtn){
+    leaveBtn.onclick=async()=>{
+      if(!confirm(`「${board.name}」から退出しますか？`))return;
+      await leaveSharedBoard(boardId);
+      closeBoardDrawer();
+    };
+  }
+}
+function bdShowJoin(){
+  _bdSetPanel("bdPanelJoin");
+  _bdSetHead("🔑 コードで参加",true);
+  const panel=document.getElementById("bdPanelJoin");
+  if(!panel)return;
+  panel.innerHTML=`
+    <div class="bd-section-title">招待コードを入力</div>
+    <div class="bd-form-group">
+      <label class="bd-form-label">8文字のコード</label>
+      <input class="bd-input" id="bdJoinCode" type="text" placeholder="xxxxxxxx" maxlength="8" style="letter-spacing:.15em;text-align:center;font-size:18px;text-transform:lowercase;">
+    </div>
+    <div class="bd-info-row" style="color:#64748b;">共有リンクのURLの末尾（?board=以降）がコードです。</div>
+    <div class="bd-footer">
+      <button class="bd-action-btn primary" id="bdJoinBtn">参加する</button>
+    </div>`;
+  const codeInput=panel.querySelector("#bdJoinCode");
+  const joinBtn=panel.querySelector("#bdJoinBtn");
+  if(joinBtn){
+    joinBtn.onclick=async()=>{
+      const code=(codeInput?codeInput.value.trim().toLowerCase():"");
+      if(!code){if(codeInput)codeInput.focus();return;}
+      joinBtn.disabled=true;joinBtn.innerText="参加中...";
+      try{
+        await joinSharedBoard(code);
+        closeBoardDrawer();
+      }catch(e){
+        showToast("参加に失敗しました");
+        joinBtn.disabled=false;joinBtn.innerText="参加する";
+      }
+    };
+  }
+  if(codeInput){
+    codeInput.addEventListener("keydown",e=>{if(e.key==="Enter")joinBtn&&joinBtn.click();});
+  }
+}
+// leaveSharedBoard を使った後にドロワーを開く場合の調整
+(function patchLeaveSharedBoard(){
+  const orig=window.leaveSharedBoard;
+  if(typeof orig==="function"){
+    // leaveSharedBoard 内部の showBoardManager 呼び出しは
+    // すでに openBoardDrawer にリダイレクトされているので変更不要
+  }
+})();
+// スワイプジェスチャー（左端から右スワイプでドロワーを開く）
+(function setupDrawerSwipe(){
+  let sx=0,sy=0,tracking=false;
+  document.addEventListener("touchstart",e=>{
+    if(!e.touches.length)return;
+    const t=e.touches[0];
+    if(t.clientX>20)return;
+    sx=t.clientX;sy=t.clientY;tracking=true;
+  },{passive:true});
+  document.addEventListener("touchmove",e=>{
+    if(!tracking||!e.touches.length)return;
+    const t=e.touches[0];
+    const dx=t.clientX-sx,dy=Math.abs(t.clientY-sy);
+    if(dx>40&&dy<60){openBoardDrawer();tracking=false;}
+  },{passive:true});
+  document.addEventListener("touchend",()=>{tracking=false;},{passive:true});
+})();
+// escキーでドロワーを閉じる
+document.addEventListener("keydown",e=>{
+  if(e.key==="Escape"){
+    const drawer=document.getElementById("boardDrawer");
+    if(drawer&&drawer.classList.contains("open")){closeBoardDrawer();return;}
+  }
+});
 // ===== UNDO =====
 function pushUndo(){undoStack.push(JSON.stringify({allData,pool,imageRegistry}));if(undoStack.length>40)undoStack.shift();}
 function undo(){
@@ -1612,6 +2178,9 @@ document.addEventListener("keydown",e=>{
   if((e.ctrlKey||e.metaKey)&&e.key==="z"){e.preventDefault();undo();return;}
   if(e.key==="Escape"&&assignmentDayIndex!=null){e.preventDefault();exitAssignmentMode();showToast("割り当てモードを終了しました");}
 });
+
+// ===== UTILS =====
+function escHtml(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
 
 // ===== TOAST =====
 function showToast(msg){
@@ -1670,6 +2239,15 @@ function applyUIMode(mode){
   if(settings.uiMode==="focus")document.body.classList.add("ui-focus");
   if(settings.uiMode==="edit")document.body.classList.add("ui-edit");
 }
+function applyTheme(t){
+  const valid=["dark","light","pink"];
+  settings.theme=valid.includes(t)?t:"dark";
+  if(settings.theme==="dark"){
+    document.body.removeAttribute("data-theme");
+  }else{
+    document.body.setAttribute("data-theme",settings.theme);
+  }
+}
 function clampSheetLevel(v){
   const n=parseInt(v,10);
   if(!Number.isFinite(n))return 4;
@@ -1698,11 +2276,9 @@ function getSheetSnapPoints(){
 }
 function calcDayMinHeight(itemCount){
   const base=isTouchLikeDevice()?300:250;
-  const perCard=84;
+  const perCard=94;
   const count=Math.max(0,Number(itemCount)||0);
-  const dynamic=base+(count*perCard);
-  const cap=Math.max(460,Math.round(window.innerHeight*1.25));
-  return Math.min(dynamic,cap);
+  return base+(count*perCard);
 }
 function removePlannedCard(target){
   const day=allData[target.wk]?.[target.meal]?.[target.di];
@@ -1772,7 +2348,7 @@ function render(){
   document.body.dataset.cardDensity=settings.cardDensity||"standard";
   const isAllMeals=currentMeal==="全";
   const wd=isAllMeals?Array.from({length:7},()=>[]):weekData();const k=curKey();
-  const start=new Date(baseDate);start.setDate(start.getDate()-start.getDay());
+  const start=getWeekStart(baseDate);
   const end=new Date(start);end.setDate(start.getDate()+6);
   document.getElementById("label").innerText=`${start.getMonth()+1}/${start.getDate()}〜${end.getMonth()+1}/${end.getDate()}`;
 
@@ -1781,7 +2357,7 @@ function render(){
     const col=document.createElement("div");col.className="day";
     col.dataset.dayIndex=String(i);
     col.style.minHeight=calcDayMinHeight(wd[i]?.length||0)+"px";
-    if(i===0)col.classList.add("sun");if(i===6)col.classList.add("sat");if(isToday(d))col.classList.add("today");
+    if(d.getDay()===0)col.classList.add("sun");if(d.getDay()===6)col.classList.add("sat");if(isToday(d))col.classList.add("today");
     if(assignmentDayIndex===i)col.classList.add("assignment-target");
     col.addEventListener("dragover",e=>{
       e.preventDefault();
@@ -1798,7 +2374,7 @@ function render(){
     });
     col.addEventListener("click",e=>{
       if(Date.now()<touchDayClickSuppressUntil)return;
-      if(e.target.closest(".card,.card-edit-btn,.day-assign-btn,.day-preset-btn,.day-clear-btn,.btn"))return;
+      if(e.target.closest(".card,.card-edit-btn,.day-assign-btn,.day-preset-btn,.day-clear-btn,.day-suggest-btn,.btn"))return;
       openAssignmentMode(i);
     });
     const hdr=document.createElement("div");hdr.className="day-header";
@@ -1829,6 +2405,16 @@ function render(){
       dotsEl.appendChild(dot);
     });
     hdr.appendChild(dotsEl);
+    if(!wd[i].length){
+      const suggestBtn=document.createElement("button");
+      suggestBtn.type="button";
+      suggestBtn.className="day-suggest-btn";
+      suggestBtn.title="この日だけおまかせ";
+      suggestBtn.innerText="🎲";
+      const _di=i;
+      suggestBtn.onclick=e=>{e.stopPropagation();autoSuggestDay(_di);};
+      hdr.appendChild(suggestBtn);
+    }
     if(wd[i].length>0){
       const clearBtn=document.createElement("button");
       clearBtn.type="button";
@@ -1869,18 +2455,7 @@ function render(){
         col.appendChild(sec);
       });
     }else{
-      const dayKey=`${k}-${currentMeal}-${i}`;
-      const limit=cardLimitByDensity();
-      const items=expandedDayKeys[dayKey]?wd[i]:wd[i].slice(0,limit);
-      items.forEach((item,ii)=>col.appendChild(mkCardEl(item,{wk:k,di:i,ii:wd[i].indexOf(item),meal:currentMeal})));
-      if(wd[i].length>limit){
-        const more=document.createElement("button");
-        more.className="btn";
-        more.style.cssText="padding:3px 6px;font-size:10px;align-self:flex-start;";
-        more.innerText=expandedDayKeys[dayKey]?"折りたたむ":`+${wd[i].length-limit}件`;
-        more.onclick=()=>{expandedDayKeys[dayKey]=!expandedDayKeys[dayKey];render();};
-        col.appendChild(more);
-      }
+      wd[i].forEach((item,ii)=>col.appendChild(mkCardEl(item,{wk:k,di:i,ii,meal:currentMeal})));
     }
     cal.appendChild(col);
   }
@@ -2309,7 +2884,7 @@ function renderActiveFilterBar(){
 // ===== GRAPH =====
 function showGraph(){
   const k=curKey();
-  const start=new Date(baseDate);start.setDate(start.getDate()-start.getDay());
+  const start=getWeekStart(baseDate);
   const combined=allMealData(k);
   const dayStats=combined.map((day,i)=>{
     const d=new Date(start);d.setDate(start.getDate()+i);
@@ -2447,6 +3022,15 @@ function showSettings(){
   account.appendChild(accountMeta);
   c.appendChild(account);
 
+  // 週の開始曜日
+  const weekRow=document.createElement("div");weekRow.className="setting-row";
+  const weekL=document.createElement("span");weekL.style.fontSize="13px";weekL.innerText="週の始まり";
+  const weekSel=document.createElement("select");weekSel.className="form-input";weekSel.style.cssText="width:90px;padding:4px 6px;";
+  [["false","日曜日"],["true","月曜日"]].forEach(([v,t])=>{const o=document.createElement("option");o.value=v;o.innerText=t;weekSel.appendChild(o);});
+  weekSel.value=String(!!settings.weekStartMonday);
+  weekSel.onchange=()=>{settings.weekStartMonday=(weekSel.value==="true");save();render();};
+  weekRow.appendChild(weekL);weekRow.appendChild(weekSel);c.appendChild(weekRow);
+
   const defs=[
     {key:"showCalories",label:"カードにカロリー表示"},
     {key:"showStars",label:"カードにお気に入り★表示"},
@@ -2537,6 +3121,33 @@ function showSettings(){
     c.appendChild(brdSec);
   }
 
+  // Theme picker
+  const themeRow=document.createElement("div");themeRow.className="setting-row";
+  themeRow.style.cssText="flex-direction:column;align-items:flex-start;gap:8px;padding-top:12px;";
+  const themeL=document.createElement("span");themeL.style.fontSize="13px";themeL.innerText="テーマ";
+  const themePicker=document.createElement("div");themePicker.style.cssText="display:flex;gap:7px;flex-wrap:wrap;width:100%;";
+  const themeOpts=[
+    {val:"dark",  label:"🌙 ダーク", bg:"#0f172a", fg:"#e2e8f0", border:"#334155"},
+    {val:"light", label:"☀️ ライト", bg:"#f1f5f9", fg:"#0f172a", border:"#cbd5e1"},
+    {val:"pink",  label:"🌸 ピンク",  bg:"#ffe4ef", fg:"#831843", border:"#f9a8d4"},
+  ];
+  themeOpts.forEach(opt=>{
+    const b=document.createElement("button");
+    const isActive=settings.theme===opt.val;
+    b.style.cssText=`background:${opt.bg};color:${opt.fg};border:2px solid ${isActive?"#3b82f6":opt.border};border-radius:10px;padding:6px 13px;font-size:12px;cursor:pointer;font-family:inherit;font-weight:bold;transition:border-color .15s;flex:1;min-width:80px;`;
+    b.innerText=opt.label;
+    b.onclick=()=>{
+      applyTheme(opt.val);
+      save();
+      themePicker.querySelectorAll("button").forEach((x,i)=>x.style.borderColor=themeOpts[i].border);
+      b.style.borderColor="#3b82f6";
+    };
+    themePicker.appendChild(b);
+  });
+  themeRow.appendChild(themeL);
+  themeRow.appendChild(themePicker);
+  c.appendChild(themeRow);
+
   const logoutWrap=document.createElement("div");logoutWrap.className="setting-logout-wrap";
   const logoutBtn=document.createElement("button");
   logoutBtn.className="btn setting-logout-btn";
@@ -2579,18 +3190,95 @@ async function logoutFromSettings(){
 // ===== AUTO SUGGEST =====
 function autoSuggest(){
   if(!pool.length){showToast("プールに献立がありません");return;}
-  pushUndo();const wd=weekData();let filled=0;
-  const scored=[...pool].sort((a,b)=>inventoryScore(b)-inventoryScore(a));
-  const topN=Math.max(1,Math.min(scored.length,Math.ceil(scored.length*0.35)));
-  wd.forEach(day=>{
-    if(!day.length){
-      const candidates=scored.slice(0,topN);
-      const pick=(candidates.length?candidates:pool)[Math.floor(Math.random()*(candidates.length||pool.length))];
-      day.push(createPlannedItemFromSource(pick,true));filled++;
+  pushUndo();
+  const wd=weekData();
+  let filled=0;
+
+  // 今週すでに配置済みのタグとIDを収集
+  const usedTags=new Set();
+  const usedIds=new Set();
+  wd.forEach(day=>day.forEach(item=>{usedTags.add(item.tag);usedIds.add(item.id);}));
+
+  // 週の開始日（日曜）を算出（平日判定用）
+  const startDate=new Date(baseDate);
+  startDate.setDate(startDate.getDate()-startDate.getDay());
+
+  wd.forEach((day,dayIndex)=>{
+    if(day.length)return; // すでに献立あり
+
+    const isWeekday=dayIndex>=1&&dayIndex<=5; // 月〜金
+
+    // 候補をスコアリング
+    const scored=[...pool]
+      .filter(item=>!usedIds.has(item.id))
+      .map(item=>{
+        let score=0;
+        score+=inventoryScore(item)*40;          // 在庫優先（0〜40）
+        score+=(item.favorite||0)*6;             // お気に入り優先（0〜30）
+        if(isWeekday){
+          const ct=item.cookTime||0;
+          if(ct>0&&ct<=30)score+=20;             // 平日は時短優先
+          else if(ct>30)score-=10;               // 平日に長調理はペナルティ
+        }
+        if(!usedTags.has(item.tag))score+=15;    // タグ多様性ボーナス
+        else score-=5;                           // 同タグ重複ペナルティ
+        score+=(Math.random()-0.5)*20;           // ±10のゆらぎ（毎回違う提案に）
+        return{item,score};
+      })
+      .sort((a,b)=>b.score-a.score);
+
+    let pick;
+    if(scored.length){
+      const topN=Math.min(scored.length,3);
+      pick=scored[Math.floor(Math.random()*topN)].item;
+      usedIds.add(pick.id);
+      usedTags.add(pick.tag);
+    }else{
+      // フォールバック: 全プールからランダム
+      pick=pool[Math.floor(Math.random()*pool.length)];
     }
+    day.push(createPlannedItemFromSource(pick,true));
+    filled++;
   });
+
   if(!filled){showToast("全日に献立が入っています");undoStack.pop();return;}
-  save();render();showToast(filled+"日分を提案しました 🎲");
+  save();render();showToast(filled+"日分をスマート提案しました 🧠");
+}
+function autoSuggestDay(dayIndex){
+  if(!pool.length){showToast("プールに献立がありません");return;}
+  const wd=weekData();
+  if(wd[dayIndex]&&wd[dayIndex].length){showToast("その日にはすでに献立が入っています");return;}
+  pushUndo();
+  const usedTags=new Set();
+  const usedIds=new Set();
+  wd.forEach(day=>day.forEach(item=>{usedTags.add(item.tag);usedIds.add(item.id);}));
+  const isWeekday=dayIndex>=1&&dayIndex<=5;
+  const scored=[...pool]
+    .filter(item=>!usedIds.has(item.id))
+    .map(item=>{
+      let score=0;
+      score+=inventoryScore(item)*40;
+      score+=(item.favorite||0)*6;
+      if(isWeekday){
+        const ct=item.cookTime||0;
+        if(ct>0&&ct<=30)score+=20;
+        else if(ct>30)score-=10;
+      }
+      if(!usedTags.has(item.tag))score+=15;
+      else score-=5;
+      score+=(Math.random()-0.5)*20;
+      return{item,score};
+    })
+    .sort((a,b)=>b.score-a.score);
+  let pick;
+  if(scored.length){
+    const topN=Math.min(scored.length,3);
+    pick=scored[Math.floor(Math.random()*topN)].item;
+  }else{
+    pick=pool[Math.floor(Math.random()*pool.length)];
+  }
+  wd[dayIndex].push(createPlannedItemFromSource(pick,true));
+  save();render();showToast(assignmentDateLabel(dayIndex)+" に提案しました 🎲");
 }
 
 // ===== TRASH =====
@@ -3363,6 +4051,7 @@ function initAuth(){
 // ===== INIT =====
 load();
 applyUIMode(settings.uiMode||"standard");
+applyTheme(settings.theme||"dark");
 if(!pool.length){
   pool=["カレー","パスタ","ラーメン","ハンバーグ","サラダ","唐揚げ","肉じゃが","チャーハン","焼き魚","餃子"].map(t=>mkItem(t));
 }
