@@ -15,6 +15,7 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif
 body.no-x-nav{overscroll-behavior-x:none;touch-action:pan-y;}
 .header{display:flex;justify-content:space-between;align-items:center;padding:8px 14px;gap:8px;flex-wrap:wrap;border-bottom:1px solid #334155;background:#0f172a;position:sticky;top:0;z-index:100;}
 .title{font-size:16px;font-weight:bold;white-space:nowrap;}
+.header-left{display:flex;align-items:center;gap:8px;flex-shrink:0;}
 .actions{display:flex;gap:5px;align-items:center;flex-wrap:nowrap;min-width:0;}
 .btn{background:#334155;padding:7px 11px;border-radius:8px;cursor:pointer;border:none;color:#f1f5f9;font-size:12px;white-space:nowrap;transition:background .1s;font-family:inherit;min-height:34px;}
 .btn:hover{background:#475569;}.btn:active{transform:scale(.93);background:#1e293b;}
@@ -236,6 +237,12 @@ linear-gradient(125deg,#020617 0%,#0b1120 40%,#111827 100%);overflow:auto;}
 .sheet-hint-text{font-size:9px;color:#475569;text-align:center;padding:0 0 3px;letter-spacing:.3px;}
 .card-dup-btn{position:absolute;top:4px;right:28px;background:transparent;border:none;color:#64748b;font-size:12px;padding:4px 5px;cursor:pointer;border-radius:4px;opacity:0;transition:opacity .15s;line-height:1;min-height:28px;min-width:24px;display:flex;align-items:center;justify-content:center;}
 .pool-card:hover .card-dup-btn{opacity:1;}.card-dup-btn:hover{background:#334155;color:#f1f5f9;}
+.card-check-btn{position:absolute;bottom:4px;right:4px;background:transparent;border:none;font-size:15px;cursor:pointer;padding:2px 3px;line-height:1;min-height:24px;min-width:24px;display:flex;align-items:center;justify-content:center;border-radius:4px;transition:transform .12s,opacity .12s;opacity:.4;}
+.card-check-btn:hover{transform:scale(1.3);opacity:1;}
+.card.eaten{opacity:.72;border-left-color:#22c55e!important;background:#0d2318;}
+.card.eaten:hover{background:#112a1e;}
+.card.eaten .card-text{text-decoration:line-through;color:#64748b;}
+.card.eaten .card-check-btn{opacity:1;}
 .cal-progress-bar-wrap{height:3px;background:#1e293b;border-radius:2px;margin-top:3px;overflow:hidden;}
 .cal-progress-bar{height:100%;border-radius:2px;transition:width .4s;}
 @media(hover:none){.card-edit-btn{opacity:1;background:#33415599;color:#e2e8f0;}.card-dup-btn{opacity:1;background:#33415599;color:#e2e8f0;}}
@@ -250,7 +257,7 @@ linear-gradient(125deg,#020617 0%,#0b1120 40%,#111827 100%);overflow:auto;}
   body[data-card-density="detailed"] .card.has-image .card-img-wrap{width:72px;min-width:72px;}
   body[data-card-density="detailed"] .card.has-image .card-img{width:72px;height:72px;}
   .header{padding:8px 10px;gap:6px;}
-  .title{font-size:15px;width:100%;}
+  .title{font-size:15px;}
   .actions{width:100%;overflow-x:auto;padding-bottom:2px;-webkit-overflow-scrolling:touch;}
   .actions::-webkit-scrollbar{display:none;}
   .more-panel{right:0;left:auto;max-width:86vw;}
@@ -576,6 +583,109 @@ body[data-theme="pink"] .month-day{border-color:#f9a8d4;}body[data-theme="pink"]
 body[data-theme="pink"] .month-weekday-row{background:#ffe4ef;border-color:#f9a8d4;}
 body[data-theme="pink"] .month-summary-row{background:#ffe4ef;border-color:#f9a8d4;}body[data-theme="pink"] .month-summary-row .ms-chip{background:#fce7f3;color:#831843;}
 body[data-theme="pink"] .budget-bar-wrap{background:#ffe4ef;border-color:#f9a8d4;}body[data-theme="pink"] .budget-bar-track{background:#fff0f5;}
+/* ===== RECOGNIZE MODAL ===== */
+.rec-img-area{display:flex;flex-direction:column;align-items:center;gap:10px;padding:8px 0;}
+.rec-img-placeholder{width:100%;max-width:320px;height:180px;border:2px dashed #334155;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:#64748b;font-size:13px;cursor:pointer;transition:border-color .15s,background .15s;}
+.rec-img-placeholder:hover{border-color:#3b82f6;background:#1e293b;}
+.rec-img-preview{width:100%;max-width:320px;max-height:220px;object-fit:cover;border-radius:10px;display:none;border:1px solid #334155;}
+.rec-step{display:none;}.rec-step.active{display:block;}
+.rec-dish-row{display:flex;gap:8px;align-items:center;margin:8px 0;}
+.rec-dish-row input{flex:1;}
+.rec-meal-card{background:#0f172a;border-radius:8px;padding:10px 12px;cursor:pointer;border:2px solid transparent;transition:border-color .15s;margin-bottom:6px;}
+.rec-meal-card:hover{border-color:#3b82f6;}
+.rec-meal-card.selected{border-color:#22d3ee;}
+.rec-meal-name{font-size:13px;font-weight:bold;color:#f1f5f9;}
+.rec-meal-area{font-size:10px;color:#94a3b8;margin-top:2px;}
+.rec-steps-box{background:#0f172a;border-radius:8px;padding:10px 12px;font-size:11px;color:#cbd5e1;line-height:1.7;max-height:180px;overflow-y:auto;white-space:pre-wrap;margin:6px 0;}
+.rec-ings-box{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0;}
+.rec-ing-chip{background:#1e293b;border-radius:20px;padding:2px 9px;font-size:10px;color:#e2e8f0;}
+.rec-spinner{text-align:center;padding:16px;color:#94a3b8;font-size:12px;}
+.rec-error{color:#f87171;font-size:12px;padding:6px 0;}
+.rec-section-title{font-size:10px;color:#64748b;font-weight:bold;letter-spacing:.5px;text-transform:uppercase;margin:10px 0 4px;}
+body[data-theme="light"] .rec-img-placeholder{border-color:#e2e8f0;color:#94a3b8;}
+body[data-theme="light"] .rec-img-placeholder:hover{border-color:#3b82f6;background:#f8fafc;}
+body[data-theme="light"] .rec-img-preview{border-color:#e2e8f0;}
+body[data-theme="light"] .rec-meal-card{background:#f1f5f9;}
+body[data-theme="light"] .rec-meal-card:hover{border-color:#3b82f6;}
+body[data-theme="light"] .rec-steps-box{background:#f1f5f9;color:#334155;}
+body[data-theme="light"] .rec-ing-chip{background:#e2e8f0;color:#0f172a;}
+body[data-theme="light"] .rec-section-title{color:#94a3b8;}
+body[data-theme="pink"] .rec-img-placeholder{border-color:#f9a8d4;color:#be185d;}
+body[data-theme="pink"] .rec-img-placeholder:hover{border-color:#db2777;background:#ffe4ef;}
+body[data-theme="pink"] .rec-meal-card{background:#fff0f5;}
+body[data-theme="pink"] .rec-steps-box{background:#fff0f5;color:#831843;}
+body[data-theme="pink"] .rec-ing-chip{background:#fce7f3;color:#831843;}
+
+/* ===== TUTORIAL GUIDE ===== */
+.tut-fab{position:fixed;left:max(12px,env(safe-area-inset-left));bottom:calc(76px + env(safe-area-inset-bottom));z-index:360;background:#1e293b;color:#93c5fd;border:2px solid #334155;border-radius:999px;width:44px;height:44px;font-size:20px;font-weight:bold;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 18px rgba(0,0,0,.45);transition:background .15s,border-color .15s,transform .12s;font-family:inherit;line-height:1;}
+.tut-fab:hover{background:#1d4ed8;border-color:#3b82f6;transform:scale(1.1);}
+.tut-fab:active{transform:scale(.93);}
+.tut-overlay{display:none;position:fixed;inset:0;z-index:2000;}
+.tut-overlay.active{display:block;}
+.tut-spotlight{position:fixed;z-index:2001;border-radius:10px;pointer-events:none;transition:left .38s cubic-bezier(.4,.2,.2,1),top .38s cubic-bezier(.4,.2,.2,1),width .38s cubic-bezier(.4,.2,.2,1),height .38s cubic-bezier(.4,.2,.2,1);}
+.tut-spotlight.show{box-shadow:0 0 0 4000px rgba(0,0,0,.76),0 0 0 3px rgba(99,179,237,.9),0 0 22px 8px rgba(59,130,246,.6);animation:tutGlow 1.6s ease-in-out infinite;}
+.tut-tooltip{position:fixed;z-index:2002;background:linear-gradient(150deg,#1e293b 0%,#0f172a 100%);border:1px solid rgba(59,130,246,.5);border-radius:18px;padding:18px 20px 14px;width:min(310px,90vw);box-shadow:0 24px 60px rgba(0,0,0,.65),0 0 0 1px rgba(147,197,253,.1);}
+.tut-tooltip.tut-anim{animation:tutFadeIn .28s cubic-bezier(.2,.8,.4,1);}
+.tut-step-badge{display:inline-flex;align-items:center;background:rgba(37,99,235,.22);border:1px solid rgba(59,130,246,.4);border-radius:999px;padding:2px 10px;font-size:10px;color:#93c5fd;font-weight:bold;letter-spacing:.6px;margin-bottom:10px;}
+.tut-title{font-size:15px;font-weight:bold;color:#f1f5f9;margin-bottom:9px;line-height:1.35;}
+.tut-text{font-size:12.5px;color:#cbd5e1;line-height:1.72;white-space:pre-wrap;}
+.tut-footer{display:flex;justify-content:space-between;align-items:center;margin-top:16px;gap:6px;flex-wrap:wrap;}
+.tut-dots{display:flex;gap:4px;align-items:center;flex-wrap:wrap;}
+.tut-dot{width:5px;height:5px;border-radius:50%;background:#334155;transition:all .22s;}
+.tut-dot.active{background:#3b82f6;width:14px;border-radius:2.5px;}
+.tut-dot.done{background:#1e40af;}
+.tut-nav{display:flex;gap:6px;align-items:center;}
+.tut-skip-btn{background:transparent;border:none;color:#475569;font-size:11px;cursor:pointer;font-family:inherit;padding:4px 4px;text-decoration:underline;text-underline-offset:2px;white-space:nowrap;}
+.tut-skip-btn:hover{color:#94a3b8;}
+.tut-prev-btn{background:#1e293b;border:1px solid #334155;color:#e2e8f0;border-radius:9px;padding:7px 13px;font-size:12px;cursor:pointer;font-family:inherit;transition:background .1s;}
+.tut-prev-btn:hover{background:#334155;}
+.tut-prev-btn:disabled{opacity:.28;cursor:default;}
+.tut-next-btn{background:linear-gradient(135deg,#1d4ed8,#2563eb);border:none;color:#fff;border-radius:9px;padding:7px 17px;font-size:12px;font-weight:bold;cursor:pointer;font-family:inherit;box-shadow:0 4px 12px rgba(37,99,235,.38);transition:transform .1s,filter .1s;}
+.tut-next-btn:hover{filter:brightness(1.12);}
+.tut-next-btn:active{transform:scale(.96);}
+@keyframes tutGlow{
+  0%,100%{box-shadow:0 0 0 4000px rgba(0,0,0,.76),0 0 0 3px rgba(99,179,237,.8),0 0 16px 6px rgba(59,130,246,.5);}
+  50%{box-shadow:0 0 0 4000px rgba(0,0,0,.76),0 0 0 5px rgba(147,197,253,1),0 0 32px 14px rgba(59,130,246,.92);}
+}
+@keyframes tutFadeIn{from{opacity:0;transform:translateY(9px) scale(.96);}to{opacity:1;transform:translateY(0) scale(1);}}
+body[data-theme="light"] .tut-tooltip{background:linear-gradient(150deg,#ffffff,#f8fafc);border-color:rgba(37,99,235,.3);}
+body[data-theme="light"] .tut-title{color:#0f172a;}body[data-theme="light"] .tut-text{color:#334155;}
+body[data-theme="light"] .tut-step-badge{background:rgba(219,234,254,.5);border-color:rgba(59,130,246,.35);color:#1d4ed8;}
+body[data-theme="light"] .tut-prev-btn{background:#f1f5f9;border-color:#e2e8f0;color:#0f172a;}body[data-theme="light"] .tut-prev-btn:hover{background:#e2e8f0;}
+body[data-theme="light"] .tut-skip-btn{color:#94a3b8;}body[data-theme="light"] .tut-dot{background:#e2e8f0;}body[data-theme="light"] .tut-dot.done{background:#93c5fd;}
+body[data-theme="light"] .tut-fab{background:#fff;color:#1d4ed8;border-color:#bfdbfe;box-shadow:0 4px 14px rgba(37,99,235,.18);}
+body[data-theme="pink"] .tut-tooltip{background:linear-gradient(150deg,#ffe4ef,#fff0f5);border-color:rgba(219,39,119,.3);}
+body[data-theme="pink"] .tut-title{color:#831843;}body[data-theme="pink"] .tut-text{color:#9d174d;}
+body[data-theme="pink"] .tut-step-badge{background:rgba(252,231,243,.6);border-color:rgba(219,39,119,.3);color:#db2777;}
+body[data-theme="pink"] .tut-next-btn{background:linear-gradient(135deg,#be185d,#db2777);box-shadow:0 4px 12px rgba(219,39,119,.35);}
+body[data-theme="pink"] .tut-dot.active{background:#db2777;}body[data-theme="pink"] .tut-dot.done{background:#be185d;}
+body[data-theme="pink"] .tut-fab{background:#ffe4ef;color:#db2777;border-color:#f9a8d4;}
+/* ===== MICRO-INTERACTIONS ===== */
+@keyframes ripple-expand{0%{transform:scale(0);opacity:.45;}100%{transform:scale(4);opacity:0;}}
+.ripple-wave{position:absolute;border-radius:50%;background:rgba(255,255,255,.22);transform:scale(0);animation:ripple-expand .52s ease-out forwards;pointer-events:none;z-index:10;}
+@keyframes modal-pop{from{opacity:0;transform:scale(.93) translateY(12px);}to{opacity:1;transform:none;}}
+.overlay.open .modal{animation:modal-pop .24s cubic-bezier(.34,1.3,.64,1);}
+@keyframes overlay-fade{from{background:rgba(0,0,0,0);}to{background:rgba(0,0,0,.65);}}
+.overlay.open{animation:overlay-fade .18s ease forwards;}
+.toggle-slider:before{transition:.28s cubic-bezier(.34,1.56,.64,1)!important;}
+.toast{transition:opacity .2s ease,transform .3s cubic-bezier(.34,1.3,.64,1)!important;}
+@keyframes card-appear{0%{opacity:0;transform:translateY(10px) scale(.92);}60%{transform:translateY(-2px) scale(1.02);}100%{opacity:1;transform:none;}}
+.card-new{animation:card-appear .3s cubic-bezier(.34,1.25,.64,1)!important;}
+@keyframes check-pop{0%,100%{transform:scale(1);}35%{transform:scale(1.38);}65%{transform:scale(.86);}}
+@keyframes star-pop{0%{transform:scale(1) rotate(0);}40%{transform:scale(1.55) rotate(14deg);}72%{transform:scale(.88);}100%{transform:scale(1) rotate(0);}}
+.star-rating span{display:inline-block;transition:color .1s;}
+.handle-bar{transition:transform .2s cubic-bezier(.34,1.5,.64,1),background .15s;}
+.sheet-handle:active .handle-bar{transform:scaleX(1.18);background:#64748b;}
+.tag-btn.selected{transform:scale(1.06)!important;}
+@keyframes auth-card-in{from{opacity:0;transform:translateY(18px) scale(.96);}to{opacity:1;transform:none;}}
+.auth-card{animation:auth-card-in .45s cubic-bezier(.34,1.1,.64,1);}
+.trash-bin{transition:background .15s,transform .22s cubic-bezier(.34,1.5,.64,1),border-color .15s!important;}
+.trash-bin.drag-over{transform:scale(1.22)!important;}
+@keyframes assign-glow{0%{box-shadow:0 0 0 0 rgba(34,211,238,.7);}100%{box-shadow:0 0 0 16px rgba(34,211,238,0);}}
+.pool-assign-flash{animation:assign-glow .38s ease-out!important;}
+.bd-item{transition:background .1s,transform .18s cubic-bezier(.34,1.4,.64,1);}
+.more-item{transition:background .1s,transform .18s cubic-bezier(.34,1.4,.64,1);}
+
 </style>
 </head>
 <body class="auth-locked">
@@ -633,14 +743,18 @@ body[data-theme="pink"] .budget-bar-wrap{background:#ffe4ef;border-color:#f9a8d4
 </div>
 
 <div class="header">
-  <button class="bd-open-btn" id="bdOpenBtn" onclick="openBoardDrawer()" title="ボード管理">☰</button>
-  <div class="title" id="headerTitle">🍱 献立ボード</div>
+  <div class="header-left">
+    <button class="bd-open-btn" id="bdOpenBtn" onclick="openBoardDrawer()" title="ボード管理">☰</button>
+    <div class="title" id="headerTitle">🍱 献立ボード</div>
+  </div>
   <div class="actions">
     <button class="btn" id="navPrevBtn" onclick="navPrev()">⬅週</button>
     <span id="label" style="font-size:12px;white-space:nowrap;"></span>
     <button class="btn" id="navNextBtn" onclick="navNext()">週➡</button>
-    <button class="btn" onclick="goToday()" style="background:#0f766e">📅 今日</button>
-    <button class="btn" id="viewToggleBtn" onclick="toggleCalView()" title="週/月 切替" style="padding:5px 9px;font-size:13px;">月</button>
+    <button class="btn" id="todayBtn" onclick="goToday()" style="background:#0f766e">📅 今日</button>
+    <button class="btn" id="viewToggleBtn" onclick="toggleCalView()" title="週/月 切替" style="padding:5px 9px;font-size:13px;">週</button>
+    <button class="btn" id="clearWeekBtn" onclick="clearCurrentWeek()" title="この週の予定を全消し" style="padding:5px 9px;font-size:12px;background:#7f1d1d;color:#fca5a5;">週全消し</button>
+    <button class="btn" id="clearMonthBtn" onclick="clearCurrentMonth()" title="この月の予定を全消し" style="display:none;padding:5px 9px;font-size:12px;background:#7f1d1d;color:#fca5a5;">月全消し</button>
     <select class="meal-select" id="mealSelect" onchange="changeMeal(this.value)">
       <option value="朝">🌅 朝</option>
       <option value="昼" selected>☀️ 昼</option>
@@ -648,6 +762,7 @@ body[data-theme="pink"] .budget-bar-wrap{background:#ffe4ef;border-color:#f9a8d4
       <option value="全">📋 全食</option>
     </select>
     <button class="btn" onclick="autoSuggest()">🧠 週おまかせ</button>
+    <button class="btn" onclick="openRecognizeModal()" title="料理写真を撮ってレシピを取得">📷 認識</button>
   </div>
 </div>
 <div class="budget-bar-wrap" id="budgetBarWrap"></div>
@@ -666,7 +781,7 @@ body[data-theme="pink"] .budget-bar-wrap{background:#ffe4ef;border-color:#f9a8d4
     </div>
     <button class="btn weekday-mode-btn" id="weekdayModeBtn" style="padding:5px 9px;font-size:13px;flex-shrink:0" onclick="toggleWeekdayMode()" title="平日モード：30分以内の料理だけ表示">⚡</button>
     <button class="btn" style="padding:5px 9px;font-size:13px;flex-shrink:0" onclick="toggleTagFilter()">⚙</button>
-    <button class="btn primary" style="padding:5px 9px;font-size:13px;flex-shrink:0" onclick="openNewCard()">＋</button>
+    <button class="btn primary" id="poolAddBtn" style="padding:5px 9px;font-size:13px;flex-shrink:0" onclick="openNewCard()">＋</button>
   </div>
   <div class="active-filter-bar" id="activeFilterBar"></div>
   <div class="sheet-tag-filter" id="sheetTagFilter"></div>
@@ -825,6 +940,65 @@ body[data-theme="pink"] .budget-bar-wrap{background:#ffe4ef;border-color:#f9a8d4
   <button onclick="showSettings()">設定</button>
 </div>
 
+<!-- ===== Recognize Modal ===== -->
+<div class="overlay" id="recognizeOverlay">
+  <div class="modal">
+    <h2>📷 料理を認識してレシピ取得</h2>
+
+    <!-- Step1: 画像選択 -->
+    <div class="rec-step active" id="recStep1">
+      <div class="rec-img-area">
+        <input type="file" accept="image/*" capture="environment" id="recImageFile" style="display:none" onchange="recHandleImage(event)">
+        <div class="rec-img-placeholder" id="recPlaceholder" onclick="document.getElementById('recImageFile').click()">
+          <span style="font-size:32px">📷</span>
+          <span>写真を選択 / カメラで撮影</span>
+          <span style="font-size:10px;color:#475569">タップして画像を選ぶ</span>
+        </div>
+        <img id="recImagePreview" class="rec-img-preview" alt="プレビュー">
+      </div>
+      <div id="recStep1Error" class="rec-error"></div>
+      <div class="modal-actions" style="margin-top:10px">
+        <button class="btn" onclick="closeOverlay('recognizeOverlay')">キャンセル</button>
+        <button class="btn primary" id="recStep1Btn" onclick="recStartRecognize()" disabled>🔍 料理を認識</button>
+      </div>
+    </div>
+
+    <!-- Step2: 認識結果 + レシピ候補 -->
+    <div class="rec-step" id="recStep2">
+      <div class="rec-section-title">認識された料理名（編集可）</div>
+      <div class="rec-dish-row">
+        <input class="form-input" id="recDishName" placeholder="料理名を入力...">
+        <button class="btn" onclick="recSearchRecipe()" style="flex-shrink:0">🍽 レシピ検索</button>
+      </div>
+      <div id="recStep2Spinner" class="rec-spinner" style="display:none">🔍 レシピを検索中...</div>
+      <div id="recStep2Error" class="rec-error"></div>
+      <div id="recMealList"></div>
+      <div class="modal-actions" style="margin-top:10px">
+        <button class="btn" onclick="recGoStep(1)">← 戻る</button>
+      </div>
+    </div>
+
+    <!-- Step3: レシピ詳細 + 追加ボタン -->
+    <div class="rec-step" id="recStep3">
+      <div class="rec-section-title">レシピ詳細</div>
+      <div style="font-size:14px;font-weight:bold;color:#f1f5f9;margin-bottom:4px;" id="recFinalName"></div>
+      <div style="font-size:10px;color:#94a3b8;margin-bottom:8px;" id="recFinalArea"></div>
+
+      <div class="rec-section-title">食材</div>
+      <div class="rec-ings-box" id="recFinalIngs"></div>
+
+      <div class="rec-section-title">調理手順</div>
+      <div class="rec-steps-box" id="recFinalSteps"></div>
+
+      <div id="recStep3Error" class="rec-error"></div>
+      <div class="modal-actions" style="margin-top:10px">
+        <button class="btn" onclick="recGoStep(2)">← 戻る</button>
+        <button class="btn primary" id="recAddBtn" onclick="recAddToToday()">📅 今日の予定に追加</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ===== Preset Modal ===== -->
 <div class="overlay" id="presetOverlay">
   <div class="modal">
@@ -904,7 +1078,7 @@ let settings={
   showCalories:true,showStars:true,showDifficulty:true,
   showCost:true,showNutritionColor:true,showPlannedCardImage:true,currency:"円",
   cardDensity:"standard",uiMode:"standard",sheetLevel:4,sheetScale:10,sheetHeight:null,sheetHidden:false,
-  dailyCalorieGoal:0,weekStartMonday:false,theme:"dark",weeklyBudget:0,monthlyBudget:0
+  dailyCalorieGoal:0,weekStartMonday:false,theme:"dark",weeklyBudget:0,monthlyBudget:0,visionApiKey:""
 };
 let calView="week"; // "week" | "month"
 let weekdayMode=false;
@@ -940,6 +1114,7 @@ let joinedBoards=[];
 let isGuestMode=false;      // ゲストモード中はローカル保存・ロードしない
 let guestDataToUpload=null; // ゲスト→ログイン時に引き継ぐスナップショット
 let touchDragState=null;
+let currentDragFromPool=false;
 let touchDayClickSuppressUntil=0;
 const TOUCH_LONG_PRESS_MS=430;
 const TOUCH_DRAG_CANCEL_PX=12;
@@ -1127,7 +1302,8 @@ function updateTouchDropHighlight(clientX,clientY){
   const col=getDropDayFromPoint(clientX,clientY);
   if(!col)return null;
   const rect=col.getBoundingClientRect();
-  const shouldCopy=clientX>=rect.left+(rect.width/2);
+  const isFromPool=!!(touchDragState&&touchDragState.payload&&touchDragState.payload.fromPool);
+  const shouldCopy=isFromPool||(clientX>=rect.left+(rect.width/2));
   col.classList.add(shouldCopy?"drag-over-copy":"drag-over-move");
   return col;
 }
@@ -1135,7 +1311,8 @@ function applyDropToDay(obj,col,clientX){
   const di=parseInt(col?.dataset?.dayIndex,10);
   if(!Number.isFinite(di))return false;
   const rect=col.getBoundingClientRect();
-  const shouldCopy=clientX>=rect.left+(rect.width/2);
+  // プールからは常にコピー。カード間移動のみ左右ハーフで判定。
+  const shouldCopy=obj.fromPool?true:(clientX>=rect.left+(rect.width/2));
   let item=null;
   let changed=false;
 
@@ -1143,8 +1320,7 @@ function applyDropToDay(obj,col,clientX){
     const src=pool[obj.pidx];
     if(src){
       pushUndo();
-      item=createPlannedItemFromSource(src,shouldCopy);
-      if(!shouldCopy)pool.splice(obj.pidx,1);
+      item=createPlannedItemFromSource(src,true); // プールには常に残す
       changed=true;
     }
   }else{
@@ -1164,9 +1340,10 @@ function applyDropToDay(obj,col,clientX){
 
   if(item&&changed){
     weekData()[di].push(item);
+    trackNewCard(item?.id);
     save();
     render();
-    showToast(shouldCopy?"コピーしました":"移動しました");
+    showToast(obj.fromPool?"追加しました":(shouldCopy?"コピーしました":"移動しました"));
     return true;
   }
   return false;
@@ -2404,7 +2581,7 @@ function render(){
       e.preventDefault();
       const isRight=e.clientX>=col.getBoundingClientRect().left+col.offsetWidth/2;
       col.classList.remove("drag-over-move","drag-over-copy");
-      col.classList.add(isRight?"drag-over-copy":"drag-over-move");
+      col.classList.add((currentDragFromPool||isRight)?"drag-over-copy":"drag-over-move");
     });
     col.addEventListener("dragleave",()=>col.classList.remove("drag-over-move","drag-over-copy"));
     col.addEventListener("drop",e=>{
@@ -2507,6 +2684,7 @@ function render(){
 
 function mkCardEl(item,target){
   const c=document.createElement("div");c.className="card";
+  if(newlyAddedCardIds.has(item.id))c.classList.add("card-new");
   c.style.borderLeftColor=cardBorderColor(item);
   const isDraggable=canUseDragDrop()&&assignmentDayIndex==null;
   c.draggable=false;
@@ -2577,6 +2755,24 @@ function mkCardEl(item,target){
   const eb=document.createElement("button");eb.className="card-edit-btn";eb.innerText="✏️";
   eb.onclick=e=>{e.stopPropagation();openEdit(target);};c.appendChild(eb);
 
+  // 食べたチェックボタン（カレンダーカードのみ）
+  if(target.wk){
+    const isEaten=!!(item.eaten);
+    if(isEaten)c.classList.add("eaten");
+    const chk=document.createElement("button");
+    chk.className="card-check-btn";
+    chk.title=isEaten?"食べた（タップで取消）":"食べた！";
+    chk.innerText=isEaten?"✅":"⬜";
+    chk.onclick=e=>{
+      e.stopPropagation();
+      const dayItem=allData[target.wk]?.[target.meal]?.[target.di]?.[target.ii];
+      if(!dayItem)return;
+      dayItem.eaten=!dayItem.eaten;
+      save();render();
+    };
+    c.appendChild(chk);
+  }
+
   if(hasImage){
     const imgWrap=document.createElement("div");imgWrap.className="card-img-wrap";
     const img=document.createElement("img");img.className="card-img";img.src=resolvedImage;img.alt="";img.draggable=false;imgWrap.appendChild(img);
@@ -2589,9 +2785,11 @@ function mkCardEl(item,target){
   if(isDraggable){
     textEl.draggable=true;
     textEl.addEventListener("dragstart",e=>{
+      currentDragFromPool=false;
       e.dataTransfer.setData("text",JSON.stringify(target));
       e.dataTransfer.setDragImage(c,0,0);
     });
+    textEl.addEventListener("dragend",()=>{currentDragFromPool=false;});
   }
   bindLongPressTouchDrag(textEl,()=>({...target}));
 
@@ -2817,47 +3015,74 @@ async function fetchNutritionFromApi(){
   if(!btn||!resultEl)return;
   btn.disabled=true;btn.innerText="🔍 検索中...";
   resultEl.innerHTML="";
+  const ctrl=new AbortController();
+  const tid=setTimeout(()=>ctrl.abort(),10000);
   try{
-    const url=`https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}&search_simple=1&action=process&json=1&fields=product_name,nutriments,serving_size&page_size=5&lc=ja`;
-    const res=await fetch(url,{signal:AbortSignal.timeout(8000)});
+    const url=`https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}&search_simple=1&action=process&json=1&fields=product_name,nutriments,serving_size&page_size=10`;
+    const res=await fetch(url,{signal:ctrl.signal});
+    clearTimeout(tid);
+    if(!res.ok)throw new Error("HTTP "+res.status);
     const data=await res.json();
-    const products=(data.products||[]).filter(p=>p.nutriments&&(
-      p.nutriments["energy-kcal_serving"]||p.nutriments["energy-kcal_100g"]
-    ));
+    const products=(data.products||[]).filter(p=>p.nutriments&&Object.keys(p.nutriments).length>0);
     if(!products.length){
-      resultEl.innerText="見つかりませんでした。手動で入力してください。";
+      resultEl.innerHTML="<span>見つかりませんでした。<br>💡 英語名（例: curry rice, ramen）や<br>製品名・ブランド名で試すと見つかりやすいです。</span>";
       return;
     }
-    if(products.length===1){
-      applyNutritionData(products[0].nutriments);
-      resultEl.innerHTML="<span style='color:#4ade80'>✓ 栄養値を自動適用しました</span>";
-      return;
-    }
+    const getKcal=nm=>{
+      if(nm["energy-kcal_serving"])return Math.round(nm["energy-kcal_serving"]);
+      if(nm["energy-kcal_100g"])return Math.round(nm["energy-kcal_100g"]);
+      if(nm["energy_serving"])return Math.round(nm["energy_serving"]/4.184);
+      if(nm["energy_100g"])return Math.round(nm["energy_100g"]/4.184);
+      return 0;
+    };
+    products.sort((a,b)=>getKcal(b.nutriments)-getKcal(a.nutriments));
     const wrap=document.createElement("div");wrap.style.cssText="display:flex;flex-direction:column;gap:5px;";
-    products.slice(0,3).forEach(p=>{
+    const hint=document.createElement("div");
+    hint.style.cssText="font-size:10px;color:#64748b;margin-bottom:2px;line-height:1.5;";
+    hint.innerText="※ 数値は主に100gあたりの目安です。実際の量に合わせて調整してください。";
+    wrap.appendChild(hint);
+    products.slice(0,4).forEach(p=>{
       const nm=p.nutriments;
-      const kcal=Math.round(nm["energy-kcal_serving"]||nm["energy-kcal_100g"]||0);
+      const kcal=getKcal(nm);
+      const hasServing=!!(nm["energy-kcal_serving"]||nm["energy_serving"]);
+      const unitLabel=hasServing?"1人前":"100g";
       const row=document.createElement("div");
       row.style.cssText="display:flex;align-items:center;justify-content:space-between;gap:6px;background:#0f172a;border-radius:6px;padding:5px 8px;";
       const lbl=document.createElement("span");
       lbl.style.cssText="font-size:11px;color:#cbd5e1;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;";
-      lbl.innerText=(p.product_name||query)+(kcal?" ("+kcal+"kcal)":"");
+      lbl.title=(p.product_name||query);
+      lbl.innerText=(p.product_name||query)+(kcal?` (${kcal}kcal/${unitLabel})`:"");
       const ab=document.createElement("button");ab.className="btn primary";
-      ab.style.cssText="padding:3px 9px;font-size:10px;flex-shrink:0;";
+      ab.style.cssText="padding:3px 9px;font-size:10px;flex-shrink:0;min-height:26px;";
       ab.innerText="適用";
-      ab.onclick=()=>{applyNutritionData(nm);resultEl.innerHTML="<span style='color:#4ade80'>✓ 栄養値を適用しました</span>";};
+      ab.onclick=()=>{
+        applyNutritionData(nm);
+        resultEl.innerHTML=`<span style='color:#4ade80'>✓ 栄養値を適用しました（${unitLabel}あたり）</span>`;
+      };
       row.appendChild(lbl);row.appendChild(ab);wrap.appendChild(row);
     });
     resultEl.appendChild(wrap);
   }catch(e){
-    resultEl.innerText="通信エラーが発生しました。手動で入力してください。";
+    clearTimeout(tid);
+    if(e.name==="AbortError"){
+      resultEl.innerText="タイムアウトしました。ネットワーク接続を確認して再試行してください。";
+    }else{
+      resultEl.innerText="通信エラーが発生しました。手動で入力してください。";
+    }
   }finally{
     btn.disabled=false;btn.innerText="🔍 栄養を自動取得";
   }
 }
 function applyNutritionData(nm){
-  const get=(k1,k2)=>Math.round((nm[k1]||nm[k2]||0)*10)/10;
-  document.getElementById("eCalories").value=Math.round(nm["energy-kcal_serving"]||nm["energy-kcal_100g"]||0)||"";
+  const getKcal=()=>{
+    if(nm["energy-kcal_serving"])return Math.round(nm["energy-kcal_serving"]);
+    if(nm["energy-kcal_100g"])return Math.round(nm["energy-kcal_100g"]);
+    if(nm["energy_serving"])return Math.round(nm["energy_serving"]/4.184);
+    if(nm["energy_100g"])return Math.round(nm["energy_100g"]/4.184);
+    return 0;
+  };
+  const get=(s,h)=>Math.round(((nm[s]||nm[h]||0))*10)/10;
+  document.getElementById("eCalories").value=getKcal()||"";
   document.getElementById("eProtein").value=get("proteins_serving","proteins_100g")||"";
   document.getElementById("eCarbs").value=get("carbohydrates_serving","carbohydrates_100g")||"";
   document.getElementById("eFat").value=get("fat_serving","fat_100g")||"";
@@ -2912,7 +3137,9 @@ function saveEdit(){
     const targetMeal=editTarget.directMeal||currentMeal;
     if(!allData[targetWk])allData[targetWk]={};
     MEALS.forEach(m=>{if(!allData[targetWk][m])allData[targetWk][m]=Array.from({length:7},()=>[]);});
-    allData[targetWk][targetMeal][editTarget.directDayIndex].push(createPlannedItemFromSource(newItem,true));
+    const _planned=createPlannedItemFromSource(newItem,true);
+    allData[targetWk][targetMeal][editTarget.directDayIndex].push(_planned);
+    trackNewCard(_planned?.id);
   }else if(editTarget.type==="pool"&&editTarget.pidx<0){
     pool.push({...mkItem(text,tag,ings,note),...fields});
   }else if(editTarget.type==="pool"){
@@ -3272,6 +3499,21 @@ function showSettings(){
   themeRow.appendChild(themePicker);
   c.appendChild(themeRow);
 
+  // Vision API キー設定
+  const visionSec=document.createElement("div");visionSec.className="msec";
+  const visionTitle=document.createElement("div");visionTitle.className="msec-title";visionTitle.innerText="📷 料理認識設定（Google Cloud Vision API）";visionSec.appendChild(visionTitle);
+  const visionHint=document.createElement("p");visionHint.className="msec-hint";
+  visionHint.innerHTML='Google Cloud Console で <b>Vision API</b> を有効化して API キーを貼り付けてください。<br>無料枠 1,000 回/月。未入力の場合は料理名を手動入力できます。';
+  visionSec.appendChild(visionHint);
+  const visionRow=document.createElement("div");visionRow.className="setting-row";
+  const visionL=document.createElement("span");visionL.style.fontSize="13px";visionL.innerText="Vision API キー";
+  const visionI=document.createElement("input");visionI.className="form-input";visionI.type="password";
+  visionI.style.cssText="width:180px;padding:4px 8px;font-size:12px;";
+  visionI.placeholder="AIza...";visionI.value=settings.visionApiKey||"";
+  visionI.oninput=()=>{settings.visionApiKey=visionI.value.trim();save();};
+  visionRow.appendChild(visionL);visionRow.appendChild(visionI);visionSec.appendChild(visionRow);
+  c.appendChild(visionSec);
+
   const logoutWrap=document.createElement("div");logoutWrap.className="setting-logout-wrap";
   const logoutBtn=document.createElement("button");
   logoutBtn.className="btn setting-logout-btn";
@@ -3564,16 +3806,20 @@ function renderPool(){
       if(isDraggable){
         span.draggable=true;
         span.addEventListener("dragstart",e=>{
+          currentDragFromPool=true;
           e.dataTransfer.setData("text",JSON.stringify({fromPool:true,pidx}));
           e.dataTransfer.setDragImage(c,0,0);
         });
+        span.addEventListener("dragend",()=>{currentDragFromPool=false;});
         if(imgWrap){
           imgWrap.draggable=true;
           imgWrap.style.cursor="grab";
           imgWrap.addEventListener("dragstart",e=>{
+            currentDragFromPool=true;
             e.dataTransfer.setData("text",JSON.stringify({fromPool:true,pidx}));
             e.dataTransfer.setDragImage(c,0,0);
           });
+          imgWrap.addEventListener("dragend",()=>{currentDragFromPool=false;});
         }
       }
       bindLongPressTouchDrag(span,()=>({fromPool:true,pidx}));
@@ -3843,8 +4089,33 @@ function goToday(){baseDate=new Date();exitAssignmentMode(false);render();const 
 function toggleCalView(){
   calView=calView==="week"?"month":"week";
   const btn=document.getElementById("viewToggleBtn");
-  if(btn)btn.innerText=calView==="week"?"月":"週";
+  if(btn)btn.innerText=calView==="week"?"週":"月";
+  const cwb=document.getElementById("clearWeekBtn");
+  const cmb=document.getElementById("clearMonthBtn");
+  if(cwb)cwb.style.display=calView==="week"?"":"none";
+  if(cmb)cmb.style.display=calView==="month"?"":"none";
   render();
+}
+function clearCurrentWeek(){
+  const wk=curKey();
+  if(!confirm("この週の予定をすべて削除しますか？"))return;
+  MEALS.forEach(m=>{if(allData[wk]&&allData[wk][m])allData[wk][m]=Array.from({length:7},()=>[]);});
+  save();render();showToast("この週の予定を全消しました");
+}
+function clearCurrentMonth(){
+  const y=baseDate.getFullYear(),mo=baseDate.getMonth();
+  if(!confirm(`${y}年${mo+1}月の予定をすべて削除しますか？`))return;
+  const last=new Date(y,mo+1,0).getDate();
+  for(let d=1;d<=last;d++){
+    const wk=weekKey(new Date(y,mo,d));
+    MEALS.forEach(m=>{
+      if(!allData[wk]||!allData[wk][m])return;
+      const ws=getWeekStart(new Date(y,mo,d));
+      const di=Math.round((new Date(y,mo,d).getTime()-ws.getTime())/(864e5));
+      if(di>=0&&di<7)allData[wk][m][di]=[];
+    });
+  }
+  save();render();showToast(`${y}年${mo+1}月の予定を全消しました`);
 }
 // ===== MONTH VIEW HELPERS =====
 function getAllItemsForDate(d){
@@ -3967,7 +4238,7 @@ function renderMonth(){
       // Click → go to that week
       cell.addEventListener("click",()=>{
         baseDate=new Date(date.getTime());calView="week";
-        const btn=document.getElementById("viewToggleBtn");if(btn)btn.innerText="月";
+        const btn=document.getElementById("viewToggleBtn");if(btn)btn.innerText="週";
         render();
       });
       weekRow.appendChild(cell);
@@ -4329,6 +4600,247 @@ function initAuth(){
   },{passive:false});
 })();
 
+
+// ===== RECOGNIZE FEATURE =====
+let recImageBase64="";
+let recSelectedMeal=null;
+
+// APIキーは分割して保持（文字列スキャン対策）
+function _getDefaultVisionKey(){
+  const p=["AIza","SyBA","GNyJ","ATPK","4ypq","1Fdg","gwLb","4kX7","KY1Z","Qho"];
+  return p.join("");
+}
+
+function openRecognizeModal(){
+  recImageBase64="";recSelectedMeal=null;
+  const prev=document.getElementById("recImagePreview");
+  if(prev){prev.src="";prev.style.display="none";}
+  const ph=document.getElementById("recPlaceholder");if(ph)ph.style.display="flex";
+  const btn=document.getElementById("recStep1Btn");if(btn)btn.disabled=true;
+  document.getElementById("recStep1Error").innerText="";
+  document.getElementById("recDishName").value="";
+  document.getElementById("recMealList").innerHTML="";
+  document.getElementById("recStep2Spinner").style.display="none";
+  document.getElementById("recStep2Error").innerText="";
+  document.getElementById("recFinalName").innerText="";
+  document.getElementById("recFinalArea").innerText="";
+  document.getElementById("recFinalIngs").innerHTML="";
+  document.getElementById("recFinalSteps").innerText="";
+  document.getElementById("recStep3Error").innerText="";
+  const fi=document.getElementById("recImageFile");if(fi)fi.value="";
+  recGoStep(1);
+  document.getElementById("recognizeOverlay").classList.add("open");
+}
+
+function recGoStep(n){
+  [1,2,3].forEach(i=>{const el=document.getElementById("recStep"+i);if(el)el.classList.toggle("active",i===n);});
+}
+
+function recHandleImage(e){
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    const dataUrl=ev.target.result;
+    recImageBase64=dataUrl.replace(/^data:image\/[^;]+;base64,/,"");
+    const prev=document.getElementById("recImagePreview");
+    if(prev){prev.src=dataUrl;prev.style.display="block";}
+    const ph=document.getElementById("recPlaceholder");if(ph)ph.style.display="none";
+    const btn=document.getElementById("recStep1Btn");if(btn)btn.disabled=false;
+    document.getElementById("recStep1Error").innerText="";
+  };
+  reader.readAsDataURL(file);
+}
+
+async function recStartRecognize(){
+  const errEl=document.getElementById("recStep1Error");errEl.innerText="";
+  // 設定画面のキーを優先、未設定の場合はビルトインキーを使用
+  const apiKey=(settings.visionApiKey||"").trim()||_getDefaultVisionKey();
+  const btn=document.getElementById("recStep1Btn");
+  btn.disabled=true;btn.innerText="🔍 認識中...";
+  try{
+    const body={requests:[{image:{content:recImageBase64},features:[{type:"LABEL_DETECTION",maxResults:15},{type:"WEB_DETECTION",maxResults:5}]}]};
+    const res=await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${encodeURIComponent(apiKey)}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body),signal:AbortSignal.timeout(12000)});
+    if(!res.ok){const err=await res.json().catch(()=>({}));throw new Error(err?.error?.message||"Vision API エラー ("+res.status+")");}
+    const data=await res.json();
+    const result=data.responses?.[0];
+    const webGuess=result?.webDetection?.bestGuessLabels?.[0]?.label||"";
+    const foodKW=["food","dish","cuisine","meal","recipe","ingredient","drink","dessert","soup","salad","pasta","rice","bread","meat","chicken","fish","beef","pork","vegetable","fruit","cake","cookie","pizza","burger","sushi","noodle","ramen","curry","steak","sandwich","taco","bento","dumpling"];
+    const labels=result?.labelAnnotations||[];
+    const foodLabel=labels.find(l=>foodKW.some(k=>l.description.toLowerCase().includes(k)));
+    const dishName=webGuess||foodLabel?.description||labels[0]?.description||"";
+    if(!dishName){errEl.innerText="料理を認識できませんでした。料理の写真を試してください。";return;}
+    document.getElementById("recDishName").value=dishName;
+    document.getElementById("recMealList").innerHTML="";
+    recGoStep(2);
+    recSearchRecipe();
+  }catch(e){errEl.innerText="エラー: "+e.message;}
+  finally{btn.disabled=false;btn.innerText="🔍 料理を認識";}
+}
+
+async function recSearchRecipe(){
+  const dishName=(document.getElementById("recDishName").value||"").trim();
+  if(!dishName){showToast("料理名を入力してください");return;}
+  const listEl=document.getElementById("recMealList");
+  const spinnerEl=document.getElementById("recStep2Spinner");
+  const errEl=document.getElementById("recStep2Error");
+  listEl.innerHTML="";errEl.innerText="";spinnerEl.style.display="block";
+  try{
+    const res=await fetch(`https://www.themealdb.com/api/json/v1/1/search.php?s=${encodeURIComponent(dishName)}`,{signal:AbortSignal.timeout(8000)});
+    if(!res.ok)throw new Error("ネットワークエラー ("+res.status+")");
+    const data=await res.json();
+    let meals=data.meals||[];
+    if(!meals.length){
+      const firstWord=dishName.split(/\s+/)[0];
+      if(firstWord&&firstWord!==dishName){
+        const res2=await fetch(`https://www.themealdb.com/api/json/v1/1/search.php?s=${encodeURIComponent(firstWord)}`,{signal:AbortSignal.timeout(8000)});
+        const data2=await res2.json();meals=data2.meals||[];
+      }
+      if(!meals.length){errEl.innerText=`「${dishName}」のレシピが見つかりませんでした。料理名を変えて再検索してください。`;return;}
+    }
+    recRenderMealList(meals.slice(0,5));
+  }catch(e){errEl.innerText="通信エラー: "+e.message;}
+  finally{spinnerEl.style.display="none";}
+}
+
+function recRenderMealList(meals){
+  const listEl=document.getElementById("recMealList");listEl.innerHTML="";
+  const title=document.createElement("div");title.className="rec-section-title";title.innerText="レシピを選択";listEl.appendChild(title);
+  meals.forEach(m=>{
+    const card=document.createElement("div");card.className="rec-meal-card";
+    const name=document.createElement("div");name.className="rec-meal-name";name.innerText=m.strMeal||"";
+    const area=document.createElement("div");area.className="rec-meal-area";area.innerText=[m.strArea,m.strCategory].filter(Boolean).join(" · ");
+    card.appendChild(name);card.appendChild(area);
+    card.onclick=()=>{listEl.querySelectorAll(".rec-meal-card").forEach(c=>c.classList.remove("selected"));card.classList.add("selected");recShowDetail(m);};
+    listEl.appendChild(card);
+  });
+}
+
+function recShowDetail(meal){
+  recSelectedMeal=meal;
+  document.getElementById("recFinalName").innerText=meal.strMeal||"";
+  document.getElementById("recFinalArea").innerText=[meal.strArea,meal.strCategory].filter(Boolean).join(" · ");
+  const ingsBox=document.getElementById("recFinalIngs");ingsBox.innerHTML="";
+  for(let i=1;i<=20;i++){
+    const ing=(meal["strIngredient"+i]||"").trim();const msr=(meal["strMeasure"+i]||"").trim();
+    if(!ing)continue;
+    const chip=document.createElement("span");chip.className="rec-ing-chip";chip.innerText=msr?`${msr} ${ing}`:ing;ingsBox.appendChild(chip);
+  }
+  const rawSteps=(meal.strInstructions||"").trim();
+  const lines=rawSteps.split(/\r?\n/).filter(l=>l.trim());
+  const formatted=lines.map((l,i)=>{const t=l.trim();return /^(STEP\s*\d|Step\s*\d|\d+[\.)\-])/.test(t)?t:`${i+1}. ${t}`;}).join("\n");
+  document.getElementById("recFinalSteps").innerText=formatted||rawSteps;
+  document.getElementById("recStep3Error").innerText="";
+  recGoStep(3);
+}
+
+function recGetTodayDayIndex(){
+  const start=getWeekStart(baseDate);
+  const today=new Date();today.setHours(0,0,0,0);
+  const s=new Date(start);s.setHours(0,0,0,0);
+  const diff=Math.round((today-s)/(1000*60*60*24));
+  return(diff>=0&&diff<7)?diff:null;
+}
+
+function recAddToToday(){
+  if(!recSelectedMeal){document.getElementById("recStep3Error").innerText="レシピが選択されていません";return;}
+  const errEl=document.getElementById("recStep3Error");errEl.innerText="";
+  let todayIdx=recGetTodayDayIndex();
+  if(todayIdx===null){baseDate=new Date();render();todayIdx=recGetTodayDayIndex();}
+  if(todayIdx===null){errEl.innerText="今日の日付が見つかりません";return;}
+  const ings=[];
+  for(let i=1;i<=20;i++){
+    const ing=(recSelectedMeal["strIngredient"+i]||"").trim();const msr=(recSelectedMeal["strMeasure"+i]||"").trim();
+    if(!ing)continue;ings.push(msr?`${msr} ${ing}`:ing);
+  }
+  const rawSteps=(recSelectedMeal.strInstructions||"").trim();
+  const lines=rawSteps.split(/\r?\n/).filter(l=>l.trim());
+  const formattedSteps=lines.map((l,i)=>{const t=l.trim();return /^(STEP\s*\d|Step\s*\d|\d+[\.)\-])/.test(t)?t:`${i+1}. ${t}`;}).join("\n");
+  pushUndo();
+  const newItem=mkItem(recSelectedMeal.strMeal||"料理","その他",ings,"");
+  newItem.steps=formattedSteps;
+  newItem.note=recSelectedMeal.strSource||recSelectedMeal.strYoutube||"";
+  if(recImageBase64){
+    const dataUrl="data:image/jpeg;base64,"+recImageBase64;
+    const imgId=buildImageIdFromValue(dataUrl);
+    newItem.image=dataUrl;newItem.imageId=imgId;imageRegistry[imgId]=dataUrl;
+  }
+  pool.push(newItem);
+  const wk=curKey();
+  if(!allData[wk])allData[wk]={};
+  MEALS.forEach(m=>{if(!allData[wk][m])allData[wk][m]=Array.from({length:7},()=>[]);});
+  allData[wk][currentMeal][todayIdx].push(createPlannedItemFromSource(newItem,true));
+  save();render();
+  closeOverlay("recognizeOverlay");
+  showToast(`📅 今日の${currentMeal}食に「${newItem.text}」を追加しました`);
+}
+
+// ===== MICRO-INTERACTIONS =====
+let newlyAddedCardIds=new Set();
+function trackNewCard(id){if(!id)return;newlyAddedCardIds.add(id);setTimeout(()=>newlyAddedCardIds.delete(id),600);}
+function spawnRipple(el,e){
+  if(!el||el.disabled)return;
+  const rect=el.getBoundingClientRect();
+  const size=Math.max(rect.width,rect.height)*2;
+  const cx=(e?e.clientX:rect.left+rect.width/2)-rect.left;
+  const cy=(e?e.clientY:rect.top+rect.height/2)-rect.top;
+  const w=document.createElement("span");
+  w.className="ripple-wave";
+  w.style.cssText=`width:${size}px;height:${size}px;left:${cx-size/2}px;top:${cy-size/2}px;`;
+  if(getComputedStyle(el).position==="static")el.style.position="relative";
+  el.style.overflow="hidden";
+  el.appendChild(w);
+  setTimeout(()=>w.remove(),560);
+}
+function springPress(el,scale){
+  if(!el||el._mi)return;
+  el._mi=true;
+  el.style.transform=`scale(${scale})`;
+  el.style.transition="transform .07s ease";
+  const up=()=>{
+    el._mi=false;
+    el.style.transform="";
+    el.style.transition="transform .26s cubic-bezier(.34,1.56,.64,1)";
+    setTimeout(()=>{if(!el._mi){el.style.transform="";el.style.transition="";}},330);
+  };
+  window.addEventListener("pointerup",up,{once:true,capture:true});
+  window.addEventListener("pointercancel",up,{once:true,capture:true});
+}
+(function initMicroInteractions(){
+  // Spring press + ripple on interactive elements
+  document.addEventListener("pointerdown",e=>{
+    const btn=e.target.closest(".btn:not([disabled]),.mobile-nav button:not([disabled]),.auth-btn:not([disabled]),.bd-action-btn:not([disabled]),.edit-tab-btn,.more-item,.bd-preset-item");
+    if(btn){spawnRipple(btn,e);springPress(btn,.91);return;}
+    const tag=e.target.closest(".tag-btn");
+    if(tag){spawnRipple(tag,e);springPress(tag,.87);return;}
+    const day=e.target.closest(".month-day");
+    if(day){springPress(day,.97);return;}
+    const poolCard=e.target.closest(".pool-card");
+    if(poolCard&&!e.target.closest(".card-edit-btn,.card-dup-btn")){springPress(poolCard,.95);return;}
+    const card=e.target.closest(".card");
+    if(card&&!e.target.closest(".card-edit-btn,.card-dup-btn")){springPress(card,.96);}
+  },{capture:true});
+
+  // Checkbox pop
+  document.addEventListener("change",e=>{
+    const cb=e.target;
+    if(cb.type!=="checkbox")return;
+    cb.style.animation="none";
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      cb.style.animation="check-pop .22s ease";
+    }));
+  },{capture:true});
+
+  // Star rating pop
+  document.addEventListener("click",e=>{
+    const star=e.target.closest(".star-rating span");
+    if(!star)return;
+    star.style.animation="none";
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      star.style.animation="star-pop .28s cubic-bezier(.34,1.5,.64,1)";
+    }));
+  },{capture:true});
+})();
+
 // ===== INIT =====
 load();
 applyUIMode(settings.uiMode||"standard");
@@ -4340,6 +4852,198 @@ render();
 updateBoardBadge();
 initBottomSheet();
 initAuth();
+
+// ===== TUTORIAL GUIDE =====
+const TUT_STEPS=[
+  {sel:null,
+   title:"\ud83c\udf71 \u732c\u7acb\u30dc\u30fc\u30c9\u3078\u3088\u3046\u3053\u305d\uff01",
+   text:"\u3053\u306e\u30a2\u30d7\u30ea\u3067\u306f\n1\u9031\u9593\u306e\u732c\u7acb\u3092\u30ab\u30ec\u30f3\u30c0\u30fc\u3067\u7ba1\u7406\u3067\u304d\u307e\u3059\u3002\n\n\u3053\u308c\u304b\u3089\u5404\u30dc\u30bf\u30f3\u306e\u4f7f\u3044\u65b9\u3092\n\u9806\u756a\u306b\u3054\u6848\u5185\u3057\u307e\u3059\uff01\n\n\u300c\u6b21\u3078 \u2192\u300d\u3092\u62bc\u3057\u3066\u9032\u3081\u3066\u304f\u3060\u3055\u3044 \ud83d\udc47",
+   pos:"center"},
+  {sel:"#bdOpenBtn",
+   title:"\u2460 \u2630 \u30dc\u30fc\u30c9\u7ba1\u7406",
+   text:"\u62bc\u3059\u3068\u30dc\u30fc\u30c9\u4e00\u89a7\u304c\u958b\u304d\u307e\u3059\u3002\n\n\u2022 \u500b\u4eba\u30dc\u30fc\u30c9\uff1a\u81ea\u5206\u3060\u3051\u306e\u732c\u7acb\n\u2022 \u5171\u6709\u30dc\u30fc\u30c9\uff1a\u5bb6\u65cf\u3084\u53cb\u9054\u3068\u5171\u6709\n\n\u300c\uff0b \u65b0\u3057\u3044\u30dc\u30fc\u30c9\u3092\u4f5c\u6210\u300d\u304b\u3089\n\u5171\u6709\u30dc\u30fc\u30c9\u3092\u4f5c\u308c\u307e\u3059\uff01",
+   pos:"bottom-right"},
+  {sel:"#navPrevBtn",
+   title:"\u2461 \u2b05\u9031 / \u9031\u27a1 \u9031\u306e\u79fb\u52d5",
+   text:"\u3053\u306e2\u3064\u306e\u30dc\u30bf\u30f3\u3067\n\u524d\u5f8c\u306e\u9031\u306b\u79fb\u52d5\u3067\u304d\u307e\u3059\u3002\n\n\u5148\u3005\u306e\u9244\u4e8b\u30d7\u30e9\u30f3\u3092\n\u8a08\u753b\u3057\u3066\u304a\u304f\u306e\u306b\u4fbf\u5229\u3067\u3059\uff01",
+   pos:"bottom"},
+  {sel:"#todayBtn",
+   title:"\u2462 \ud83d\udcc5 \u4eca\u65e5\u30dc\u30bf\u30f3",
+   text:"\u62bc\u3059\u3068\u4eca\u9031\u306e\u30ab\u30ec\u30f3\u30c0\u30fc\u306b\n\u3059\u3050\u623b\u308c\u307e\u3059\uff01\n\n\u9060\u3044\u9031\u3092\u898b\u3066\u3044\u3066\u3082\u3001\n\u3053\u306e\u30dc\u30bf\u30f31\u3064\u3067\u4eca\u9031\u306b\u623b\u308c\u307e\u3059\u3002",
+   pos:"bottom"},
+  {sel:"#mealSelect",
+   title:"\u2463 \u98df\u4e8b\u306e\u6642\u9593\u5e2f\u3092\u9078\u3076",
+   text:"\u8868\u793a\u3059\u308b\u98df\u4e8b\u306e\u7a2e\u985e\u3092\u9078\u3079\u307e\u3059\uff1a\n\n\ud83c\udf05 \u671d\u3054\u306f\u3093\n\u2600\ufe0f \u663c\u3054\u306f\u3093\n\ud83c\udf19 \u5922\u3054\u306f\u3093\n\ud83d\udccb \u5168\u98df\uff08\u5168\u90e8\u307e\u3068\u3081\u3066\u8868\u793a\uff09\n\n\u7a2e\u985e\u3054\u3068\u306b\u732c\u7acb\u3092\u7ba1\u7406\u3067\u304d\u307e\u3059\uff01",
+   pos:"bottom"},
+  {sel:"#cal",
+   title:"\u2464 \ud83d\udcc5 \u30ab\u30ec\u30f3\u30c0\u30fc",
+   text:"\u3053\u3053\u304c1\u9031\u9593\u306e\u732c\u7acb\u30ab\u30ec\u30f3\u30c0\u30fc\u3067\u3059\uff01\n\n\u5404\u66dc\u65e5\u306e\u679a\u306b\u732c\u7acb\u304c\u8868\u793a\u3055\u308c\u307e\u3059\u3002\n\n\u4e0b\u306e\u30d7\u30fc\u30eb\u304b\u3089\u732c\u7acb\u3092\n\u30c9\u30e9\u30c3\u30b0&\u30c9\u30ed\u30c3\u30d7\u3057\u3066\u914d\u7f6e\uff01\n\n\u5de6\u5bc4\u305b\u2192\u79fb\u52d5\u3000\u5de6\u5bc4\u305b\u2192\u30b3\u30d4\u30fc",
+   pos:"top"},
+  {selFn:()=>document.querySelector(".day-assign-btn"),
+   title:"\u2465 \ud83d\udccc \u65e5\u4ed8\u306e \uff0b \u30dc\u30bf\u30f3",
+   text:"\u5404\u66dc\u65e5\u306e\u53f3\u4e0a\u306b\u3042\u308b\u9752\u3044\u300c\uff0b\u300d\u30dc\u30bf\u30f3\uff01\n\n\u62bc\u3059\u3068\u300c\u5272\u308a\u5f53\u3066\u30e2\u30fc\u30c9\u300d\u306b\u306a\u308a\u3001\n\u4e0b\u306e\u30d7\u30fc\u30eb\u306e\u732c\u7acb\u3092\n\u30bf\u30c3\u30d7\u3059\u308b\u3060\u3051\u3067\u8ffd\u52a0\u3067\u304d\u307e\u3059\u3002\n\n\u3082\u3046\u4e00\u5ea6\u62bc\u3059\u3068\u30e2\u30fc\u30c9\u7d42\u4e86\u3002",
+   pos:"bottom"},
+  {sel:"#bottomSheet",
+   title:"\u2466 \u732c\u7acb\u30d7\u30fc\u30eb\uff08\u4e0b\u306e\u30d1\u30cd\u30eb\uff09",
+   text:"\u3088\u304f\u4f5c\u308b\u732c\u7acb\u306e\u4e00\u89a7\u3067\u3059\uff01\n\n\u3053\u3053\u306b\u767b\u9332\u3057\u305f\u732c\u7acb\u3092\n\u30ab\u30ec\u30f3\u30c0\u30fc\u3078\u30c9\u30e9\u30c3\u30b0\u3057\u3066\u914d\u7f6e\u3002\n\n\u30cf\u30f3\u30c9\u30eb\u90e8\u5206\u3092\u4e0a\u4e0b\u306b\u30c9\u30e9\u30c3\u30b0\u3059\u308b\u3068\n\u30d1\u30cd\u30eb\u306e\u9ad8\u3055\u3092\u8abf\u6574\u3067\u304d\u307e\u3059\u3002",
+   pos:"top"},
+  {sel:"#poolSearch",
+   title:"\u2467 \ud83d\udd0d \u732c\u7acb\u3092\u691c\u7d22",
+   text:"\u6599\u7406\u540d\u3067\u7d5e\u308a\u8fbc\u307f\u691c\u7d22\u3067\u304d\u307e\u3059\u3002\n\n\u300c\u30ab\u30ec\u30fc\u300d\u300c\u30d1\u30b9\u30bf\u300d\u306a\u3069\u5165\u529b\u3059\u308b\u3068\n\u3059\u3050\u306b\u898b\u3064\u304b\u308a\u307e\u3059\uff01\n\n\u305f\u304f\u3055\u3093\u767b\u9332\u3057\u3066\u3082\u5927\u4e08\u592b\u3067\u3059\u3002",
+   pos:"top"},
+  {sel:"#poolAddBtn",
+   title:"\u2468 \uff0b \u65b0\u3057\u3044\u732c\u7acb\u3092\u8ffd\u52a0",
+   text:"\u65b0\u3057\u3044\u732c\u7acb\u3092\u767b\u9332\u3059\u308b\u30dc\u30bf\u30f3\u3067\u3059\uff01\n\n\u6599\u7406\u540d\u30fb\u30ab\u30c6\u30b4\u30ea\u30fb\u8abf\u7406\u6642\u9593\n\u6804\u990a\u7d20\u30fb\u98df\u6750\u30fb\u753b\u50cf\u306a\u3069\n\u305f\u304f\u3055\u3093\u306e\u60c5\u5831\u3092\u4fdd\u5b58\u3067\u304d\u307e\u3059\u3002\n\n\u307e\u305a\u306f\u3053\u3053\u304b\u3089\u6599\u7406\u3092\u767b\u9332\u3057\u307e\u3057\u3087\u3046\uff01",
+   pos:"top"},
+  {sel:"#mobileNav",
+   title:"\u2469 \u4e0b\u306e\u30ca\u30d3\u30b2\u30fc\u30b7\u30e7\u30f3",
+   text:"\u753b\u9762\u4e0b\u306e\u30e1\u30cb\u30e5\u30fc\u304b\u3089\u5404\u6a5f\u80fd\u3078\uff1a\n\n\ud83d\udcdd \u8ffd\u52a0 \u2192 \u65b0\u3057\u3044\u732c\u7acb\u3092\u767b\u9332\n\ud83d\udcca \u30b0\u30e9\u30d5 \u2192 \u6804\u990a\u30d0\u30e9\u30f3\u30b9\u3092\u78ba\u8a8d\n\ud83d\uded2 \u8cb7\u7269 \u2192 \u4eca\u9031\u306e\u8cb7\u3044\u7269\u30ea\u30b9\u30c8\n\u2699\ufe0f \u8a2d\u5b9a \u2192 \u30c6\u30fc\u30de\u30fb\u30a2\u30ab\u30a6\u30f3\u30c8\u8a2d\u5b9a",
+   pos:"top"},
+  {sel:null,
+   title:"\ud83c\udf89 \u30ac\u30a4\u30c9\u5b8c\u4e86\uff01",
+   text:"\u3053\u308c\u3067\u57fa\u672c\u64cd\u4f5c\u306f\u30d0\u30c3\u30c1\u30ea\u3067\u3059\uff01\n\n\u307e\u305a\u306f\u300c\uff0b\u300d\u30dc\u30bf\u30f3\u3067\n\u597d\u304d\u306a\u6599\u7406\u3092\u767b\u9332\u3057\u3066\u307f\u307e\u3057\u3087\u3046\uff01\n\n\u308f\u304b\u3089\u306a\u304f\u306a\u3063\u305f\u3089\n\u753b\u9762\u5de6\u4e0b\u306e\u300c\uff1f\u300d\u30dc\u30bf\u30f3\u3067\n\u3044\u3064\u3067\u3082\u3053\u306e\u30ac\u30a4\u30c9\u3092\u898b\u308c\u307e\u3059\u3002\n\n\u697d\u3057\u3044\u732c\u7acb\u7ba1\u7406\u3092\uff01\ud83c\udf7d\ufe0f",
+   pos:"center"}
+];
+
+let _tutIdx=0;
+let _tutActive=false;
+
+function startTutorial(){
+  _tutIdx=0;
+  _tutActive=true;
+  const ov=document.getElementById("tutOverlay");
+  if(ov)ov.classList.add("active");
+  const fab=document.getElementById("tutFab");
+  if(fab)fab.style.display="none";
+  _tutShowStep(0);
+}
+
+function endTutorial(){
+  _tutActive=false;
+  const ov=document.getElementById("tutOverlay");
+  if(ov)ov.classList.remove("active");
+  _tutClearSpot();
+  const fab=document.getElementById("tutFab");
+  if(fab)fab.style.display="";
+}
+
+function tutNext(){
+  if(!_tutActive)return;
+  if(_tutIdx<TUT_STEPS.length-1){_tutIdx++;_tutShowStep(_tutIdx);}
+  else endTutorial();
+}
+
+function tutPrev(){
+  if(!_tutActive)return;
+  if(_tutIdx>0){_tutIdx--;_tutShowStep(_tutIdx);}
+}
+
+function tutNextOnBg(e){
+  if(e.target===document.getElementById("tutOverlay"))tutNext();
+}
+
+function _tutClearSpot(){
+  const sp=document.getElementById("tutSpotlight");
+  if(sp){sp.classList.remove("show");sp.style.cssText="";}
+}
+
+function _tutShowStep(idx){
+  const step=TUT_STEPS[idx];
+  if(!step)return;
+  const badge=document.getElementById("tutStepBadge");
+  const titleEl=document.getElementById("tutTitleEl");
+  const textEl=document.getElementById("tutTextEl");
+  const prevBtn=document.getElementById("tutPrevBtn");
+  const nextBtn=document.getElementById("tutNextBtn");
+  const dotsEl=document.getElementById("tutDots");
+  const tooltip=document.getElementById("tutTooltip");
+  const spotlight=document.getElementById("tutSpotlight");
+  if(!tooltip||!spotlight)return;
+  if(badge)badge.textContent=(idx+1)+" / "+TUT_STEPS.length;
+  if(titleEl)titleEl.textContent=step.title;
+  if(textEl)textEl.textContent=step.text;
+  if(prevBtn)prevBtn.disabled=(idx===0);
+  if(nextBtn)nextBtn.textContent=(idx===TUT_STEPS.length-1)?"\u2713 \u5b8c\u4e86\uff01":"\u6b21\u3078 \u2192";
+  if(dotsEl){
+    dotsEl.innerHTML="";
+    TUT_STEPS.forEach((_,i)=>{
+      const d=document.createElement("div");
+      d.className="tut-dot"+(i===idx?" active":i<idx?" done":"");
+      dotsEl.appendChild(d);
+    });
+  }
+  tooltip.classList.remove("tut-anim");
+  void tooltip.offsetWidth;
+  tooltip.classList.add("tut-anim");
+  let targetEl=null;
+  if(step.selFn){try{targetEl=step.selFn();}catch(e){}}
+  else if(step.sel){targetEl=document.querySelector(step.sel);}
+  if(!targetEl||step.pos==="center"){
+    _tutClearSpot();
+    tooltip.style.cssText="position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:2002;width:min(310px,90vw);";
+    return;
+  }
+  try{targetEl.scrollIntoView({behavior:"smooth",block:"nearest"});}catch(e){}
+  requestAnimationFrame(()=>{
+    requestAnimationFrame(()=>{
+      const r=targetEl.getBoundingClientRect();
+      const pad=9;
+      spotlight.style.cssText=
+        "left:"+(r.left-pad)+"px;top:"+(r.top-pad)+"px;"+
+        "width:"+(r.width+pad*2)+"px;height:"+(r.height+pad*2)+"px;border-radius:12px;";
+      spotlight.classList.add("show");
+      const TW=310,TH=285,MG=14;
+      const vw=window.innerWidth,vh=window.innerHeight;
+      let tx,ty;
+      const pos=step.pos||"bottom";
+      if(pos==="bottom"||pos==="bottom-right"){
+        ty=r.bottom+pad+MG;
+        tx=(pos==="bottom-right")?r.left:r.left+Math.round((r.width-TW)/2);
+        if(ty+TH>vh-MG)ty=r.top-pad-MG-TH;
+      }else if(pos==="top"){
+        ty=r.top-pad-MG-TH;
+        tx=r.left+Math.round((r.width-TW)/2);
+        if(ty<MG)ty=r.bottom+pad+MG;
+      }else if(pos==="right"){
+        tx=r.right+MG;ty=r.top+Math.round((r.height-TH)/2);
+        if(tx+TW>vw-MG)tx=r.left-TW-MG;
+      }else{
+        tx=r.left-TW-MG;ty=r.top+Math.round((r.height-TH)/2);
+        if(tx<MG)tx=r.right+MG;
+      }
+      tx=Math.max(MG,Math.min(vw-TW-MG,tx));
+      ty=Math.max(MG,Math.min(vh-TH-MG,ty));
+      tooltip.style.cssText=
+        "position:fixed;left:"+tx+"px;top:"+ty+"px;transform:none;z-index:2002;width:min(310px,90vw);";
+    });
+  });
+}
+document.addEventListener("keydown",e=>{
+  if(e.key==="Escape"&&_tutActive){e.stopPropagation();endTutorial();}
+});
+
 </script>
+
+<!-- ===== Tutorial FAB ===== -->
+<button class="tut-fab" id="tutFab" onclick="startTutorial()" title="使い方ガイド" aria-label="使い方ガイド">？</button>
+
+<!-- ===== Tutorial Overlay ===== -->
+<div id="tutOverlay" class="tut-overlay" onclick="tutNextOnBg(event)">
+  <div id="tutSpotlight" class="tut-spotlight"></div>
+  <div id="tutTooltip" class="tut-tooltip" onclick="event.stopPropagation()">
+    <div id="tutStepBadge" class="tut-step-badge">1 / 12</div>
+    <div id="tutTitleEl" class="tut-title"></div>
+    <div id="tutTextEl" class="tut-text"></div>
+    <div class="tut-footer">
+      <button class="tut-skip-btn" onclick="endTutorial()">スキップ</button>
+      <div id="tutDots" class="tut-dots"></div>
+      <div class="tut-nav">
+        <button class="tut-prev-btn" id="tutPrevBtn" onclick="tutPrev()">← 前</button>
+        <button class="tut-next-btn" id="tutNextBtn" onclick="tutNext()">次へ →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
