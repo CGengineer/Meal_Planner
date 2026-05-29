@@ -1360,6 +1360,19 @@ function clearTouchDrag(){
   document.body.classList.remove("touch-dnd-active");
   clearDayDropHighlight();
 }
+function makeDragGhost(el){
+  const scale=0.5;
+  const r=el.getBoundingClientRect();
+  const wrap=document.createElement("div");
+  wrap.style.cssText=`position:fixed;left:-9999px;top:0;width:${Math.round(r.width*scale)}px;height:${Math.round(r.height*scale)}px;overflow:hidden;pointer-events:none;`;
+  const clone=el.cloneNode(true);
+  clone.querySelectorAll(".card-edit-btn,.card-dup-btn").forEach(b=>b.remove());
+  clone.style.cssText+=`;width:${Math.round(r.width)}px;transform:scale(${scale});transform-origin:top left;margin:0;flex-shrink:0;`;
+  wrap.appendChild(clone);
+  document.body.appendChild(wrap);
+  setTimeout(()=>wrap.remove(),0);
+  return wrap;
+}
 function startTouchDrag(sourceEl,payload,clientX,clientY){
   clearTouchDrag();
   if(!sourceEl||!payload)return;
@@ -1384,7 +1397,7 @@ function startTouchDrag(sourceEl,payload,clientX,clientY){
 }
 function updateTouchDrag(clientX,clientY){
   if(!touchDragState)return;
-  touchDragState.ghostEl.style.transform=`translate3d(${Math.round(clientX-touchDragState.offsetX)}px,${Math.round(clientY-touchDragState.offsetY)}px,0) scale(.8)`;
+  touchDragState.ghostEl.style.transform=`translate3d(${Math.round(clientX-touchDragState.offsetX)}px,${Math.round(clientY-touchDragState.offsetY)}px,0) scale(.5)`;
   touchDragState.hoverCol=updateTouchDropHighlight(clientX,clientY);
 }
 function endTouchDrag(clientX,clientY){
@@ -2797,7 +2810,7 @@ function mkCardEl(item,target){
       if(e.target.closest("button,a"))return e.preventDefault();
       currentDragFromPool=false;
       e.dataTransfer.setData("text",JSON.stringify(target));
-      e.dataTransfer.setDragImage(c,0,0);
+      e.dataTransfer.setDragImage(makeDragGhost(c),0,0);
     });
     c.addEventListener("dragend",()=>{currentDragFromPool=false;});
   }
@@ -3821,7 +3834,7 @@ function renderPool(){
         span.addEventListener("dragstart",e=>{
           currentDragFromPool=true;
           e.dataTransfer.setData("text",JSON.stringify({fromPool:true,pidx}));
-          e.dataTransfer.setDragImage(c,0,0);
+          e.dataTransfer.setDragImage(makeDragGhost(c),0,0);
         });
         span.addEventListener("dragend",()=>{currentDragFromPool=false;});
         if(imgWrap){
@@ -3830,7 +3843,7 @@ function renderPool(){
           imgWrap.addEventListener("dragstart",e=>{
             currentDragFromPool=true;
             e.dataTransfer.setData("text",JSON.stringify({fromPool:true,pidx}));
-            e.dataTransfer.setDragImage(c,0,0);
+            e.dataTransfer.setDragImage(makeDragGhost(c),0,0);
           });
           imgWrap.addEventListener("dragend",()=>{currentDragFromPool=false;});
         }
