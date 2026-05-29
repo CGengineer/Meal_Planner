@@ -1119,6 +1119,7 @@ let isGuestMode=false;      // ゲストモード中はローカル保存・ロ�
 let guestDataToUpload=null; // ゲスト→ログイン時に引き継ぐスナップショット
 let touchDragState=null;
 let currentDragFromPool=false;
+let _asRAF=null,_asDir=0,_asSpeed=0;
 let touchDayClickSuppressUntil=0;
 const TOUCH_LONG_PRESS_MS=430;
 const TOUCH_DRAG_CANCEL_PX=12;
@@ -1354,11 +1355,33 @@ function applyDropToDay(obj,col,clientX){
 }
 function clearTouchDrag(){
   if(!touchDragState)return;
+  _stopAutoScroll();
   if(touchDragState.sourceEl)touchDragState.sourceEl.style.opacity="";
   if(touchDragState.ghostEl&&touchDragState.ghostEl.parentNode)touchDragState.ghostEl.parentNode.removeChild(touchDragState.ghostEl);
   touchDragState=null;
   document.body.classList.remove("touch-dnd-active");
   clearDayDropHighlight();
+}
+function _runAutoScroll(){
+  if(!_asDir){_asRAF=null;return;}
+  const cal=document.getElementById("cal");
+  if(cal)cal.scrollTop+=_asDir*_asSpeed;
+  _asRAF=requestAnimationFrame(_runAutoScroll);
+}
+function _updateAutoScroll(clientY){
+  const vh=window.innerHeight;
+  const sheet=document.getElementById("bottomSheet");
+  const sheetH=sheet?sheet.offsetHeight:80;
+  const topEdge=90,bottomEdge=sheetH+90;
+  let dir=0,speed=0;
+  if(clientY<topEdge){dir=-1;speed=Math.max(3,Math.round((topEdge-clientY)/topEdge*16));}
+  else if(clientY>vh-bottomEdge){dir=1;speed=Math.max(3,Math.round((clientY-(vh-bottomEdge))/bottomEdge*16));}
+  _asDir=dir;_asSpeed=speed;
+  if(dir&&!_asRAF)_asRAF=requestAnimationFrame(_runAutoScroll);
+  else if(!dir&&_asRAF){cancelAnimationFrame(_asRAF);_asRAF=null;}
+}
+function _stopAutoScroll(){
+  _asDir=0;if(_asRAF){cancelAnimationFrame(_asRAF);_asRAF=null;}
 }
 function makeDragGhost(el){
   const scale=0.5;
@@ -1399,6 +1422,7 @@ function updateTouchDrag(clientX,clientY){
   if(!touchDragState)return;
   touchDragState.ghostEl.style.transform=`translate3d(${Math.round(clientX-touchDragState.offsetX)}px,${Math.round(clientY-touchDragState.offsetY)}px,0) scale(.5)`;
   touchDragState.hoverCol=updateTouchDropHighlight(clientX,clientY);
+  _updateAutoScroll(clientY);
 }
 function endTouchDrag(clientX,clientY){
   if(!touchDragState)return false;
@@ -3687,6 +3711,10 @@ function autoSuggestDay(dayIndex){
     save();render();showToastWithUndo("削除しました");
   });
 })();
+// HTML5 drag auto-scroll
+document.addEventListener("dragover",e=>_updateAutoScroll(e.clientY));
+document.addEventListener("dragend",_stopAutoScroll);
+document.addEventListener("drop",_stopAutoScroll);
 
 // ===== POOL RENDER =====
 function renderPool(){
