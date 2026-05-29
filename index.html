@@ -1423,17 +1423,15 @@ function startTouchDrag(sourceEl,payload,clientX,clientY){
   const ghost=sourceEl.cloneNode(true);
   ghost.classList.add("touch-drag-ghost");
   ghost.querySelectorAll(".card-edit-btn").forEach(btn=>btn.remove());
-  const ghostW=Math.min(200,Math.max(72,Math.round(rect.width)));
-  ghost.style.width=ghostW+"px";
+  ghost.style.width=Math.max(72,Math.round(rect.width))+"px";
   document.body.appendChild(ghost);
   sourceEl.style.opacity=".45";
   document.body.classList.add("touch-dnd-active");
-  const relX=(clientX-rect.left)/rect.width;
   touchDragState={
     sourceEl,
     payload,
     ghostEl:ghost,
-    offsetX:Math.min(ghostW-12,Math.max(12,relX*ghostW))*.85,
+    offsetX:Math.min(rect.width-12,Math.max(12,clientX-rect.left))*.85,
     offsetY:Math.min(rect.height-10,Math.max(10,clientY-rect.top))*.85,
     hoverCol:null
   };
@@ -1501,7 +1499,7 @@ function bindLongPressTouchDrag(el,getPayload){
     const dx=e.clientX-startX;
     const dy=e.clientY-startY;
     if(!longPressed){
-      if(Math.abs(dy)>TOUCH_DRAG_CANCEL_PX)clearTimer();
+      if(Math.abs(dx)>TOUCH_DRAG_CANCEL_PX||Math.abs(dy)>TOUCH_DRAG_CANCEL_PX)clearTimer();
       return;
     }
     e.preventDefault();
@@ -2876,6 +2874,70 @@ function mkCardEl(item,target){
     c.addEventListener("dragend",()=>{currentDragFromPool=false;});
   }
   bindLongPressTouchDrag(c,()=>({...target}));
+
+  if(target.wk&&target.meal!==undefined){
+    let startX=0,startY=0,swiping=false,hLocked=false,pointerId=null;
+    const maxSwipe=120,deleteThreshold=90;
+
+    const mixBg=dx=>{
+      const p=Math.min(1,Math.abs(dx)/deleteThreshold);
+      const r=Math.round(30+(239-30)*p);
+      const g=Math.round(41+(68-41)*p);
+      const b=Math.round(59+(68-59)*p);
+      c.style.backgroundColor=`rgb(${r},${g},${b})`;
+    };
+    const reset=()=>{
+      c.style.transform="translateX(0)";
+      c.style.backgroundColor="";
+      c.style.opacity="1";
+    };
+
+    c.addEventListener("pointerdown",e=>{
+      if(e.pointerType==="mouse")return;
+      if(e.target.closest(".card-edit-btn"))return;
+      startX=e.clientX;startY=e.clientY;
+      swiping=true;hLocked=false;pointerId=e.pointerId;
+    });
+
+    c.addEventListener("pointermove",e=>{
+      if(touchDragState)return;
+      if(!swiping||e.pointerId!==pointerId)return;
+      const dx=e.clientX-startX;
+      const dy=e.clientY-startY;
+
+      if(!hLocked){
+        if(Math.abs(dx)<=8&&Math.abs(dy)<=8)return;
+        if(Math.abs(dx)<=Math.abs(dy)){swiping=false;reset();return;}
+        hLocked=true;
+        c.setPointerCapture?.(pointerId);
+      }
+
+      if(dx>=0){reset();return;}
+      const clamped=Math.max(-maxSwipe,dx);
+      e.preventDefault();
+      c.style.transform=`translateX(${clamped}px)`;
+      mixBg(clamped);
+    });
+
+    const finish=e=>{
+      if(touchDragState)return;
+      if(!swiping||e.pointerId!==pointerId)return;
+      const dx=e.clientX-startX;
+      swiping=false;
+      c.releasePointerCapture?.(pointerId);
+
+      if(dx<=-deleteThreshold){
+        c.style.transform="translateX(-120%)";
+        c.style.opacity="0";
+        setTimeout(()=>removePlannedCard(target),140);
+      }else{
+        reset();
+      }
+    };
+
+    c.addEventListener("pointerup",finish);
+    c.addEventListener("pointercancel",finish);
+  }
 
   return c;
 }
