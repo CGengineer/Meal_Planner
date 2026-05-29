@@ -1423,15 +1423,17 @@ function startTouchDrag(sourceEl,payload,clientX,clientY){
   const ghost=sourceEl.cloneNode(true);
   ghost.classList.add("touch-drag-ghost");
   ghost.querySelectorAll(".card-edit-btn").forEach(btn=>btn.remove());
-  ghost.style.width=Math.max(72,Math.round(rect.width))+"px";
+  const ghostW=Math.min(200,Math.max(72,Math.round(rect.width)));
+  ghost.style.width=ghostW+"px";
   document.body.appendChild(ghost);
   sourceEl.style.opacity=".45";
   document.body.classList.add("touch-dnd-active");
+  const relX=(clientX-rect.left)/rect.width;
   touchDragState={
     sourceEl,
     payload,
     ghostEl:ghost,
-    offsetX:Math.min(rect.width-12,Math.max(12,clientX-rect.left))*.85,
+    offsetX:Math.min(ghostW-12,Math.max(12,relX*ghostW))*.85,
     offsetY:Math.min(rect.height-10,Math.max(10,clientY-rect.top))*.85,
     hoverCol:null
   };
