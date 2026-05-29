@@ -2869,7 +2869,7 @@ function mkCardEl(item,target){
       if(e.target.closest("button,a"))return e.preventDefault();
       currentDragFromPool=false;
       e.dataTransfer.setData("text",JSON.stringify(target));
-      const ghost=makeDragGhost(c);e.dataTransfer.setDragImage(ghost,0,0);
+      const ghost=makeDragGhost(c);e.dataTransfer.setDragImage(ghost,Math.round(e.offsetX*0.5),Math.round(e.offsetY*0.5));
     });
     c.addEventListener("dragend",()=>{currentDragFromPool=false;});
   }
@@ -3891,23 +3891,14 @@ function renderPool(){
       const db=document.createElement("button");db.className="card-dup-btn";db.innerText="📋";db.title="複製";
       db.onclick=e=>{e.stopPropagation();pushUndo();const dup={...pool[pidx],id:uid()};pool.splice(pidx+1,0,dup);save();renderPool();showToast("複製しました");};c.appendChild(db);
       if(isDraggable){
-        span.draggable=true;
-        span.addEventListener("dragstart",e=>{
+        c.draggable=true;
+        c.addEventListener("dragstart",e=>{
+          if(e.target.closest("button,a"))return e.preventDefault();
           currentDragFromPool=true;
           e.dataTransfer.setData("text",JSON.stringify({fromPool:true,pidx}));
-          const ghost=makeDragGhost(c);e.dataTransfer.setDragImage(ghost,0,0);
+          const ghost=makeDragGhost(c);e.dataTransfer.setDragImage(ghost,Math.round(e.offsetX*0.5),Math.round(e.offsetY*0.5));
         });
-        span.addEventListener("dragend",()=>{currentDragFromPool=false;});
-        if(imgWrap){
-          imgWrap.draggable=true;
-          imgWrap.style.cursor="grab";
-          imgWrap.addEventListener("dragstart",e=>{
-            currentDragFromPool=true;
-            e.dataTransfer.setData("text",JSON.stringify({fromPool:true,pidx}));
-            const ghost=makeDragGhost(c);e.dataTransfer.setDragImage(ghost,0,0);
-          });
-          imgWrap.addEventListener("dragend",()=>{currentDragFromPool=false;});
-        }
+        c.addEventListener("dragend",()=>{currentDragFromPool=false;});
       }
       bindLongPressTouchDrag(c,()=>({fromPool:true,pidx}));
     }else{
