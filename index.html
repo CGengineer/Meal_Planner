@@ -28,7 +28,7 @@ body.no-x-nav{overscroll-behavior-x:none;touch-action:pan-y;}
 /* Calendar */
 .calendar{display:grid;grid-template-columns:repeat(7,minmax(120px,1fr));height:calc(100svh - 140px);border-top:1px solid #334155;overflow-y:auto;overflow-x:auto;-webkit-overflow-scrolling:touch;}
 .day{border-right:1px solid #334155;border-bottom:1px solid #334155;padding:8px 7px;display:flex;flex-direction:column;gap:6px;min-height:clamp(200px,calc(80svh - 140px),600px);overflow:visible;transition:background .12s;}
-.day:nth-child(7n){border-right:none;}.day.drag-over-move{background:rgba(202,138,4,0.18)!important;}.day.drag-over-copy{background:rgba(22,163,74,0.18)!important;}
+.day:nth-child(7n){border-right:none;}.day.drag-over-move{background:rgba(202,138,4,0.18)!important;}.day.drag-over-copy{background:rgba(22,163,74,0.18)!important;}.day.drag-over-split{background:linear-gradient(to right,rgba(202,138,4,0.18) 50%,rgba(22,163,74,0.18) 50%)!important;}.day.drag-over-split.drag-over-left{background:linear-gradient(to right,rgba(202,138,4,0.36) 50%,rgba(22,163,74,0.10) 50%)!important;}.day.drag-over-split.drag-over-right{background:linear-gradient(to right,rgba(202,138,4,0.10) 50%,rgba(22,163,74,0.36) 50%)!important;}
 .day-header{font-size:11px;font-weight:bold;text-align:center;padding:2px 30px 2px 30px;border-radius:4px;position:relative;display:flex;align-items:center;justify-content:center;}
 .day-assign-btn{position:absolute;right:0;top:50%;transform:translateY(-50%);width:22px;height:22px;border:none;border-radius:999px;background:#1d4ed8;color:#f8fafc;font-size:14px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;}
 .day-assign-btn:hover{background:#2563eb;}
@@ -426,6 +426,9 @@ body[data-theme="light"] .bd-open-btn:hover{background:#f1f5f9;color:#0f172a;}
 body[data-theme="light"] .weekday-mode-btn.active{background:#f59e0b!important;color:#0f172a!important;}
 body[data-theme="light"] .day.drag-over-move{background:rgba(202,138,4,.12)!important;}
 body[data-theme="light"] .day.drag-over-copy{background:rgba(22,163,74,.12)!important;}
+body[data-theme="light"] .day.drag-over-split{background:linear-gradient(to right,rgba(202,138,4,.12) 50%,rgba(22,163,74,.12) 50%)!important;}
+body[data-theme="light"] .day.drag-over-split.drag-over-left{background:linear-gradient(to right,rgba(202,138,4,.28) 50%,rgba(22,163,74,.06) 50%)!important;}
+body[data-theme="light"] .day.drag-over-split.drag-over-right{background:linear-gradient(to right,rgba(202,138,4,.06) 50%,rgba(22,163,74,.28) 50%)!important;}
 body[data-theme="light"] .touch-drag-ghost{filter:drop-shadow(0 14px 24px rgba(0,0,0,.2));}
 body[data-theme="light"] .cal-progress-bar-wrap{background:#e2e8f0;}
 /* ===== PINK THEME ===== */
@@ -546,6 +549,9 @@ body[data-theme="pink"] .bd-open-btn:hover{background:#fce7f3;color:#831843;}
 body[data-theme="pink"] .weekday-mode-btn.active{background:#db2777!important;color:#fff!important;}
 body[data-theme="pink"] .day.drag-over-move{background:rgba(251,191,36,.14)!important;}
 body[data-theme="pink"] .day.drag-over-copy{background:rgba(219,39,119,.12)!important;}
+body[data-theme="pink"] .day.drag-over-split{background:linear-gradient(to right,rgba(251,191,36,.14) 50%,rgba(219,39,119,.12) 50%)!important;}
+body[data-theme="pink"] .day.drag-over-split.drag-over-left{background:linear-gradient(to right,rgba(251,191,36,.30) 50%,rgba(219,39,119,.06) 50%)!important;}
+body[data-theme="pink"] .day.drag-over-split.drag-over-right{background:linear-gradient(to right,rgba(251,191,36,.06) 50%,rgba(219,39,119,.28) 50%)!important;}
 body[data-theme="pink"] .cal-progress-bar-wrap{background:#fce7f3;}
 body[data-theme="pink"] .guest-banner{background:#fce7f3;border-color:#f9a8d4;color:#831843;}
 body[data-theme="pink"] .guest-banner button{background:#db2777;}
@@ -787,8 +793,6 @@ body[data-theme="pink"] .tut-fab{background:#ffe4ef;color:#db2777;border-color:#
   <div class="sheet-tag-filter" id="sheetTagFilter"></div>
   <div id="pool" class="pool-grid"></div>
 </div>
-<button id="sheetRestoreBtn" class="sheet-restore-btn" type="button" aria-label="検索パネルを開く">🔍</button>
-<div id="trash" class="trash-bin">🗑️</div>
 
 <!-- ===== Edit Modal ===== -->
 <div class="overlay" id="editOverlay">
@@ -1291,7 +1295,7 @@ function ensureSheetVisible(saveState=true){
   if(settings.sheetHidden)setSheetHidden(false,saveState);
 }
 function clearDayDropHighlight(){
-  document.querySelectorAll(".day.drag-over-move,.day.drag-over-copy").forEach(el=>el.classList.remove("drag-over-move","drag-over-copy"));
+  document.querySelectorAll(".day.drag-over-move,.day.drag-over-copy,.day.drag-over-split").forEach(el=>el.classList.remove("drag-over-move","drag-over-copy","drag-over-split","drag-over-left","drag-over-right"));
 }
 function getDropDayFromPoint(clientX,clientY){
   const hit=document.elementFromPoint(clientX,clientY);
@@ -1304,7 +1308,7 @@ function updateTouchDropHighlight(clientX,clientY){
   const rect=col.getBoundingClientRect();
   const isFromPool=!!(touchDragState&&touchDragState.payload&&touchDragState.payload.fromPool);
   const shouldCopy=isFromPool||(clientX>=rect.left+(rect.width/2));
-  col.classList.add(shouldCopy?"drag-over-copy":"drag-over-move");
+  if(!isFromPool){col.classList.add("drag-over-split",shouldCopy?"drag-over-right":"drag-over-left");}else{col.classList.add("drag-over-copy");}
   return col;
 }
 function applyDropToDay(obj,col,clientX){
@@ -2580,12 +2584,16 @@ function render(){
     col.addEventListener("dragover",e=>{
       e.preventDefault();
       const isRight=e.clientX>=col.getBoundingClientRect().left+col.offsetWidth/2;
-      col.classList.remove("drag-over-move","drag-over-copy");
-      col.classList.add((currentDragFromPool||isRight)?"drag-over-copy":"drag-over-move");
+      col.classList.remove("drag-over-move","drag-over-copy","drag-over-split","drag-over-left","drag-over-right");
+      if(currentDragFromPool){
+        col.classList.add("drag-over-copy");
+      }else{
+        col.classList.add("drag-over-split",isRight?"drag-over-right":"drag-over-left");
+      }
     });
-    col.addEventListener("dragleave",()=>col.classList.remove("drag-over-move","drag-over-copy"));
+    col.addEventListener("dragleave",()=>col.classList.remove("drag-over-move","drag-over-copy","drag-over-split","drag-over-left","drag-over-right"));
     col.addEventListener("drop",e=>{
-      col.classList.remove("drag-over-move","drag-over-copy");
+      col.classList.remove("drag-over-move","drag-over-copy","drag-over-split","drag-over-left","drag-over-right");
       const raw=e.dataTransfer.getData("text");if(!raw)return;
       const obj=JSON.parse(raw);
       applyDropToDay(obj,col,e.clientX);
@@ -2815,11 +2823,12 @@ function mkCardEl(item,target){
       if(e.target.closest(".card-edit-btn"))return;
       startX=e.clientX;startY=e.clientY;
       swiping=true;hLocked=false;pointerId=e.pointerId;
-      c.setPointerCapture?.(pointerId);
+      // Don't capture here: defer until horizontal gesture is confirmed
+      // so that the long-press drag timer on textEl can complete first.
     });
 
     c.addEventListener("pointermove",e=>{
-      if(touchDragState&&touchDragState.sourceEl===c)return;
+      if(touchDragState)return;
       if(!swiping||e.pointerId!==pointerId)return;
       const dx=e.clientX-startX;
       const dy=e.clientY-startY;
@@ -2828,6 +2837,7 @@ function mkCardEl(item,target){
         if(Math.abs(dx)<=8&&Math.abs(dy)<=8)return;
         if(Math.abs(dx)<=Math.abs(dy)){swiping=false;reset();return;}
         hLocked=true;
+        c.setPointerCapture?.(pointerId);
       }
 
       if(dx>=0){reset();return;}
@@ -2838,7 +2848,7 @@ function mkCardEl(item,target){
     });
 
     const finish=e=>{
-      if(touchDragState&&touchDragState.sourceEl===c)return;
+      if(touchDragState)return;
       if(!swiping||e.pointerId!==pointerId)return;
       const dx=e.clientX-startX;
       swiping=false;
@@ -3650,6 +3660,7 @@ function autoSuggestDay(dayIndex){
 // ===== TRASH =====
 (function setupTrash(){
   const bin=document.getElementById("trash");
+  if(!bin)return;
   bin.addEventListener("dragover",e=>{e.preventDefault();bin.classList.add("drag-over");});
   bin.addEventListener("dragleave",()=>bin.classList.remove("drag-over"));
   bin.addEventListener("drop",e=>{
@@ -3871,8 +3882,8 @@ function initBottomSheet(){
     }
     setTimeout(()=>sheet.classList.remove("bs-anim"),340);
   }
+  const PEEK_H=78; // ちょっとだけ見せる高さ
   function startDrag(clientY){
-    if(settings.sheetHidden){settings.sheetHidden=false;updateSheetRestoreButton();}
     drag=true;startY=clientY;startH=sheet.offsetHeight;
     sheet.classList.remove("bs-anim");
   }
@@ -3899,7 +3910,19 @@ function initBottomSheet(){
     lastTapX=clientX;
     lastTapY=clientY;
     if(!isDouble)return false;
-    setSheetHidden(!settings.sheetHidden);
+    sheet.classList.add("bs-anim");
+    if(sheet.offsetHeight<=PEEK_H+10){
+      // ピーク状態 → 元の高さに戻す
+      const restoreH=Number.isFinite(Number(settings.sheetHeight))&&Number(settings.sheetHeight)>PEEK_H
+        ?clampSheetHeight(Number(settings.sheetHeight))
+        :levelToSheetHeight(clampSheetLevel(settings.sheetLevel));
+      sheet.style.height=restoreH+"px";
+    }else{
+      // 通常状態 → ちょっとだけ見せる
+      settings.sheetHeight=sheet.offsetHeight; // 現在の高さを保存
+      sheet.style.height=PEEK_H+"px";
+    }
+    setTimeout(()=>sheet.classList.remove("bs-anim"),340);
     return true;
   }
 
@@ -3980,8 +4003,7 @@ function initBottomSheet(){
   const savedH=Number.isFinite(Number(settings.sheetHeight))
     ?clampSheetHeight(Number(settings.sheetHeight))
     :initSnap[clampSheetLevel(settings.sheetLevel)];
-  sheet.style.height=(settings.sheetHidden?28:savedH)+"px";
-  updateSheetRestoreButton();
+  sheet.style.height=savedH+"px";
 }
 
 function toggleWeekdayMode(){
