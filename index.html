@@ -2781,8 +2781,9 @@ function mkCardEl(item,target){
     c.appendChild(chk);
   }
 
+  let imgWrap=null;
   if(hasImage){
-    const imgWrap=document.createElement("div");imgWrap.className="card-img-wrap";
+    imgWrap=document.createElement("div");imgWrap.className="card-img-wrap";
     const img=document.createElement("img");img.className="card-img";img.src=resolvedImage;img.alt="";img.draggable=false;imgWrap.appendChild(img);
     c.appendChild(imgWrap);
     if(meta.children.length)main.appendChild(meta);
@@ -2798,8 +2799,19 @@ function mkCardEl(item,target){
       e.dataTransfer.setDragImage(c,0,0);
     });
     textEl.addEventListener("dragend",()=>{currentDragFromPool=false;});
+    if(imgWrap){
+      imgWrap.draggable=true;
+      imgWrap.style.cursor="grab";
+      imgWrap.addEventListener("dragstart",e=>{
+        currentDragFromPool=false;
+        e.dataTransfer.setData("text",JSON.stringify(target));
+        e.dataTransfer.setDragImage(c,0,0);
+      });
+      imgWrap.addEventListener("dragend",()=>{currentDragFromPool=false;});
+    }
   }
   bindLongPressTouchDrag(textEl,()=>({...target}));
+  if(imgWrap)bindLongPressTouchDrag(imgWrap,()=>({...target}));
 
   if(target.wk&&target.meal!==undefined){
     let startX=0,startY=0,swiping=false,hLocked=false,pointerId=null;
