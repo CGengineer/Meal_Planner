@@ -1388,8 +1388,8 @@ function startTouchDrag(sourceEl,payload,clientX,clientY){
     sourceEl,
     payload,
     ghostEl:ghost,
-    offsetX:Math.min(rect.width-12,Math.max(12,clientX-rect.left)),
-    offsetY:Math.min(rect.height-10,Math.max(10,clientY-rect.top)),
+    offsetX:Math.min(rect.width-12,Math.max(12,clientX-rect.left))*.5,
+    offsetY:Math.min(rect.height-10,Math.max(10,clientY-rect.top))*.5,
     hoverCol:null
   };
   updateTouchDrag(clientX,clientY);
