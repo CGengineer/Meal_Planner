@@ -101,7 +101,7 @@ body[data-card-density="detailed"] .card.has-image .card-img{width:80px;height:8
 .filter-acc-body.open{display:flex;}
 .pool-grid{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:6px 8px 8px;overflow-y:auto;align-content:start;-webkit-overflow-scrolling:touch;}
 .pool-empty{grid-column:1/-1;text-align:center;color:#475569;font-size:12px;padding:20px 0;}
-.pool-card{background:#334155;border-radius:8px;padding:7px 26px 6px 9px;cursor:grab;position:relative;font-size:12px;border-left:3px solid #475569;user-select:none;min-height:88px;}
+.pool-card{background:#334155;border-radius:8px;padding:7px 26px 6px 9px;cursor:grab;position:relative;font-size:12px;border-left:3px solid #475569;user-select:none;touch-action:pan-y;min-height:88px;}
 .pool-card:hover{background:#3d4f65;}.pool-card .card-edit-btn{opacity:0;transition:opacity .15s;}.pool-card:hover .card-edit-btn{opacity:1;}
 .card:not(.is-draggable),.pool-card:not(.is-draggable){cursor:default;}
 .card,.pool-card,.card-text{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;}
@@ -1360,6 +1360,19 @@ function clearTouchDrag(){
   document.body.classList.remove("touch-dnd-active");
   clearDayDropHighlight();
 }
+function makeDragGhost(el){
+  const scale=0.5;
+  const r=el.getBoundingClientRect();
+  const wrap=document.createElement("div");
+  wrap.style.cssText=`position:fixed;left:-9999px;top:0;width:${Math.round(r.width*scale)}px;height:${Math.round(r.height*scale)}px;overflow:hidden;pointer-events:none;`;
+  const clone=el.cloneNode(true);
+  clone.querySelectorAll(".card-edit-btn,.card-dup-btn").forEach(b=>b.remove());
+  clone.style.cssText+=`;width:${Math.round(r.width)}px;transform:scale(${scale});transform-origin:top left;margin:0;flex-shrink:0;`;
+  wrap.appendChild(clone);
+  document.body.appendChild(wrap);
+  setTimeout(()=>wrap.remove(),0);
+  return wrap;
+}
 function startTouchDrag(sourceEl,payload,clientX,clientY){
   clearTouchDrag();
   if(!sourceEl||!payload)return;
@@ -1384,7 +1397,7 @@ function startTouchDrag(sourceEl,payload,clientX,clientY){
 }
 function updateTouchDrag(clientX,clientY){
   if(!touchDragState)return;
-  touchDragState.ghostEl.style.transform=`translate3d(${Math.round(clientX-touchDragState.offsetX)}px,${Math.round(clientY-touchDragState.offsetY)}px,0) scale(.8)`;
+  touchDragState.ghostEl.style.transform=`translate3d(${Math.round(clientX-touchDragState.offsetX)}px,${Math.round(clientY-touchDragState.offsetY)}px,0) scale(.5)`;
   touchDragState.hoverCol=updateTouchDropHighlight(clientX,clientY);
 }
 function endTouchDrag(clientX,clientY){
@@ -2797,7 +2810,7 @@ function mkCardEl(item,target){
       if(e.target.closest("button,a"))return e.preventDefault();
       currentDragFromPool=false;
       e.dataTransfer.setData("text",JSON.stringify(target));
-      e.dataTransfer.setDragImage(c,0,0);
+      e.dataTransfer.setDragImage(makeDragGhost(c),0,0);
     });
     c.addEventListener("dragend",()=>{currentDragFromPool=false;});
   }
@@ -3821,7 +3834,7 @@ function renderPool(){
         span.addEventListener("dragstart",e=>{
           currentDragFromPool=true;
           e.dataTransfer.setData("text",JSON.stringify({fromPool:true,pidx}));
-          e.dataTransfer.setDragImage(c,0,0);
+          e.dataTransfer.setDragImage(makeDragGhost(c),0,0);
         });
         span.addEventListener("dragend",()=>{currentDragFromPool=false;});
         if(imgWrap){
@@ -3830,13 +3843,12 @@ function renderPool(){
           imgWrap.addEventListener("dragstart",e=>{
             currentDragFromPool=true;
             e.dataTransfer.setData("text",JSON.stringify({fromPool:true,pidx}));
-            e.dataTransfer.setDragImage(c,0,0);
+            e.dataTransfer.setDragImage(makeDragGhost(c),0,0);
           });
           imgWrap.addEventListener("dragend",()=>{currentDragFromPool=false;});
         }
       }
-      bindLongPressTouchDrag(span,()=>({fromPool:true,pidx}));
-      if(imgWrap) bindLongPressTouchDrag(imgWrap,()=>({fromPool:true,pidx}));
+      bindLongPressTouchDrag(c,()=>({fromPool:true,pidx}));
     }else{
       c.style.cursor="pointer";
       c.addEventListener("click",e=>{e.preventDefault();assignPoolItemToSelectedDay(pidx);});
