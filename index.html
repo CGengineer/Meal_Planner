@@ -1499,7 +1499,7 @@ function bindLongPressTouchDrag(el,getPayload){
     const dx=e.clientX-startX;
     const dy=e.clientY-startY;
     if(!longPressed){
-      if(Math.abs(dx)>TOUCH_DRAG_CANCEL_PX||Math.abs(dy)>TOUCH_DRAG_CANCEL_PX)clearTimer();
+      if(Math.abs(dy)>TOUCH_DRAG_CANCEL_PX)clearTimer();
       return;
     }
     e.preventDefault();
