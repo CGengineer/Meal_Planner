@@ -2869,7 +2869,7 @@ function mkCardEl(item,target){
       if(e.target.closest("button,a"))return e.preventDefault();
       currentDragFromPool=false;
       e.dataTransfer.setData("text",JSON.stringify(target));
-      const ghost=makeDragGhost(c);e.dataTransfer.setDragImage(ghost,Math.round(e.offsetX*0.5),Math.round(e.offsetY*0.5));
+      const ghost=makeDragGhost(c);e.dataTransfer.setDragImage(ghost,0,0);
     });
     c.addEventListener("dragend",()=>{currentDragFromPool=false;});
   }
@@ -3895,7 +3895,7 @@ function renderPool(){
         span.addEventListener("dragstart",e=>{
           currentDragFromPool=true;
           e.dataTransfer.setData("text",JSON.stringify({fromPool:true,pidx}));
-          const ghost=makeDragGhost(c);e.dataTransfer.setDragImage(ghost,Math.round(e.offsetX*0.5),Math.round(e.offsetY*0.5));
+          const ghost=makeDragGhost(c);e.dataTransfer.setDragImage(ghost,0,0);
         });
         span.addEventListener("dragend",()=>{currentDragFromPool=false;});
         if(imgWrap){
@@ -3904,7 +3904,7 @@ function renderPool(){
           imgWrap.addEventListener("dragstart",e=>{
             currentDragFromPool=true;
             e.dataTransfer.setData("text",JSON.stringify({fromPool:true,pidx}));
-            const ghost=makeDragGhost(c);e.dataTransfer.setDragImage(ghost,Math.round(e.offsetX*0.5),Math.round(e.offsetY*0.5));
+            const ghost=makeDragGhost(c);e.dataTransfer.setDragImage(ghost,0,0);
           });
           imgWrap.addEventListener("dragend",()=>{currentDragFromPool=false;});
         }
