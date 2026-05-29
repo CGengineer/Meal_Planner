@@ -1499,7 +1499,7 @@ function bindLongPressTouchDrag(el,getPayload){
     const dx=e.clientX-startX;
     const dy=e.clientY-startY;
     if(!longPressed){
-      if(Math.abs(dx)>TOUCH_DRAG_CANCEL_PX||Math.abs(dy)>TOUCH_DRAG_CANCEL_PX)clearTimer();
+      if(Math.abs(dy)>TOUCH_DRAG_CANCEL_PX)clearTimer();
       return;
     }
     e.preventDefault();
@@ -2869,7 +2869,7 @@ function mkCardEl(item,target){
       if(e.target.closest("button,a"))return e.preventDefault();
       currentDragFromPool=false;
       e.dataTransfer.setData("text",JSON.stringify(target));
-      e.dataTransfer.setDragImage(makeDragGhost(c),0,0);
+      const ghost=makeDragGhost(c);e.dataTransfer.setDragImage(ghost,Math.round(e.offsetX*0.5),Math.round(e.offsetY*0.5));
     });
     c.addEventListener("dragend",()=>{currentDragFromPool=false;});
   }
@@ -3895,7 +3895,7 @@ function renderPool(){
         span.addEventListener("dragstart",e=>{
           currentDragFromPool=true;
           e.dataTransfer.setData("text",JSON.stringify({fromPool:true,pidx}));
-          e.dataTransfer.setDragImage(makeDragGhost(c),0,0);
+          const ghost=makeDragGhost(c);e.dataTransfer.setDragImage(ghost,Math.round(e.offsetX*0.5),Math.round(e.offsetY*0.5));
         });
         span.addEventListener("dragend",()=>{currentDragFromPool=false;});
         if(imgWrap){
@@ -3904,7 +3904,7 @@ function renderPool(){
           imgWrap.addEventListener("dragstart",e=>{
             currentDragFromPool=true;
             e.dataTransfer.setData("text",JSON.stringify({fromPool:true,pidx}));
-            e.dataTransfer.setDragImage(makeDragGhost(c),0,0);
+            const ghost=makeDragGhost(c);e.dataTransfer.setDragImage(ghost,Math.round(e.offsetX*0.5),Math.round(e.offsetY*0.5));
           });
           imgWrap.addEventListener("dragend",()=>{currentDragFromPool=false;});
         }
