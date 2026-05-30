@@ -2792,26 +2792,16 @@ function mkCardEl(item,target){
   }
 
   if(isDraggable){
-    textEl.draggable=true;
-    textEl.addEventListener("dragstart",e=>{
+    c.draggable=true;
+    c.addEventListener("dragstart",e=>{
+      if(e.target.closest("button,a"))return e.preventDefault();
       currentDragFromPool=false;
       e.dataTransfer.setData("text",JSON.stringify(target));
       e.dataTransfer.setDragImage(c,0,0);
     });
-    textEl.addEventListener("dragend",()=>{currentDragFromPool=false;});
-    if(imgWrap){
-      imgWrap.draggable=true;
-      imgWrap.style.cursor="grab";
-      imgWrap.addEventListener("dragstart",e=>{
-        currentDragFromPool=false;
-        e.dataTransfer.setData("text",JSON.stringify(target));
-        e.dataTransfer.setDragImage(c,0,0);
-      });
-      imgWrap.addEventListener("dragend",()=>{currentDragFromPool=false;});
-    }
+    c.addEventListener("dragend",()=>{currentDragFromPool=false;});
   }
-  bindLongPressTouchDrag(textEl,()=>({...target}));
-  if(imgWrap)bindLongPressTouchDrag(imgWrap,()=>({...target}));
+  bindLongPressTouchDrag(c,()=>({...target}));
 
   if(target.wk&&target.meal!==undefined){
     let startX=0,startY=0,swiping=false,hLocked=false,pointerId=null;
