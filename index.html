@@ -4537,6 +4537,52 @@ function _renderWeekPanel(container,date,isCurrent){
     container.appendChild(col);
   }
 }
+function showMonthDayMenu(dateObj,wk,dayIdx){
+  const ex=document.getElementById("monthDayMenu");if(ex)ex.remove();
+  const mealColors={"朝":"#f59e0b","昼":"#3b82f6","夜":"#8b5cf6"};
+  const mo=dateObj.getMonth()+1,da=dateObj.getDate();
+  const dow=["日","月","火","水","木","金","土"][dateObj.getDay()];
+  const overlay=document.createElement("div");
+  overlay.id="monthDayMenu";
+  overlay.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:300;display:flex;align-items:flex-end;justify-content:center;";
+  const panel=document.createElement("div");
+  panel.style.cssText="background:#1e293b;border-radius:18px 18px 0 0;padding:20px 20px 28px;width:100%;max-width:500px;max-height:75vh;overflow-y:auto;box-shadow:0 -4px 24px rgba(0,0,0,0.4);";
+  // ドラッグバー
+  const bar=document.createElement("div");bar.style.cssText="width:40px;height:4px;background:#334155;border-radius:2px;margin:0 auto 16px;";panel.appendChild(bar);
+  // タイトル
+  const title=document.createElement("div");title.style.cssText="font-size:17px;font-weight:700;color:#f1f5f9;margin-bottom:18px;text-align:center;";
+  title.innerText=`${mo}月${da}日（${dow}）`;panel.appendChild(title);
+  // 食事セクション
+  const mealsToShow=currentMeal==="全"?MEALS:[currentMeal];
+  mealsToShow.forEach(meal=>{
+    const items=(allData[wk]?.[meal]?.[dayIdx]||[]);
+    const section=document.createElement("div");section.style.cssText="margin-bottom:14px;background:#0f172a;border-radius:10px;padding:10px 12px;";
+    const header=document.createElement("div");header.style.cssText="display:flex;align-items:center;gap:8px;margin-bottom:8px;";
+    const lbl=document.createElement("span");lbl.style.cssText=`font-size:12px;font-weight:700;color:${mealColors[meal]};background:${mealColors[meal]}22;padding:2px 10px;border-radius:999px;`;lbl.innerText=meal;header.appendChild(lbl);
+    const addBtn=document.createElement("button");addBtn.style.cssText="margin-left:auto;font-size:12px;padding:4px 12px;background:#334155;color:#94a3b8;border:1px solid #475569;border-radius:6px;cursor:pointer;";addBtn.innerText="＋ 追加";
+    addBtn.onclick=()=>{overlay.remove();openNewCard(dayIdx,wk,meal);};header.appendChild(addBtn);section.appendChild(header);
+    if(!items.length){
+      const empty=document.createElement("div");empty.style.cssText="font-size:12px;color:#475569;";empty.innerText="まだ登録なし";section.appendChild(empty);
+    }else{
+      const chipsWrap=document.createElement("div");chipsWrap.style.cssText="display:flex;flex-wrap:wrap;gap:5px;";
+      items.forEach(item=>{
+        const chip=document.createElement("div");chip.style.cssText=`font-size:12px;padding:4px 10px;border-radius:6px;background:${mealColors[meal]}22;color:${mealColors[meal]};cursor:pointer;`;
+        chip.innerText=item.text;
+        chipsWrap.appendChild(chip);
+      });
+      section.appendChild(chipsWrap);
+    }
+    panel.appendChild(section);
+  });
+  // 閉じるボタン
+  const closeBtn=document.createElement("button");closeBtn.style.cssText="width:100%;margin-top:8px;padding:12px;background:#334155;color:#94a3b8;border:none;border-radius:10px;font-size:14px;cursor:pointer;";closeBtn.innerText="閉じる";closeBtn.onclick=()=>overlay.remove();panel.appendChild(closeBtn);
+  overlay.appendChild(panel);
+  overlay.addEventListener("click",e=>{if(e.target===overlay)overlay.remove();});
+  document.body.appendChild(overlay);
+  // アニメーション
+  panel.style.transform="translateY(100%)";panel.style.transition="transform 0.25s ease";
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{panel.style.transform="translateY(0)";}));
+}
 function _renderMonthPanel(container,year,month){
   container.innerHTML="";
   const dayOrder=settings.weekStartMonday?[1,2,3,4,5,6,0]:[0,1,2,3,4,5,6];
@@ -4592,9 +4638,7 @@ function _renderMonthPanel(container,year,month){
       if(isThisMonth)monthCostTotal+=dayCost;
       if(dayCost>0){const costEl=document.createElement("div");costEl.className="month-day-cost";costEl.innerText=dayCost.toLocaleString()+(settings.currency||"円");cell.appendChild(costEl);}
       cell.addEventListener("click",()=>{
-        baseDate=new Date(date.getTime());calView="week";
-        const btn=document.getElementById("viewToggleBtn");if(btn)btn.innerText="週";
-        render();
+        showMonthDayMenu(date,wk,dayIdx);
       });
       weekRow.appendChild(cell);
       d.setDate(d.getDate()+1);
@@ -5046,6 +5090,8 @@ async function recStartRecognize(){
   }catch(e){errEl.innerText="エラー: "+e.message;}
   finally{btn.disabled=false;btn.innerText="🔍 料理を認識";}
 }
+
+
 
 async function recSearchRecipe(){
   const dishName=(document.getElementById("recDishName").value||"").trim();
