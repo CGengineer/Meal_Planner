@@ -50,7 +50,7 @@ body.no-x-nav{overscroll-behavior-x:none;touch-action:pan-y;}
 .pool-assign-hint .btn{padding:4px 8px;font-size:11px;min-height:28px;}
 .day.today{background:#1a2332;}.day.sun .day-header{color:#f87171;}.day.sat .day-header{color:#60a5fa;}
 /* Card */
-.card{background:#1e293b;border-radius:8px;padding:7px 7px 5px;cursor:grab;position:relative;border-left:3px solid #475569;font-size:12px;transition:background .1s,transform .16s ease,opacity .16s ease,background-color .1s;user-select:none;touch-action:pan-y;min-height:88px;overflow:hidden;}
+.card{background:#1e293b;border-radius:8px;padding:7px 7px 5px;cursor:grab;position:relative;border-left:3px solid #475569;font-size:12px;transition:background .1s,transform .16s ease,opacity .16s ease,background-color .1s;user-select:none;touch-action:pan-y;min-height:88px;}
 .card:hover{background:#263348;}
 .card.is-draggable .card-text,.pool-card.is-draggable .card-text{cursor:grab;user-select:none;}
 .card.is-draggable .card-text:active,.pool-card.is-draggable .card-text:active{cursor:grabbing;}
@@ -101,7 +101,7 @@ body[data-card-density="detailed"] .card.has-image .card-img{width:80px;height:8
 .filter-acc-body.open{display:flex;}
 .pool-grid{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:6px 8px 8px;overflow-y:auto;align-content:start;-webkit-overflow-scrolling:touch;}
 .pool-empty{grid-column:1/-1;text-align:center;color:#475569;font-size:12px;padding:20px 0;}
-.pool-card{background:#334155;border-radius:8px;padding:7px 26px 6px 9px;cursor:grab;position:relative;font-size:12px;border-left:3px solid #475569;user-select:none;touch-action:pan-y;min-height:88px;overflow:hidden;}
+.pool-card{background:#334155;border-radius:8px;padding:7px 26px 6px 9px;cursor:grab;position:relative;font-size:12px;border-left:3px solid #475569;user-select:none;touch-action:pan-y;min-height:88px;}
 .pool-card:hover{background:#3d4f65;}.pool-card .card-edit-btn{opacity:0;transition:opacity .15s;}.pool-card:hover .card-edit-btn{opacity:1;}
 .card:not(.is-draggable),.pool-card:not(.is-draggable){cursor:default;}
 .card,.pool-card,.card-text{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;}
@@ -691,26 +691,6 @@ body[data-theme="pink"] .tut-fab{background:#ffe4ef;color:#db2777;border-color:#
 .pool-assign-flash{animation:assign-glow .38s ease-out!important;}
 .bd-item{transition:background .1s,transform .18s cubic-bezier(.34,1.4,.64,1);}
 .more-item{transition:background .1s,transform .18s cubic-bezier(.34,1.4,.64,1);}
-/* ===== カードシャイン（鏡反射） ===== */
-@keyframes card-shine{
-  0%{transform:translateX(-130%) skewX(-20deg);}
-  100%{transform:translateX(230%) skewX(-20deg);}
-}
-.card::after,.pool-card::after{
-  content:'';position:absolute;inset:0;
-  background:linear-gradient(105deg,
-    transparent 25%,
-    rgba(255,255,255,0.12) 42%,
-    rgba(255,255,255,0.52) 50%,
-    rgba(255,255,255,0.12) 58%,
-    transparent 75%
-  );
-  transform:translateX(-130%) skewX(-20deg);
-  pointer-events:none;z-index:10;border-radius:inherit;
-}
-.card.shining::after,.pool-card.shining::after{
-  animation:card-shine 0.52s cubic-bezier(0.25,0.46,0.45,0.94) forwards;
-}
 
 </style>
 </head>
@@ -2455,21 +2435,6 @@ document.addEventListener("keydown",e=>{
 
 // ===== UTILS =====
 function escHtml(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
-function triggerCardShine(el){
-  el.classList.remove("shining");
-  void el.offsetWidth;
-  el.classList.add("shining");
-  el.addEventListener("animationend",()=>el.classList.remove("shining"),{once:true});
-}
-// カードタップ/クリックでシャイン発火（イベント委譲）
-document.addEventListener("touchstart",e=>{
-  const card=e.target.closest(".card,.pool-card");
-  if(card)triggerCardShine(card);
-},{passive:true});
-document.addEventListener("mousedown",e=>{
-  const card=e.target.closest(".card,.pool-card");
-  if(card)triggerCardShine(card);
-});
 
 // ===== TOAST =====
 function showToast(msg){
@@ -2874,6 +2839,72 @@ function mkCardEl(item,target){
     c.addEventListener("dragend",()=>{currentDragFromPool=false;});
   }
   bindLongPressTouchDrag(c,()=>({...target}));
+
+  if(target.wk&&target.meal!==undefined){
+    let startX=0,startY=0,swiping=false,hLocked=false,pointerId=null;
+    const maxSwipe=120,deleteThreshold=90;
+
+    const mixBg=dx=>{
+      const p=Math.min(1,Math.abs(dx)/deleteThreshold);
+      const r=Math.round(30+(239-30)*p);
+      const g=Math.round(41+(68-41)*p);
+      const b=Math.round(59+(68-59)*p);
+      c.style.backgroundColor=`rgb(${r},${g},${b})`;
+    };
+    const reset=()=>{
+      c.style.transform="translateX(0)";
+      c.style.backgroundColor="";
+      c.style.opacity="1";
+    };
+
+    c.addEventListener("pointerdown",e=>{
+      if(e.pointerType==="mouse")return;
+      if(e.target.closest(".card-edit-btn"))return;
+      startX=e.clientX;startY=e.clientY;
+      swiping=true;hLocked=false;pointerId=e.pointerId;
+      // Don't capture here: defer until horizontal gesture is confirmed
+      // so that the long-press drag timer on textEl can complete first.
+    });
+
+    c.addEventListener("pointermove",e=>{
+      if(touchDragState)return;
+      if(!swiping||e.pointerId!==pointerId)return;
+      const dx=e.clientX-startX;
+      const dy=e.clientY-startY;
+
+      if(!hLocked){
+        if(Math.abs(dx)<=8&&Math.abs(dy)<=8)return;
+        if(Math.abs(dx)<=Math.abs(dy)){swiping=false;reset();return;}
+        hLocked=true;
+        c.setPointerCapture?.(pointerId);
+      }
+
+      if(dx>=0){reset();return;}
+      const clamped=Math.max(-maxSwipe,dx);
+      e.preventDefault();
+      c.style.transform=`translateX(${clamped}px)`;
+      mixBg(clamped);
+    });
+
+    const finish=e=>{
+      if(touchDragState)return;
+      if(!swiping||e.pointerId!==pointerId)return;
+      const dx=e.clientX-startX;
+      swiping=false;
+      c.releasePointerCapture?.(pointerId);
+
+      if(dx<=-deleteThreshold){
+        c.style.transform="translateX(-120%)";
+        c.style.opacity="0";
+        setTimeout(()=>removePlannedCard(target),140);
+      }else{
+        reset();
+      }
+    };
+
+    c.addEventListener("pointerup",finish);
+    c.addEventListener("pointercancel",finish);
+  }
 
   return c;
 }
