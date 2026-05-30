@@ -558,7 +558,9 @@ body[data-theme="pink"] .guest-banner{background:#fce7f3;border-color:#f9a8d4;co
 body[data-theme="pink"] .guest-banner button{background:#db2777;}
 body[data-theme="pink"] .guest-banner .dismiss{color:#f9a8d4;}
 /* ===== MONTH VIEW ===== */
-.calendar.month-view{display:block;height:calc(100svh - 140px);overflow-y:auto;overflow-x:hidden;}
+.calendar.month-view{display:block;height:calc(100svh - 140px);overflow:hidden;}
+.month-slider-wrap{display:flex;height:100%;width:300%;will-change:transform;}
+.month-panel{flex:0 0 33.333%;width:33.333%;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;}
 .month-weekday-row{display:grid;grid-template-columns:repeat(7,1fr);border-bottom:1px solid #334155;background:#0f172a;position:sticky;top:0;z-index:10;}
 .month-weekday-cell{font-size:9px;text-align:center;padding:4px 2px;font-weight:bold;color:#64748b;letter-spacing:.3px;}
 .month-weekday-cell.sun{color:#f87171;}.month-weekday-cell.sat{color:#60a5fa;}
@@ -4232,30 +4234,18 @@ function updateBudgetBar(){
     mkRow("今月",calcMonthCost(baseDate.getFullYear(),baseDate.getMonth()),mB);
   }
 }
-function renderMonth(){
-  const cal=document.getElementById("cal");
-  cal.innerHTML="";cal.className="calendar month-view";
-  document.body.dataset.cardDensity=settings.cardDensity||"standard";
-  const year=baseDate.getFullYear(),month=baseDate.getMonth();
-  document.getElementById("label").innerText=`${year}年${month+1}月`;
-  const pB=document.getElementById("navPrevBtn");const nB=document.getElementById("navNextBtn");
-  if(pB)pB.innerText="⬅月";if(nB)nB.innerText="月➡";
+function _renderMonthPanel(container,year,month){
+  container.innerHTML="";
   const dayOrder=settings.weekStartMonday?[1,2,3,4,5,6,0]:[0,1,2,3,4,5,6];
-  // Weekday header
   const wRow=document.createElement("div");wRow.className="month-weekday-row";
   dayOrder.forEach(dow=>{
     const cell=document.createElement("div");
     cell.className="month-weekday-cell"+(dow===0?" sun":dow===6?" sat":"");
     cell.innerText=DAYS[dow];wRow.appendChild(cell);
   });
-  cal.appendChild(wRow);
-  // Grid
-  const firstOfMonth=new Date(year,month,1);
-  const lastOfMonth=new Date(year,month+1,0);
-  let gridStart=getWeekStart(firstOfMonth);
-  // Make sure we cover the whole month
+  container.appendChild(wRow);
   const today=new Date();
-  let d=new Date(gridStart.getTime());
+  let d=new Date(getWeekStart(new Date(year,month,1)).getTime());
   let monthCostTotal=0;
   while(true){
     const weekRow=document.createElement("div");weekRow.className="month-week-row";
@@ -4266,10 +4256,8 @@ function renderMonth(){
       cell.className="month-day"+(date.toDateString()===today.toDateString()?" today":"")+(isThisMonth?"":" other-month");
       const dow=date.getDay();
       if(dow===0)cell.classList.add("sun");if(dow===6)cell.classList.add("sat");
-      // Day number
       const num=document.createElement("span");num.className="month-day-num";num.innerText=date.getDate();
       cell.appendChild(num);
-      // Meal chips
       const wk=weekKey(date);
       const ws=getWeekStart(new Date(date.getTime()));
       const dayIdx=Math.max(0,Math.min(6,Math.round((date.getTime()-ws.getTime())/(1000*60*60*24))));
@@ -4300,7 +4288,6 @@ function renderMonth(){
       cell.appendChild(chipsDiv);
       if(isThisMonth)monthCostTotal+=dayCost;
       if(dayCost>0){const costEl=document.createElement("div");costEl.className="month-day-cost";costEl.innerText=dayCost.toLocaleString()+(settings.currency||"円");cell.appendChild(costEl);}
-      // Click → go to that week
       cell.addEventListener("click",()=>{
         baseDate=new Date(date.getTime());calView="week";
         const btn=document.getElementById("viewToggleBtn");if(btn)btn.innerText="週";
@@ -4309,10 +4296,9 @@ function renderMonth(){
       weekRow.appendChild(cell);
       d.setDate(d.getDate()+1);
     }
-    cal.appendChild(weekRow);
+    container.appendChild(weekRow);
     if(d.getFullYear()>year||(d.getFullYear()===year&&d.getMonth()>month))break;
   }
-  // Monthly summary bar
   const sumRow=document.createElement("div");sumRow.className="month-summary-row";
   const cur=settings.currency||"円";
   const mBudget=Number(settings.monthlyBudget)||0;
@@ -4328,7 +4314,25 @@ function renderMonth(){
   }
   const monthlyCal=calcMonthCalories(year,month);
   if(monthlyCal>0){const calChip=document.createElement("span");calChip.className="ms-chip";calChip.innerText=`🔥 月計: ${monthlyCal.toLocaleString()}kcal`;sumRow.appendChild(calChip);}
-  cal.appendChild(sumRow);
+  container.appendChild(sumRow);
+}
+function renderMonth(){
+  const cal=document.getElementById("cal");
+  cal.innerHTML="";cal.className="calendar month-view";
+  document.body.dataset.cardDensity=settings.cardDensity||"standard";
+  const year=baseDate.getFullYear(),month=baseDate.getMonth();
+  document.getElementById("label").innerText=`${year}年${month+1}月`;
+  const pB=document.getElementById("navPrevBtn");const nB=document.getElementById("navNextBtn");
+  if(pB)pB.innerText="⬅月";if(nB)nB.innerText="月➡";
+  const wrap=document.createElement("div");wrap.className="month-slider-wrap";
+  wrap.style.transform="translateX(-33.333%)";
+  const panels=[0,1,2].map(()=>{const p=document.createElement("div");p.className="month-panel";wrap.appendChild(p);return p;});
+  cal.appendChild(wrap);
+  const prev=new Date(year,month-1,1);
+  const next=new Date(year,month+1,1);
+  _renderMonthPanel(panels[0],prev.getFullYear(),prev.getMonth());
+  _renderMonthPanel(panels[1],year,month);
+  _renderMonthPanel(panels[2],next.getFullYear(),next.getMonth());
 }
 
 // ===== GUEST DATA MIGRATION =====
@@ -5087,24 +5091,48 @@ document.addEventListener("keydown",e=>{
   if(e.key==="Escape"&&_tutActive){e.stopPropagation();endTutorial();}
 });
 
-// Month view: horizontal swipe → navigate months
+// Month view: horizontal swipe with slide animation
 {
   const _cal=document.getElementById("cal");
   if(_cal){
-    let _msPid=null,_msSx=0,_msSy=0;
+    let _pid=null,_sx=0,_sy=0,_tracking=false,_hLocked=false;
+    const _wrap=()=>_cal.querySelector(".month-slider-wrap");
     _cal.addEventListener("pointerdown",e=>{
       if(calView!=="month")return;
-      _msPid=e.pointerId;_msSx=e.clientX;_msSy=e.clientY;
+      _pid=e.pointerId;_sx=e.clientX;_sy=e.clientY;_tracking=true;_hLocked=false;
     });
-    _cal.addEventListener("pointerup",e=>{
-      if(_msPid==null||e.pointerId!==_msPid)return;
-      _msPid=null;
-      if(calView!=="month"||touchDragState)return;
-      const dx=e.clientX-_msSx,dy=e.clientY-_msSy;
-      if(Math.abs(dx)<50||Math.abs(dx)<=Math.abs(dy))return;
-      if(dx<0)moveMonth(1);else moveMonth(-1);
+    _cal.addEventListener("pointermove",e=>{
+      if(!_tracking||e.pointerId!==_pid||calView!=="month")return;
+      const dx=e.clientX-_sx,dy=e.clientY-_sy;
+      if(!_hLocked){
+        if(Math.abs(dx)<8&&Math.abs(dy)<8)return;
+        if(Math.abs(dy)>=Math.abs(dx)){_tracking=false;return;}
+        _hLocked=true;
+        if(_cal.setPointerCapture)_cal.setPointerCapture(_pid);
+      }
+      e.preventDefault();
+      const w=_wrap();if(!w)return;
+      w.style.transition="none";
+      w.style.transform=`translateX(calc(-33.333% + ${dx}px))`;
+    },{passive:false});
+    const _snapBack=()=>{const w=_wrap();if(w){w.style.transition="transform 0.25s cubic-bezier(.25,.46,.45,.94)";w.style.transform="translateX(-33.333%)";}};
+    const _onEnd=e=>{
+      if(!_tracking||e.pointerId!==_pid)return;
+      const dx=e.clientX-_sx,wasH=_hLocked;
+      _tracking=false;_hLocked=false;_pid=null;
+      if(calView!=="month"||touchDragState){_snapBack();return;}
+      const w=_wrap();if(!w)return;
+      if(!wasH||Math.abs(dx)<50){_snapBack();return;}
+      const dir=dx<0?1:-1;
+      w.style.transition="transform 0.3s cubic-bezier(.25,.46,.45,.94)";
+      w.style.transform=dir>0?"translateX(-66.666%)":"translateX(0%)";
+      setTimeout(()=>moveMonth(dir),300);
+    };
+    _cal.addEventListener("pointerup",_onEnd);
+    _cal.addEventListener("pointercancel",e=>{
+      if(e.pointerId!==_pid)return;
+      _tracking=false;_hLocked=false;_pid=null;_snapBack();
     });
-    _cal.addEventListener("pointercancel",e=>{if(e.pointerId===_msPid)_msPid=null;});
   }
 }
 
