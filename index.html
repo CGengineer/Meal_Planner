@@ -63,6 +63,8 @@ body.no-x-nav{overscroll-behavior-x:none;touch-action:pan-y;}
 .day-header{padding-bottom:14px;}
 .weekday-mode-btn.active{background:#f59e0b!important;color:#0f172a!important;}
 .day.assignment-target{background:#10243a;box-shadow:inset 0 0 0 1px #22d3ee;}
+@keyframes daySelect{from{box-shadow:inset 0 0 0 0px #3b82f6;}to{box-shadow:inset 0 0 0 2px #3b82f6;}}
+.day.cal-day-selected{box-shadow:inset 0 0 0 2px #3b82f6!important;background:#172036!important;animation:daySelect .18s ease-out;}
 .pool-assign-hint{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;gap:8px;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:7px 8px;font-size:11px;color:#cbd5e1;}
 .pool-assign-hint .btn{padding:4px 8px;font-size:11px;min-height:28px;}
 .day.today{background:#1a2332;}.day.sun .day-header{color:#f87171;}.day.sat .day-header{color:#60a5fa;}
@@ -591,8 +593,8 @@ body[data-theme="pink"] .guest-banner .dismiss{color:#f9a8d4;}
 .calendar.month-view{display:block;height:calc(100svh - 140px);overflow:hidden;touch-action:pan-y;}
 .month-slider-wrap{display:flex;height:100%;width:300%;will-change:transform;touch-action:pan-y;}
 .month-panel{flex:0 0 33.333%;width:33.333%;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;}
-.calendar.week-view{display:block;overflow:hidden;}
-.week-panel{width:100%;display:grid;grid-template-columns:repeat(7,minmax(120px,1fr));overflow-y:auto;overflow-x:auto;-webkit-overflow-scrolling:touch;align-content:start;}
+.calendar.week-view{display:block;overflow:hidden;touch-action:pan-y;}
+.week-panel{width:100%;height:100%;display:grid;grid-template-columns:repeat(7,minmax(120px,1fr));overflow-y:auto;overflow-x:auto;-webkit-overflow-scrolling:touch;align-content:start;touch-action:pan-y;}
 @media(max-width:760px){.week-panel{grid-template-columns:1fr;overflow-x:hidden;}}
 .month-weekday-row{display:grid;grid-template-columns:repeat(7,1fr);border-bottom:1px solid #334155;background:#0f172a;position:sticky;top:0;z-index:10;}
 .month-weekday-cell{font-size:13px;text-align:center;padding:7px 2px;font-weight:bold;color:#64748b;letter-spacing:.5px;}
@@ -605,7 +607,9 @@ body[data-theme="pink"] .guest-banner .dismiss{color:#f9a8d4;}
 .month-day.other-month{opacity:.3;}
 .month-day-num{font-size:11px;font-weight:bold;line-height:1.6;display:inline-block;width:18px;text-align:center;}
 .month-meal-chips{display:flex;flex-direction:column;gap:1px;margin-top:1px;}
-.month-meal-chip{font-size:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:1px 3px;border-radius:3px;line-height:1.35;cursor:pointer;}
+.month-meal-chip{font-size:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:1px 3px;border-radius:3px;line-height:1.35;cursor:pointer;transition:transform .15s,filter .15s;}
+@keyframes chipSelect{0%{transform:scale(1);}55%{transform:scale(1.28);}100%{transform:scale(1.12);}}
+.month-meal-chip.month-chip-selected{transform:scale(1.12);filter:brightness(1.5);outline:2px solid currentColor;position:relative;z-index:5;animation:chipSelect .24s cubic-bezier(.34,1.56,.64,1);}
 .month-day-cost{font-size:8px;color:#22c55e;position:absolute;bottom:2px;right:3px;font-weight:bold;}
 .month-summary-row{display:flex;align-items:center;gap:10px;padding:5px 12px;background:#0f172a;border-top:1px solid #334155;font-size:11px;color:#94a3b8;flex-wrap:wrap;}
 .month-summary-row .ms-chip{background:#1e293b;border-radius:6px;padding:3px 8px;color:#e2e8f0;font-size:11px;}
@@ -1194,6 +1198,8 @@ let guestDataToUpload=null; // ゲスト→ログイン時に引き継ぐスナ�
 let touchDragState=null;
 let currentDragFromPool=false;
 let _asRAF=null,_asDir=0,_asSpeed=0;
+let _monthSelChip=null;
+let _calSelDay=null;
 let _poolScrollLocked=false;
 let touchDayClickSuppressUntil=0;
 const TOUCH_LONG_PRESS_MS=430;
@@ -1566,7 +1572,6 @@ function bindLongPressTouchDrag(el,getPayload){
   };
   const reset=()=>{
     clearTimer();
-    if(isPoolCard)_unlockPoolScroll();
     pointerId=null;
     longPressed=false;
   };
@@ -1581,12 +1586,12 @@ function bindLongPressTouchDrag(el,getPayload){
     startY=e.clientY;
     longPressed=false;
     clearTimer();
-    if(isPoolCard)_lockPoolScroll();
     timer=setTimeout(()=>{
-      if(pointerId==null){if(isPoolCard)_unlockPoolScroll();return;}
+      if(pointerId==null)return;
       const payload=getPayload();
-      if(!payload){if(isPoolCard)_unlockPoolScroll();return;}
+      if(!payload)return;
       longPressed=true;
+      if(isPoolCard)_lockPoolScroll(); // ドラッグ確定時にのみスクロールを停止
       startTouchDrag(el,payload,startX,startY);
     },TOUCH_LONG_PRESS_MS);
   },{passive:true});
@@ -1598,10 +1603,7 @@ function bindLongPressTouchDrag(el,getPayload){
     const dx=e.clientX-startX;
     const dy=e.clientY-startY;
     if(!longPressed){
-      if(Math.abs(dx)>TOUCH_DRAG_CANCEL_PX||Math.abs(dy)>TOUCH_DRAG_CANCEL_PX){
-        clearTimer();
-        if(isPoolCard)_unlockPoolScroll();
-      }
+      if(Math.abs(dx)>TOUCH_DRAG_CANCEL_PX||Math.abs(dy)>TOUCH_DRAG_CANCEL_PX)clearTimer();
       return;
     }
     e.preventDefault();
@@ -1615,13 +1617,10 @@ function bindLongPressTouchDrag(el,getPayload){
     clearTimer();
     pointerId=null;
     longPressed=false;
-    if(!wasLongPressed){
-      if(isPoolCard)_unlockPoolScroll();
-      return;
-    }
+    if(!wasLongPressed)return;
     e.preventDefault();
     endTouchDrag(e.clientX,e.clientY);
-    // clearTouchDrag (called inside endTouchDrag flow) handles _unlockPoolScroll for drag path
+    // clearTouchDrag が _unlockPoolScroll を呼ぶ
   };
 
   el.addEventListener("pointerup",finish);
@@ -2740,6 +2739,7 @@ function deletePreset(presetId,dayIndex,wk){
   openPresetMenu(dayIndex,wk);
 }
 function render(){
+  _calSelDay=null;
   updateBudgetBar();
   updateNavSelects();
   if(calView==="month"){renderMonth();renderPool();return;}
@@ -3903,6 +3903,15 @@ function autoSuggestDay(dayIndex){
     save();render();showToastWithUndo("削除しました");
   });
 })();
+// Deselect month chip on outside tap
+document.addEventListener("click",e=>{
+  if(_monthSelChip&&!e.target.closest(".month-meal-chip")){
+    _monthSelChip.el.classList.remove("month-chip-selected");_monthSelChip=null;
+  }
+  if(_calSelDay&&!e.target.closest(".day")){
+    _calSelDay.el.classList.remove("cal-day-selected");_calSelDay=null;
+  }
+});
 // HTML5 drag auto-scroll
 document.addEventListener("dragover",e=>_updateAutoScroll(e.clientY));
 document.addEventListener("dragend",_stopAutoScroll);
@@ -4616,7 +4625,13 @@ function _renderWeekPanel(container,date,isCurrent){
       col.addEventListener("click",e=>{
         if(Date.now()<touchDayClickSuppressUntil)return;
         if(e.target.closest(".card,.card-edit-btn,.day-assign-btn,.day-preset-btn,.day-clear-btn,.day-suggest-btn,.btn"))return;
-        openAssignmentMode(i);
+        if(_calSelDay&&_calSelDay.el===col){
+          _calSelDay.el.classList.remove("cal-day-selected");_calSelDay=null;
+          openAssignmentMode(i);
+        }else{
+          if(_calSelDay)_calSelDay.el.classList.remove("cal-day-selected");
+          _calSelDay={el:col,idx:i};col.classList.add("cal-day-selected");
+        }
       });
     }
     const hdr=document.createElement("div");hdr.className="day-header";
@@ -4834,7 +4849,16 @@ function _renderMonthPanel(container,year,month){
             const chip=document.createElement("div");chip.className="month-meal-chip";
             chip.style.cssText=`background:${mealColors[meal]}22;color:${mealColors[meal]};`;
             chip.innerText=item.text;
-            chip.addEventListener("click",e=>{e.stopPropagation();openEdit({wk,di:dayIdx,ii,meal});});
+            chip.addEventListener("click",e=>{
+              e.stopPropagation();
+              const _t={wk,di:dayIdx,ii,meal};
+              if(_monthSelChip&&_monthSelChip.el===chip){
+                _monthSelChip.el.classList.remove("month-chip-selected");_monthSelChip=null;openEdit(_t);
+              }else{
+                if(_monthSelChip)_monthSelChip.el.classList.remove("month-chip-selected");
+                _monthSelChip={el:chip};chip.classList.add("month-chip-selected");
+              }
+            });
             chipsDiv.appendChild(chip);
           });
           if(items.length>2){const more=document.createElement("div");more.className="month-meal-chip";more.style.color="#64748b";more.innerText=`+${items.length-2}`;chipsDiv.appendChild(more);}
@@ -4846,7 +4870,16 @@ function _renderMonthPanel(container,year,month){
           const chip=document.createElement("div");chip.className="month-meal-chip";
           chip.style.cssText=`background:${TC[item.tag]||"#475569"}22;color:${TC[item.tag]||"#94a3b8"};`;
           chip.innerText=item.text;
-          chip.addEventListener("click",e=>{e.stopPropagation();openEdit({wk,di:dayIdx,ii,meal:currentMeal});});
+          chip.addEventListener("click",e=>{
+            e.stopPropagation();
+            const _t={wk,di:dayIdx,ii,meal:currentMeal};
+            if(_monthSelChip&&_monthSelChip.el===chip){
+              _monthSelChip.el.classList.remove("month-chip-selected");_monthSelChip=null;openEdit(_t);
+            }else{
+              if(_monthSelChip)_monthSelChip.el.classList.remove("month-chip-selected");
+              _monthSelChip={el:chip};chip.classList.add("month-chip-selected");
+            }
+          });
           chipsDiv.appendChild(chip);
         });
         if(items.length>3){const more=document.createElement("div");more.className="month-meal-chip";more.style.color="#64748b";more.innerText=`+${items.length-3}件`;chipsDiv.appendChild(more);}
@@ -4881,6 +4914,7 @@ function _renderMonthPanel(container,year,month){
   container.appendChild(sumRow);
 }
 function renderMonth(){
+  if(_monthSelChip){_monthSelChip.el.classList.remove("month-chip-selected");_monthSelChip=null;}
   const cal=document.getElementById("cal");
   cal.innerHTML="";cal.className="calendar month-view";
   document.body.dataset.cardDensity=settings.cardDensity||"standard";
