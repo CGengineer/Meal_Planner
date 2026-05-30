@@ -4850,7 +4850,7 @@ function _renderMonthPanel(container,year,month){
       if(currentMeal==="全"){
         MEALS.forEach(meal=>{
           const items=allData[wk]?.[meal]?.[dayIdx]||[];
-          items.slice(0,2).forEach((item,ii)=>{
+          items.forEach((item,ii)=>{
             dayCost+=(item.cost||0);
             const chip=document.createElement("div");chip.className="month-meal-chip";
             chip.style.cssText=`background:${mealColors[meal]}22;color:${mealColors[meal]};`;
@@ -4867,12 +4867,11 @@ function _renderMonthPanel(container,year,month){
             });
             chipsDiv.appendChild(chip);
           });
-          if(items.length>2){const more=document.createElement("div");more.className="month-meal-chip";more.style.color="#64748b";more.innerText=`+${items.length-2}`;chipsDiv.appendChild(more);}
         });
       }else{
         const items=allData[wk]?.[currentMeal]?.[dayIdx]||[];
         items.forEach(item=>dayCost+=(item.cost||0));
-        items.slice(0,3).forEach((item,ii)=>{
+        items.forEach((item,ii)=>{
           const chip=document.createElement("div");chip.className="month-meal-chip";
           chip.style.cssText=`background:${mealColors[currentMeal]}22;color:${mealColors[currentMeal]};`;
           chip.innerText=item.text;
@@ -4888,7 +4887,6 @@ function _renderMonthPanel(container,year,month){
           });
           chipsDiv.appendChild(chip);
         });
-        if(items.length>3){const more=document.createElement("div");more.className="month-meal-chip";more.style.color="#64748b";more.innerText=`+${items.length-3}件`;chipsDiv.appendChild(more);}
       }
       cell.appendChild(chipsDiv);
       if(isThisMonth)monthCostTotal+=dayCost;
