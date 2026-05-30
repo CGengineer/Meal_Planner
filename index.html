@@ -21,7 +21,7 @@ body.no-x-nav{overscroll-behavior-x:none;touch-action:pan-y;}
 .header-right{display:flex;align-items:center;gap:5px;flex-shrink:0;}
 .nav-btn{padding:2px 12px;font-size:20px;min-height:32px;line-height:1;background:#1e293b;}
 .nav-label{font-size:13px;font-weight:600;white-space:nowrap;min-width:88px;text-align:center;color:#f1f5f9;padding:0 2px;}
-.today-btn{padding:4px 9px;font-size:12px;min-height:32px;background:#0f766e;}
+.today-btn{padding:4px 8px;font-size:17px;min-height:32px;min-width:32px;line-height:1;background:#0f766e;}
 .today-btn:hover{background:#0d9488!important;}
 .view-btn{padding:4px 10px;font-size:13px;min-height:32px;font-weight:600;}
 .more-btn{padding:4px 11px;min-height:32px;font-size:14px;letter-spacing:2px;background:#1e293b;}
@@ -812,7 +812,7 @@ body[data-theme="pink"] .tut-fab{background:#ffe4ef;color:#db2777;border-color:#
     <span id="label" style="display:none"></span>
   </div>
   <div class="header-right">
-    <button class="btn today-btn" id="todayBtn" onclick="goToday()">今日</button>
+    <button class="btn today-btn" id="todayBtn" onclick="goToday()" title="今日">📅</button>
     <button class="btn view-btn" id="viewToggleBtn" onclick="toggleCalView()" title="週/月 切替">週</button>
     <select class="meal-select" id="mealSelect" onchange="changeMeal(this.value)" style="display:none">
       <option value="朝">🌅 朝</option>
@@ -821,7 +821,7 @@ body[data-theme="pink"] .tut-fab{background:#ffe4ef;color:#db2777;border-color:#
       <option value="全">📋 全</option>
     </select>
     <div class="meal-tabs" id="mealTabs">
-      <button class="meal-tab" data-meal="朝" onclick="changeMeal('朝')" title="朝食">🌅</button>
+      <button class="meal-tab" data-meal="朝" onclick="changeMeal('朝')" title="朝食">🌄</button>
       <button class="meal-tab active" data-meal="昼" onclick="changeMeal('昼')" title="昼食">☀️</button>
       <button class="meal-tab" data-meal="夜" onclick="changeMeal('夜')" title="夕食">🌙</button>
       <button class="meal-tab" data-meal="全" onclick="changeMeal('全')" title="全食">📋</button>
@@ -876,7 +876,10 @@ body[data-theme="pink"] .tut-fab{background:#ffe4ef;color:#db2777;border-color:#
     <!-- 基本 -->
     <div class="form-group edit-panel" data-tab="basic">
       <label>料理名 *</label>
-      <input class="form-input" id="eText" placeholder="例: カレーライス">
+      <div style="display:flex;gap:6px;align-items:center;">
+        <input class="form-input" id="eText" placeholder="例: カレーライス" style="flex:1;">
+        <button class="btn" id="autoFillBtn" type="button" title="料理名またはAIで全フィールドを自動入力" onclick="smartAutoFill(document.getElementById('eText').value.trim())" style="font-size:16px;padding:6px 10px;flex-shrink:0;">✨</button>
+      </div>
     </div>
     <div class="form-group edit-panel" data-tab="basic">
       <label>カテゴリ</label>
@@ -1149,7 +1152,7 @@ let settings={
   showCalories:true,showStars:true,showDifficulty:true,
   showCost:true,showNutritionColor:true,showPlannedCardImage:true,currency:"円",
   cardDensity:"standard",uiMode:"standard",sheetLevel:4,sheetScale:10,sheetHeight:null,sheetHidden:false,
-  dailyCalorieGoal:0,weekStartMonday:false,theme:"dark",weeklyBudget:0,monthlyBudget:0,visionApiKey:""
+  dailyCalorieGoal:0,weekStartMonday:false,theme:"dark",weeklyBudget:0,monthlyBudget:0,visionApiKey:"",anthropicApiKey:""
 };
 let calView="week"; // "week" | "month"
 let weekdayMode=false;
@@ -3068,6 +3071,12 @@ function handleImageUpload(ev){
       const pv=document.getElementById("eImagePreview");
       pv.src=currentImage;pv.style.display="block";
       document.getElementById("eImageClear").style.display="inline-block";
+      // 料理名が空なら自動認識
+      const nameEl=document.getElementById("eText");
+      if(nameEl&&!nameEl.value.trim()){
+        const b64=currentImage.replace(/^data:image\/\w+;base64,/,"");
+        smartAutoFill("",b64);
+      }
     };
     img.src=e.target.result;
   };
@@ -3164,6 +3173,149 @@ function addIngRow(val){
   stockWrap.appendChild(stock);stockWrap.appendChild(stockTxt);
   const del=document.createElement("button");del.innerText="✕";del.onclick=()=>row.remove();
   row.appendChild(inp);row.appendChild(stockWrap);row.appendChild(del);list.appendChild(row);
+}
+
+// ===== AI 自動入力 =====
+function showAutoFillSpinner(show,msg=""){
+  let overlay=document.getElementById("autoFillOverlay");
+  if(!overlay){
+    overlay=document.createElement("div");
+    overlay.id="autoFillOverlay";
+    overlay.style.cssText="position:absolute;inset:0;background:rgba(15,23,42,.88);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;z-index:500;border-radius:inherit;font-size:14px;color:#f1f5f9;pointer-events:all;";
+    const mb=document.querySelector("#editModal .modal-body")||document.getElementById("editModal");
+    if(mb){mb.style.position="relative";mb.appendChild(overlay);}
+  }
+  if(show){
+    overlay.innerHTML=`<div style="font-size:36px;animation:card-shine 1.2s linear infinite alternate">✨</div><div style="font-weight:bold;">${msg}</div>`;
+    overlay.style.display="flex";
+  }else{
+    overlay.style.display="none";
+  }
+}
+
+async function callClaudeAutoFill(dishName,imageBase64=null){
+  const key=(settings.anthropicApiKey||"").trim();
+  if(!key)return null;
+  const prompt=`料理「${dishName||"この料理"}」について以下のJSONのみを返してください（日本語で、数値は1人前の目安）:
+{"name":"料理名","tag":"カテゴリ（和食/洋食/中華/イタリアン/デザート/その他のいずれか）","calories":数値,"protein":数値,"carbs":数値,"fat":数値,"fiber":数値,"sugar":数値,"salt":数値,"cost":目安円,"cookTime":分,"difficulty":1〜5,"ingredients":["食材1 分量",...],"steps":"調理手順（改行区切り）","note":""}
+JSONのみ返してください。説明不要。`;
+  const content=imageBase64?[
+    {type:"image",source:{type:"base64",media_type:"image/jpeg",data:imageBase64}},
+    {type:"text",text:prompt}
+  ]:[{type:"text",text:prompt}];
+  const res=await fetch("https://api.anthropic.com/v1/messages",{
+    method:"POST",
+    headers:{
+      "x-api-key":key,
+      "anthropic-version":"2023-06-01",
+      "content-type":"application/json",
+      "anthropic-dangerous-direct-browser-access":"true"
+    },
+    body:JSON.stringify({model:"claude-haiku-4-5-20251001",max_tokens:1500,messages:[{role:"user",content}]}),
+    signal:AbortSignal.timeout(25000)
+  });
+  if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error((e.error?.message)||"Claude API エラー "+res.status);}
+  const data=await res.json();
+  const text=data.content?.[0]?.text||"";
+  const m=text.match(/\{[\s\S]*\}/);
+  if(!m)throw new Error("JSONパース失敗");
+  return JSON.parse(m[0]);
+}
+
+function applyAutoFillData(data){
+  if(!data)return;
+  // 料理名（空のときだけ）
+  if(data.name){const el=document.getElementById("eText");if(el&&!el.value.trim())el.value=data.name;}
+  // カテゴリ
+  if(data.tag){
+    const btns=[...document.querySelectorAll("#ePicker .tag-btn")];
+    const hit=btns.find(b=>b.innerText.includes(data.tag)||data.tag.includes(b.innerText));
+    if(hit){btns.forEach(b=>b.classList.remove("selected"));hit.classList.add("selected");}
+  }
+  // 数値フィールド
+  const map={eCalories:"calories",eProtein:"protein",eCarbs:"carbs",eFat:"fat",
+              eFiber:"fiber",eSugar:"sugar",eSalt:"salt",eCost:"cost",eCookTime:"cookTime"};
+  Object.entries(map).forEach(([id,k])=>{const el=document.getElementById(id);if(el&&data[k]>0)el.value=data[k];});
+  // 難易度
+  if(data.difficulty>0)buildStarRating("eDifficulty",Math.min(5,Math.max(1,parseInt(data.difficulty))),5);
+  // 食材
+  if(Array.isArray(data.ingredients)&&data.ingredients.length){
+    const listEl=document.getElementById("eIngList");
+    if(listEl){listEl.innerHTML="";data.ingredients.forEach(v=>addIngRow(v));}
+  }
+  // 手順・メモ
+  if(data.steps){const el=document.getElementById("eSteps");if(el)el.value=data.steps;}
+  if(data.note){const el=document.getElementById("eNote");if(el&&!el.value.trim())el.value=data.note;}
+}
+
+async function visionGetDishName(imageBase64){
+  const apiKey=(settings.visionApiKey||"").trim()||_getDefaultVisionKey();
+  const body={requests:[{image:{content:imageBase64},features:[{type:"LABEL_DETECTION",maxResults:15},{type:"WEB_DETECTION",maxResults:5}]}]};
+  const res=await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${encodeURIComponent(apiKey)}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body),signal:AbortSignal.timeout(12000)});
+  if(!res.ok)throw new Error("Vision API エラー "+res.status);
+  const data=await res.json();
+  const result=data.responses?.[0];
+  const webGuess=result?.webDetection?.bestGuessLabels?.[0]?.label||"";
+  const foodKW=["food","dish","cuisine","meal","recipe","ingredient","drink","dessert","soup","salad","pasta","rice","bread","meat","chicken","fish","beef","pork","vegetable","fruit","cake","cookie","pizza","burger","sushi","noodle","ramen","curry","steak","sandwich","bento"];
+  const labels=result?.labelAnnotations||[];
+  const foodLabel=labels.find(l=>foodKW.some(k=>l.description.toLowerCase().includes(k)));
+  return webGuess||foodLabel?.description||labels[0]?.description||"";
+}
+
+async function fillFromTheMealDB(dishName){
+  if(!dishName)return;
+  const res=await fetch(`https://www.themealdb.com/api/json/v1/1/search.php?s=${encodeURIComponent(dishName)}`,{signal:AbortSignal.timeout(8000)});
+  if(!res.ok)return;
+  const data=await res.json();
+  const meal=(data.meals||[])[0];
+  if(!meal)return;
+  // 食材
+  const ings=[];
+  for(let i=1;i<=20;i++){const ing=(meal["strIngredient"+i]||"").trim();const msr=(meal["strMeasure"+i]||"").trim();if(!ing)continue;ings.push(msr?`${msr} ${ing}`:ing);}
+  const listEl=document.getElementById("eIngList");
+  if(listEl&&ings.length){listEl.innerHTML="";ings.forEach(v=>addIngRow(v));}
+  // 手順
+  if(meal.strInstructions){const el=document.getElementById("eSteps");if(el&&!el.value.trim())el.value=meal.strInstructions.trim();}
+  // メモ
+  const note=meal.strSource||meal.strYoutube||"";
+  if(note){const el=document.getElementById("eNote");if(el&&!el.value.trim())el.value=note;}
+}
+
+async function smartAutoFill(dishName,imageBase64=null){
+  if(!dishName&&!imageBase64){showToast("料理名を入力するか、画像を追加してください");return;}
+  const hasClaude=(settings.anthropicApiKey||"").trim();
+  // ① Claude API
+  if(hasClaude){
+    showAutoFillSpinner(true,"✨ AI自動入力中...");
+    try{
+      const data=await callClaudeAutoFill(dishName,imageBase64);
+      applyAutoFillData(data);
+      showAutoFillSpinner(false);
+      showToast("✨ AIで自動入力しました");
+      selectEditTab("basic");
+      return;
+    }catch(e){
+      console.warn("Claude API失敗、フォールバック:",e.message);
+      showAutoFillSpinner(false);
+      showToast("AI自動入力失敗: "+e.message);
+      return;
+    }
+  }
+  // ② フォールバック: Vision API（画像の場合）→ TheMealDB + OpenFoodFacts
+  showAutoFillSpinner(true,"🔍 検索中...");
+  try{
+    let name=dishName;
+    if(imageBase64&&!name){
+      name=await visionGetDishName(imageBase64);
+      if(name){const el=document.getElementById("eText");if(el&&!el.value.trim())el.value=name;}
+    }
+    if(name){
+      await Promise.allSettled([fillFromTheMealDB(name),fetchNutritionFromApi()]);
+    }
+    showToast("自動入力を試みました（TheMealDB / OpenFoodFacts）");
+  }catch(e){showToast("自動入力エラー: "+e.message);}
+  showAutoFillSpinner(false);
+  selectEditTab("basic");
 }
 
 async function fetchNutritionFromApi(){
@@ -3672,6 +3824,21 @@ function showSettings(){
   visionI.oninput=()=>{settings.visionApiKey=visionI.value.trim();save();};
   visionRow.appendChild(visionL);visionRow.appendChild(visionI);visionSec.appendChild(visionRow);
   c.appendChild(visionSec);
+
+  // Anthropic API キー設定
+  const aiSec=document.createElement("div");aiSec.className="msec";
+  const aiTitle=document.createElement("div");aiTitle.className="msec-title";aiTitle.innerText="✨ AI自動入力（Anthropic Claude）";aiSec.appendChild(aiTitle);
+  const aiHint=document.createElement("p");aiHint.className="msec-hint";
+  aiHint.innerHTML='料理名や写真から <b>栄養素・食材・カテゴリ・難易度</b> などを一括自動入力します。<a href="https://console.anthropic.com/" target="_blank" style="color:#93c5fd;">console.anthropic.com</a> でAPIキーを取得してください。<br>未設定時は Vision API + TheMealDB + OpenFoodFacts で動作します。';
+  aiSec.appendChild(aiHint);
+  const aiRow=document.createElement("div");aiRow.className="setting-row";
+  const aiL=document.createElement("span");aiL.style.fontSize="13px";aiL.innerText="Anthropic APIキー";
+  const aiI=document.createElement("input");aiI.className="form-input";aiI.type="password";
+  aiI.style.cssText="width:180px;padding:4px 8px;font-size:12px;";
+  aiI.placeholder="sk-ant-api03-...";aiI.value=settings.anthropicApiKey||"";
+  aiI.oninput=()=>{settings.anthropicApiKey=aiI.value.trim();save();};
+  aiRow.appendChild(aiL);aiRow.appendChild(aiI);aiSec.appendChild(aiRow);
+  c.appendChild(aiSec);
 
   const logoutWrap=document.createElement("div");logoutWrap.className="setting-logout-wrap";
   const logoutBtn=document.createElement("button");
