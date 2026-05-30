@@ -265,7 +265,6 @@ linear-gradient(125deg,#020617 0%,#0b1120 40%,#111827 100%);overflow:auto;}
 @media(hover:none){.card-edit-btn{opacity:1;background:#33415599;color:#e2e8f0;}.card-dup-btn{opacity:1;background:#33415599;color:#e2e8f0;}}
 @media(max-width:760px){
   .calendar{grid-template-columns:1fr;overflow-x:hidden;}
-  .week-panel{grid-template-columns:1fr;overflow-x:hidden;}
   .day{min-height:calc(100svh - 180px);border-right:none;}
   .day:nth-child(3n){border-right:none;}
   .card.has-image .card-img-wrap{width:64px;min-width:64px;}
@@ -596,6 +595,7 @@ body[data-theme="pink"] .guest-banner .dismiss{color:#f9a8d4;}
 .week-slider-wrap{display:flex;height:100%;width:300%;will-change:transform;}
 .week-panel{flex:0 0 33.333%;width:33.333%;display:grid;grid-template-columns:repeat(7,minmax(120px,1fr));overflow-y:auto;overflow-x:auto;-webkit-overflow-scrolling:touch;align-content:start;}
 .week-panel.side-panel{opacity:0.7;pointer-events:none;}
+@media(max-width:760px){.week-panel{grid-template-columns:1fr;overflow-x:hidden;}}
 .month-weekday-row{display:grid;grid-template-columns:repeat(7,1fr);border-bottom:1px solid #334155;background:#0f172a;position:sticky;top:0;z-index:10;}
 .month-weekday-cell{font-size:9px;text-align:center;padding:4px 2px;font-weight:bold;color:#64748b;letter-spacing:.3px;}
 .month-weekday-cell.sun{color:#f87171;}.month-weekday-cell.sat{color:#60a5fa;}
