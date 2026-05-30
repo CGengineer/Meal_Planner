@@ -65,6 +65,8 @@ body.no-x-nav{overscroll-behavior-x:none;touch-action:pan-y;}
 .day.assignment-target{background:#10243a;box-shadow:inset 0 0 0 1px #22d3ee;}
 @keyframes daySelect{from{box-shadow:inset 0 0 0 0px #3b82f6;}to{box-shadow:inset 0 0 0 2px #3b82f6;}}
 .day.cal-day-selected{box-shadow:inset 0 0 0 2px #3b82f6!important;background:#172036!important;animation:daySelect .18s ease-out;}
+@keyframes monthDaySelect{from{box-shadow:inset 0 0 0 0px #f59e0b;}to{box-shadow:inset 0 0 0 2px #f59e0b;}}
+.month-day.month-day-selected{box-shadow:inset 0 0 0 2px #f59e0b!important;background:rgba(245,158,11,0.10)!important;animation:monthDaySelect .18s ease-out;}
 .pool-assign-hint{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;gap:8px;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:7px 8px;font-size:11px;color:#cbd5e1;}
 .pool-assign-hint .btn{padding:4px 8px;font-size:11px;min-height:28px;}
 .day.today{background:#1a2332;}.day.sun .day-header{color:#f87171;}.day.sat .day-header{color:#60a5fa;}
@@ -590,11 +592,11 @@ body[data-theme="pink"] .guest-banner{background:#fce7f3;border-color:#f9a8d4;co
 body[data-theme="pink"] .guest-banner button{background:#db2777;}
 body[data-theme="pink"] .guest-banner .dismiss{color:#f9a8d4;}
 /* ===== MONTH VIEW ===== */
-.calendar.month-view{display:block;height:calc(100svh - 140px);overflow:hidden;touch-action:pan-y;}
+.calendar.month-view{display:block;height:calc(100svh - 140px);overflow:hidden;touch-action:pan-y;overscroll-behavior-x:none;}
 .month-slider-wrap{display:flex;height:100%;width:300%;will-change:transform;touch-action:pan-y;}
 .month-panel{flex:0 0 33.333%;width:33.333%;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;}
 .calendar.week-view{display:block;overflow:hidden;touch-action:pan-y;}
-.week-panel{width:100%;height:100%;display:grid;grid-template-columns:repeat(7,minmax(120px,1fr));overflow-y:auto;overflow-x:auto;-webkit-overflow-scrolling:touch;align-content:start;touch-action:pan-y;}
+.week-panel{width:100%;height:100%;display:grid;grid-template-columns:repeat(7,minmax(120px,1fr));overflow-y:auto;overflow-x:auto;-webkit-overflow-scrolling:touch;align-content:start;}
 @media(max-width:760px){.week-panel{grid-template-columns:1fr;overflow-x:hidden;}}
 .month-weekday-row{display:grid;grid-template-columns:repeat(7,1fr);border-bottom:1px solid #334155;background:#0f172a;position:sticky;top:0;z-index:10;}
 .month-weekday-cell{font-size:13px;text-align:center;padding:7px 2px;font-weight:bold;color:#64748b;letter-spacing:.5px;}
@@ -1200,6 +1202,7 @@ let currentDragFromPool=false;
 let _asRAF=null,_asDir=0,_asSpeed=0;
 let _monthSelChip=null;
 let _calSelDay=null;
+let _monthSelDay=null;
 let _poolScrollLocked=false;
 let touchDayClickSuppressUntil=0;
 const TOUCH_LONG_PRESS_MS=430;
@@ -3911,6 +3914,9 @@ document.addEventListener("click",e=>{
   if(_calSelDay&&!e.target.closest(".day")){
     _calSelDay.el.classList.remove("cal-day-selected");_calSelDay=null;
   }
+  if(_monthSelDay&&!e.target.closest(".month-day")){
+    _monthSelDay.el.classList.remove("month-day-selected");_monthSelDay=null;
+  }
 });
 // HTML5 drag auto-scroll
 document.addEventListener("dragover",e=>_updateAutoScroll(e.clientY));
@@ -4888,7 +4894,13 @@ function _renderMonthPanel(container,year,month){
       if(isThisMonth)monthCostTotal+=dayCost;
       if(dayCost>0){const costEl=document.createElement("div");costEl.className="month-day-cost";costEl.innerText=dayCost.toLocaleString()+(settings.currency||"円");cell.appendChild(costEl);}
       cell.addEventListener("click",()=>{
-        showMonthDayMenu(date,wk,dayIdx);
+        if(_monthSelDay&&_monthSelDay.el===cell){
+          _monthSelDay.el.classList.remove("month-day-selected");_monthSelDay=null;
+          showMonthDayMenu(date,wk,dayIdx);
+        }else{
+          if(_monthSelDay)_monthSelDay.el.classList.remove("month-day-selected");
+          _monthSelDay={el:cell};cell.classList.add("month-day-selected");
+        }
       });
       weekRow.appendChild(cell);
       d.setDate(d.getDate()+1);
@@ -4915,6 +4927,7 @@ function _renderMonthPanel(container,year,month){
 }
 function renderMonth(){
   if(_monthSelChip){_monthSelChip.el.classList.remove("month-chip-selected");_monthSelChip=null;}
+  if(_monthSelDay){_monthSelDay.el.classList.remove("month-day-selected");_monthSelDay=null;}
   const cal=document.getElementById("cal");
   cal.innerHTML="";cal.className="calendar month-view";
   document.body.dataset.cardDensity=settings.cardDensity||"standard";
