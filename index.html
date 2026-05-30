@@ -36,6 +36,12 @@ body.no-x-nav{overscroll-behavior-x:none;touch-action:pan-y;}
 .more-item:hover{background:#334155;}
 .more-item.danger{color:#fca5a5;}
 .more-item.danger:hover{background:#450a0a;}
+.nav-select{background:#1e293b;border:1px solid #334155;border-radius:8px;color:#f1f5f9;padding:4px 6px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;min-height:32px;outline:none;}
+.nav-select:focus{border-color:#3b82f6;}
+.meal-tabs{display:flex;gap:1px;background:#1e293b;border-radius:8px;padding:2px;}
+.meal-tab{background:transparent;border:none;color:#64748b;border-radius:6px;padding:3px 8px;font-size:17px;cursor:pointer;font-family:inherit;min-height:28px;min-width:32px;line-height:1;transition:background .1s,color .1s;}
+.meal-tab:hover{background:#334155;color:#f1f5f9;}
+.meal-tab.active{background:#2563eb;color:#f1f5f9;}
 /* Calendar */
 .calendar{display:grid;grid-template-columns:repeat(7,minmax(120px,1fr));height:calc(100svh - 140px);border-top:1px solid #334155;overflow-y:auto;overflow-x:auto;-webkit-overflow-scrolling:touch;}
 .day{border-right:1px solid #334155;border-bottom:1px solid #334155;padding:8px 7px;display:flex;flex-direction:column;gap:6px;min-height:clamp(200px,calc(80svh - 140px),600px);overflow:visible;transition:background .12s;}
@@ -200,7 +206,7 @@ body.touch-dnd-active,body.touch-dnd-active *{-webkit-user-select:none!important
 .sheet-restore-btn{display:none;position:fixed;right:max(12px,env(safe-area-inset-right));bottom:calc(76px + env(safe-area-inset-bottom));z-index:360;background:#1d4ed8;color:#f8fafc;border:none;border-radius:999px;min-width:44px;min-height:44px;padding:0 14px;font-size:16px;cursor:pointer;box-shadow:0 10px 28px rgba(15,23,42,.45);}
 .sheet-restore-btn.show{display:inline-flex;align-items:center;justify-content:center;}
 body.ui-focus .header .title{opacity:.8;}
-body.ui-focus .trash-bin,body.ui-focus #mealSelect{display:none;}
+body.ui-focus .trash-bin,body.ui-focus #mealSelect,body.ui-focus .meal-tabs{display:none;}
 body.ui-edit #bottomSheet{min-height:100px;}
 
 /* Auth Screen */
@@ -396,6 +402,11 @@ body[data-theme="light"] .preset-row{background:#f1f5f9;}
 body[data-theme="light"] .mobile-nav{background:#ffffff;border-color:#e2e8f0;}
 body[data-theme="light"] .mobile-nav button{background:#f1f5f9;border-color:#e2e8f0;color:#0f172a;}
 body[data-theme="light"] .meal-select{background:#ffffff;border-color:#e2e8f0;color:#0f172a;}
+body[data-theme="light"] .nav-select{background:#ffffff;border-color:#e2e8f0;color:#0f172a;}
+body[data-theme="light"] .meal-tabs{background:#f1f5f9;}
+body[data-theme="light"] .meal-tab{color:#94a3b8;}
+body[data-theme="light"] .meal-tab:hover{background:#e2e8f0;color:#0f172a;}
+body[data-theme="light"] .meal-tab.active{background:#2563eb;color:#ffffff;}
 body[data-theme="light"] .trash-bin{background:#e2e8f0;border-color:#cbd5e1;}
 body[data-theme="light"] .toast{background:#ffffff;border-color:#e2e8f0;color:#0f172a;}
 body[data-theme="light"] .setting-account{border-color:#e2e8f0;}
@@ -519,6 +530,11 @@ body[data-theme="pink"] .preset-row{background:#fff0f5;}
 body[data-theme="pink"] .mobile-nav{background:#ffe4ef;border-color:#f9a8d4;}
 body[data-theme="pink"] .mobile-nav button{background:#fce7f3;border-color:#f9a8d4;color:#831843;}
 body[data-theme="pink"] .meal-select{background:#fce7f3;border-color:#f9a8d4;color:#831843;}
+body[data-theme="pink"] .nav-select{background:#fce7f3;border-color:#f9a8d4;color:#831843;}
+body[data-theme="pink"] .meal-tabs{background:#fce7f3;}
+body[data-theme="pink"] .meal-tab{color:#f9a8d4;}
+body[data-theme="pink"] .meal-tab:hover{background:#fbcfe8;color:#831843;}
+body[data-theme="pink"] .meal-tab.active{background:#ec4899;color:#ffffff;}
 body[data-theme="pink"] .trash-bin{background:#fce7f3;border-color:#f9a8d4;}
 body[data-theme="pink"] .trash-bin.drag-over{background:#e11d48;border-color:#f87171;}
 body[data-theme="pink"] .toast{background:#ffe4ef;border-color:#f9a8d4;color:#1a0a14;}
@@ -791,19 +807,25 @@ body[data-theme="pink"] .tut-fab{background:#ffe4ef;color:#db2777;border-color:#
     <div class="title" id="headerTitle">🍱 献立ボード</div>
   </div>
   <div class="header-nav">
-    <button class="btn nav-btn" id="navPrevBtn" onclick="navPrev()">‹</button>
-    <span id="label" class="nav-label"></span>
-    <button class="btn nav-btn" id="navNextBtn" onclick="navNext()">›</button>
+    <select class="nav-select" id="navYear" onchange="navDateChange()"></select>
+    <select class="nav-select" id="navMonth" onchange="navDateChange()"></select>
+    <span id="label" style="display:none"></span>
   </div>
   <div class="header-right">
     <button class="btn today-btn" id="todayBtn" onclick="goToday()">今日</button>
     <button class="btn view-btn" id="viewToggleBtn" onclick="toggleCalView()" title="週/月 切替">週</button>
-    <select class="meal-select" id="mealSelect" onchange="changeMeal(this.value)">
+    <select class="meal-select" id="mealSelect" onchange="changeMeal(this.value)" style="display:none">
       <option value="朝">🌅 朝</option>
       <option value="昼" selected>☀️ 昼</option>
       <option value="夜">🌙 夜</option>
       <option value="全">📋 全</option>
     </select>
+    <div class="meal-tabs" id="mealTabs">
+      <button class="meal-tab" data-meal="朝" onclick="changeMeal('朝')" title="朝食">🌅</button>
+      <button class="meal-tab active" data-meal="昼" onclick="changeMeal('昼')" title="昼食">☀️</button>
+      <button class="meal-tab" data-meal="夜" onclick="changeMeal('夜')" title="夕食">🌙</button>
+      <button class="meal-tab" data-meal="全" onclick="changeMeal('全')" title="全食">📋</button>
+    </div>
     <div class="more-menu" id="moreMenuWrap">
       <button class="btn more-btn" onclick="toggleMoreMenu(event)">•••</button>
       <div class="more-panel" id="morePanel">
@@ -1296,7 +1318,35 @@ function allMealData(k){
   if(!allData[k])return Array.from({length:7},()=>[]);
   return Array.from({length:7},(_,i)=>MEALS.flatMap(m=>(allData[k]?.[m]?.[i])||[]));
 }
-function changeMeal(m){currentMeal=m;exitAssignmentMode(false);render();}
+function changeMeal(m){
+  currentMeal=m;
+  document.querySelectorAll(".meal-tab").forEach(b=>b.classList.toggle("active",b.dataset.meal===m));
+  const sel=document.getElementById("mealSelect");if(sel)sel.value=m;
+  exitAssignmentMode(false);render();
+}
+function initNavSelects(){
+  const yearSel=document.getElementById("navYear");
+  const monthSel=document.getElementById("navMonth");
+  if(!yearSel||!monthSel)return;
+  const curY=new Date().getFullYear();
+  yearSel.innerHTML="";
+  for(let y=curY-5;y<=curY+5;y++){const o=document.createElement("option");o.value=y;o.innerText=y+"年";yearSel.appendChild(o);}
+  monthSel.innerHTML="";
+  for(let m=0;m<12;m++){const o=document.createElement("option");o.value=m;o.innerText=(m+1)+"月";monthSel.appendChild(o);}
+  updateNavSelects();
+}
+function updateNavSelects(){
+  const yearSel=document.getElementById("navYear");
+  const monthSel=document.getElementById("navMonth");
+  if(yearSel)yearSel.value=baseDate.getFullYear();
+  if(monthSel)monthSel.value=baseDate.getMonth();
+}
+function navDateChange(){
+  const y=parseInt(document.getElementById("navYear")?.value)||baseDate.getFullYear();
+  const m=parseInt(document.getElementById("navMonth")?.value);
+  baseDate=new Date(y,Number.isFinite(m)?m:baseDate.getMonth(),1);
+  exitAssignmentMode(false);render();
+}
 function isToday(d){return d.toDateString()===new Date().toDateString();}
 
 function assignmentDateLabel(dayIndex){
@@ -2660,6 +2710,7 @@ function deletePreset(presetId,dayIndex,wk){
 }
 function render(){
   updateBudgetBar();
+  updateNavSelects();
   if(calView==="month"){renderMonth();renderPool();return;}
   const cal=document.getElementById("cal");cal.innerHTML="";
   cal.className="calendar";
@@ -4974,6 +5025,7 @@ if(!pool.length){
 render();
 updateBoardBadge();
 initBottomSheet();
+initNavSelects();
 initAuth();
 
 // ===== TUTORIAL GUIDE =====
