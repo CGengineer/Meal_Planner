@@ -4874,7 +4874,7 @@ function _renderMonthPanel(container,year,month){
         items.forEach(item=>dayCost+=(item.cost||0));
         items.slice(0,3).forEach((item,ii)=>{
           const chip=document.createElement("div");chip.className="month-meal-chip";
-          chip.style.cssText=`background:${TC[item.tag]||"#475569"}22;color:${TC[item.tag]||"#94a3b8"};`;
+          chip.style.cssText=`background:${mealColors[currentMeal]}22;color:${mealColors[currentMeal]};`;
           chip.innerText=item.text;
           chip.addEventListener("click",e=>{
             e.stopPropagation();
