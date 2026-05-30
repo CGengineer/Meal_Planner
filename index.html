@@ -591,6 +591,10 @@ body[data-theme="pink"] .guest-banner .dismiss{color:#f9a8d4;}
 .calendar.month-view{display:block;height:calc(100svh - 140px);overflow:hidden;}
 .month-slider-wrap{display:flex;height:100%;width:300%;will-change:transform;}
 .month-panel{flex:0 0 33.333%;width:33.333%;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;}
+.calendar.week-view{display:block;overflow:hidden;}
+.week-slider-wrap{display:flex;height:100%;width:300%;will-change:transform;}
+.week-panel{flex:0 0 33.333%;width:33.333%;display:grid;grid-template-columns:repeat(7,minmax(120px,1fr));overflow-y:auto;overflow-x:auto;-webkit-overflow-scrolling:touch;align-content:start;}
+.week-panel.side-panel{opacity:0.7;pointer-events:none;}
 .month-weekday-row{display:grid;grid-template-columns:repeat(7,1fr);border-bottom:1px solid #334155;background:#0f172a;position:sticky;top:0;z-index:10;}
 .month-weekday-cell{font-size:9px;text-align:center;padding:4px 2px;font-weight:bold;color:#64748b;letter-spacing:.3px;}
 .month-weekday-cell.sun{color:#f87171;}.month-weekday-cell.sat{color:#60a5fa;}
@@ -2716,127 +2720,22 @@ function render(){
   updateNavSelects();
   if(calView==="month"){renderMonth();renderPool();return;}
   const cal=document.getElementById("cal");cal.innerHTML="";
-  cal.className="calendar";
+  cal.className="calendar week-view";
   document.body.dataset.cardDensity=settings.cardDensity||"standard";
-  const isAllMeals=currentMeal==="全";
-  const wd=isAllMeals?Array.from({length:7},()=>[]):weekData();const k=curKey();
   const start=getWeekStart(baseDate);
   const end=new Date(start);end.setDate(start.getDate()+6);
   document.getElementById("label").innerText=`${start.getMonth()+1}/${start.getDate()}〜${end.getMonth()+1}/${end.getDate()}`;
-
-  for(let i=0;i<7;i++){
-    const d=new Date(start);d.setDate(start.getDate()+i);
-    const col=document.createElement("div");col.className="day";
-    col.dataset.dayIndex=String(i);
-    col.style.minHeight=calcDayMinHeight(wd[i]?.length||0)+"px";
-    if(d.getDay()===0)col.classList.add("sun");if(d.getDay()===6)col.classList.add("sat");if(isToday(d))col.classList.add("today");
-    if(assignmentDayIndex===i)col.classList.add("assignment-target");
-    col.addEventListener("dragover",e=>{
-      e.preventDefault();
-      const isRight=e.clientX>=col.getBoundingClientRect().left+col.offsetWidth/2;
-      col.classList.remove("drag-over-move","drag-over-copy","drag-over-split","drag-over-left","drag-over-right");
-      if(currentDragFromPool){
-        col.classList.add("drag-over-copy");
-      }else{
-        col.classList.add("drag-over-split",isRight?"drag-over-right":"drag-over-left");
-      }
-    });
-    col.addEventListener("dragleave",()=>col.classList.remove("drag-over-move","drag-over-copy","drag-over-split","drag-over-left","drag-over-right"));
-    col.addEventListener("drop",e=>{
-      col.classList.remove("drag-over-move","drag-over-copy","drag-over-split","drag-over-left","drag-over-right");
-      const raw=e.dataTransfer.getData("text");if(!raw)return;
-      const obj=JSON.parse(raw);
-      applyDropToDay(obj,col,e.clientX);
-    });
-    col.addEventListener("click",e=>{
-      if(Date.now()<touchDayClickSuppressUntil)return;
-      if(e.target.closest(".card,.card-edit-btn,.day-assign-btn,.day-preset-btn,.day-clear-btn,.day-suggest-btn,.btn"))return;
-      openAssignmentMode(i);
-    });
-    const hdr=document.createElement("div");hdr.className="day-header";
-    const text=document.createElement("span");
-    text.innerText=`${DAYS[d.getDay()]} ${d.getDate()}`;
-    hdr.appendChild(text);
-    const addBtn=document.createElement("button");
-    addBtn.type="button";
-    addBtn.className="day-assign-btn"+(assignmentDayIndex===i?" active":"");
-    addBtn.innerText="＋";
-    addBtn.title="この日に直接追加";
-    addBtn.onclick=e=>{e.stopPropagation();openNewCard(i,k,currentMeal==="全"?null:currentMeal);};
-    hdr.appendChild(addBtn);
-    const presetBtn=document.createElement("button");
-    presetBtn.type="button";
-    presetBtn.className="day-preset-btn"+(dayPresets.length?" has-presets":"");
-    presetBtn.title="お気に入りメニュー";
-    presetBtn.innerText="⭐";
-    presetBtn.onclick=e=>{e.stopPropagation();openPresetMenu(i,k);};
-    hdr.appendChild(presetBtn);
-    const dotsEl=document.createElement("div");dotsEl.className="meal-dots";
-    const mealDotColors={"朝":"#f59e0b","昼":"#3b82f6","夜":"#8b5cf6"};
-    MEALS.forEach(m=>{
-      const dot=document.createElement("span");dot.className="meal-dot";
-      const hasMeal=(allData[k]?.[m]?.[i]?.length||0)>0;
-      if(hasMeal){dot.style.background=mealDotColors[m];}
-      dot.title=m+(hasMeal?": 計画あり":": 未計画");
-      dotsEl.appendChild(dot);
-    });
-    hdr.appendChild(dotsEl);
-    if(!wd[i].length){
-      const suggestBtn=document.createElement("button");
-      suggestBtn.type="button";
-      suggestBtn.className="day-suggest-btn";
-      suggestBtn.title="この日だけおまかせ";
-      suggestBtn.innerText="🎲";
-      const _di=i;
-      suggestBtn.onclick=e=>{e.stopPropagation();autoSuggestDay(_di);};
-      hdr.appendChild(suggestBtn);
-    }
-    if(wd[i].length>0){
-      const clearBtn=document.createElement("button");
-      clearBtn.type="button";
-      clearBtn.className="day-clear-btn day-preset-btn";
-      clearBtn.style.cssText="left:auto;right:24px;color:#ef4444;font-size:10px;";
-      clearBtn.title="この日をクリア";
-      clearBtn.innerText="✕";
-      const di2=i;
-      clearBtn.onclick=e=>{e.stopPropagation();pushUndo();weekData()[di2]=[];save();render();showToastWithUndo(`${DAYS[d.getDay()]}曜日の予定をクリアしました`);};
-      hdr.appendChild(clearBtn);
-    }
-    col.appendChild(hdr);
-    if(settings.dailyCalorieGoal>0){
-      const dayCal=allMealData(k)[i].reduce((s,it)=>s+(it.calories||0),0);
-      const ratio=dayCal/settings.dailyCalorieGoal;
-      const pct=Math.min(ratio*100,100);
-      const color=ratio>1?"#ef4444":ratio>0.8?"#f59e0b":"#22c55e";
-      const barWrap=document.createElement("div");barWrap.className="cal-progress-bar-wrap";
-      const bar=document.createElement("div");bar.className="cal-progress-bar";
-      bar.style.cssText=`width:${pct}%;background:${color};`;
-      barWrap.title=`${dayCal}kcal / 目標${settings.dailyCalorieGoal}kcal (${Math.round(ratio*100)}%)`;
-      barWrap.appendChild(bar);
-      col.appendChild(barWrap);
-    }
-    if(isAllMeals){
-      const mealLabels={"朝":"🌅 朝","昼":"☀️ 昼","夜":"🌙 夜"};
-      MEALS.forEach(meal=>{
-        const sec=document.createElement("div");sec.className="meal-section";
-        const lbl=document.createElement("div");lbl.className="meal-section-label";lbl.innerText=mealLabels[meal]||meal;
-        sec.appendChild(lbl);
-        const mealItems=allData[k]?.[meal]?.[i]||[];
-        mealItems.forEach((item,ii)=>sec.appendChild(mkCardEl(item,{wk:k,di:i,ii,meal})));
-        const addMini=document.createElement("button");addMini.className="btn";
-        addMini.style.cssText="padding:2px 5px;font-size:10px;align-self:flex-start;";
-        addMini.innerText="＋";addMini.title=meal+"に追加";
-        addMini.onclick=e=>{e.stopPropagation();openNewCard(i,k,meal);};
-        sec.appendChild(addMini);
-        col.appendChild(sec);
-      });
-    }else{
-      wd[i].forEach((item,ii)=>col.appendChild(mkCardEl(item,{wk:k,di:i,ii,meal:currentMeal})));
-    }
-    cal.appendChild(col);
-  }
-
-  // Pool
+  const wrapW=document.createElement("div");wrapW.className="week-slider-wrap";
+  wrapW.style.transform="translateX(-33.333%)";
+  const wPanels=[0,1,2].map(()=>{const p=document.createElement("div");p.className="week-panel";wrapW.appendChild(p);return p;});
+  cal.appendChild(wrapW);
+  const prevWkDate=new Date(start);prevWkDate.setDate(start.getDate()-7);
+  const nextWkDate=new Date(start);nextWkDate.setDate(start.getDate()+7);
+  wPanels[0].classList.add("side-panel");
+  wPanels[2].classList.add("side-panel");
+  _renderWeekPanel(wPanels[0],prevWkDate,false);
+  _renderWeekPanel(wPanels[1],baseDate,true);
+  _renderWeekPanel(wPanels[2],nextWkDate,false);
   renderPool();
 }
 
@@ -2947,7 +2846,7 @@ function mkCardEl(item,target){
       if(e.target.closest("button,a"))return e.preventDefault();
       currentDragFromPool=false;
       e.dataTransfer.setData("text",JSON.stringify(target));
-      e.dataTransfer.setDragImage(makeDragGhost(c),0,0);
+      e.dataTransfer.setDragImage(makeDragGhost(c),Math.round(e.offsetX*0.5),Math.round(e.offsetY*0.5));
     });
     c.addEventListener("dragend",()=>{currentDragFromPool=false;});
   }
@@ -4139,7 +4038,7 @@ function renderPool(){
         span.addEventListener("dragstart",e=>{
           currentDragFromPool=true;
           e.dataTransfer.setData("text",JSON.stringify({fromPool:true,pidx}));
-          e.dataTransfer.setDragImage(makeDragGhost(c),0,0);
+          e.dataTransfer.setDragImage(makeDragGhost(c),Math.round(e.offsetX*0.5),Math.round(e.offsetY*0.5));
         });
         span.addEventListener("dragend",()=>{currentDragFromPool=false;});
         if(imgWrap){
@@ -4148,7 +4047,7 @@ function renderPool(){
           imgWrap.addEventListener("dragstart",e=>{
             currentDragFromPool=true;
             e.dataTransfer.setData("text",JSON.stringify({fromPool:true,pidx}));
-            e.dataTransfer.setDragImage(makeDragGhost(c),0,0);
+            e.dataTransfer.setDragImage(makeDragGhost(c),Math.round(e.offsetX*0.5),Math.round(e.offsetY*0.5));
           });
           imgWrap.addEventListener("dragend",()=>{currentDragFromPool=false;});
         }
@@ -4506,6 +4405,135 @@ function updateBudgetBar(){
   }
   if(mB>0){
     mkRow("今月",calcMonthCost(baseDate.getFullYear(),baseDate.getMonth()),mB);
+  }
+}
+function _renderWeekPanel(container,date,isCurrent){
+  const panelStart=getWeekStart(new Date(date.getTime()));
+  const k=weekKey(panelStart);
+  const isAllMeals=currentMeal==="全";
+  const wd=isAllMeals?Array.from({length:7},()=>[]):(allData[k]?.[currentMeal]||Array.from({length:7},()=>[]));
+  const mealDotColors={"朝":"#f59e0b","昼":"#3b82f6","夜":"#8b5cf6"};
+  for(let i=0;i<7;i++){
+    const d=new Date(panelStart);d.setDate(panelStart.getDate()+i);
+    const col=document.createElement("div");col.className="day";
+    col.dataset.dayIndex=String(i);
+    col.style.minHeight=calcDayMinHeight(wd[i]?.length||0)+"px";
+    if(d.getDay()===0)col.classList.add("sun");
+    if(d.getDay()===6)col.classList.add("sat");
+    if(isToday(d))col.classList.add("today");
+    if(isCurrent&&assignmentDayIndex===i)col.classList.add("assignment-target");
+    if(isCurrent){
+      col.addEventListener("dragover",e=>{
+        e.preventDefault();
+        const isRight=e.clientX>=col.getBoundingClientRect().left+col.offsetWidth/2;
+        col.classList.remove("drag-over-move","drag-over-copy","drag-over-split","drag-over-left","drag-over-right");
+        if(currentDragFromPool){col.classList.add("drag-over-copy");}
+        else{col.classList.add("drag-over-split",isRight?"drag-over-right":"drag-over-left");}
+      });
+      col.addEventListener("dragleave",()=>col.classList.remove("drag-over-move","drag-over-copy","drag-over-split","drag-over-left","drag-over-right"));
+      col.addEventListener("drop",e=>{
+        col.classList.remove("drag-over-move","drag-over-copy","drag-over-split","drag-over-left","drag-over-right");
+        const raw=e.dataTransfer.getData("text");if(!raw)return;
+        applyDropToDay(JSON.parse(raw),col,e.clientX);
+      });
+      col.addEventListener("click",e=>{
+        if(Date.now()<touchDayClickSuppressUntil)return;
+        if(e.target.closest(".card,.card-edit-btn,.day-assign-btn,.day-preset-btn,.day-clear-btn,.day-suggest-btn,.btn"))return;
+        openAssignmentMode(i);
+      });
+    }
+    const hdr=document.createElement("div");hdr.className="day-header";
+    const text=document.createElement("span");
+    text.innerText=`${DAYS[d.getDay()]} ${d.getDate()}`;
+    hdr.appendChild(text);
+    if(isCurrent){
+      const addBtn=document.createElement("button");addBtn.type="button";
+      addBtn.className="day-assign-btn"+(assignmentDayIndex===i?" active":"");
+      addBtn.innerText="＋";addBtn.title="この日に直接追加";
+      addBtn.onclick=e=>{e.stopPropagation();openNewCard(i,k,currentMeal==="全"?null:currentMeal);};
+      hdr.appendChild(addBtn);
+      const presetBtn=document.createElement("button");presetBtn.type="button";
+      presetBtn.className="day-preset-btn"+(dayPresets.length?" has-presets":"");
+      presetBtn.title="お気に入りメニュー";presetBtn.innerText="⭐";
+      presetBtn.onclick=e=>{e.stopPropagation();openPresetMenu(i,k);};
+      hdr.appendChild(presetBtn);
+    }
+    const dotsEl=document.createElement("div");dotsEl.className="meal-dots";
+    MEALS.forEach(m=>{
+      const dot=document.createElement("span");dot.className="meal-dot";
+      const hasMeal=(allData[k]?.[m]?.[i]?.length||0)>0;
+      if(hasMeal)dot.style.background=mealDotColors[m];
+      dot.title=m+(hasMeal?": 計画あり":": 未計画");
+      dotsEl.appendChild(dot);
+    });
+    hdr.appendChild(dotsEl);
+    if(isCurrent){
+      if(!wd[i].length){
+        const suggestBtn=document.createElement("button");suggestBtn.type="button";
+        suggestBtn.className="day-suggest-btn";suggestBtn.title="この日だけおまかせ";suggestBtn.innerText="🎲";
+        const _di=i;suggestBtn.onclick=e=>{e.stopPropagation();autoSuggestDay(_di);};
+        hdr.appendChild(suggestBtn);
+      }
+      if(wd[i].length>0){
+        const clearBtn=document.createElement("button");clearBtn.type="button";
+        clearBtn.className="day-clear-btn day-preset-btn";
+        clearBtn.style.cssText="left:auto;right:24px;color:#ef4444;font-size:10px;";
+        clearBtn.title="この日をクリア";clearBtn.innerText="✕";
+        const di2=i;
+        clearBtn.onclick=e=>{e.stopPropagation();pushUndo();weekData()[di2]=[];save();render();showToastWithUndo(`${DAYS[d.getDay()]}曜日の予定をクリアしました`);};
+        hdr.appendChild(clearBtn);
+      }
+    }
+    col.appendChild(hdr);
+    if(isCurrent&&settings.dailyCalorieGoal>0){
+      const dayCal=allMealData(k)[i].reduce((s,it)=>s+(it.calories||0),0);
+      const ratio=dayCal/settings.dailyCalorieGoal;
+      const pct=Math.min(ratio*100,100);
+      const color=ratio>1?"#ef4444":ratio>0.8?"#f59e0b":"#22c55e";
+      const barWrap=document.createElement("div");barWrap.className="cal-progress-bar-wrap";
+      const bar=document.createElement("div");bar.className="cal-progress-bar";
+      bar.style.cssText=`width:${pct}%;background:${color};`;
+      barWrap.title=`${dayCal}kcal / 目標${settings.dailyCalorieGoal}kcal (${Math.round(ratio*100)}%)`;
+      barWrap.appendChild(bar);col.appendChild(barWrap);
+    }
+    if(isCurrent){
+      if(isAllMeals){
+        const mealLabels={"朝":"🌅 朝","昼":"☀️ 昼","夜":"🌙 夜"};
+        MEALS.forEach(meal=>{
+          const sec=document.createElement("div");sec.className="meal-section";
+          const lbl=document.createElement("div");lbl.className="meal-section-label";lbl.innerText=mealLabels[meal]||meal;
+          sec.appendChild(lbl);
+          const mealItems=allData[k]?.[meal]?.[i]||[];
+          mealItems.forEach((item,ii)=>sec.appendChild(mkCardEl(item,{wk:k,di:i,ii,meal})));
+          const addMini=document.createElement("button");addMini.className="btn";
+          addMini.style.cssText="padding:2px 5px;font-size:10px;align-self:flex-start;";
+          addMini.innerText="＋";addMini.title=meal+"に追加";
+          addMini.onclick=e=>{e.stopPropagation();openNewCard(i,k,meal);};
+          sec.appendChild(addMini);col.appendChild(sec);
+        });
+      }else{
+        wd[i].forEach((item,ii)=>col.appendChild(mkCardEl(item,{wk:k,di:i,ii,meal:currentMeal})));
+      }
+    }else{
+      const chipsWrap=document.createElement("div");chipsWrap.className="month-meal-chips";
+      if(isAllMeals){
+        MEALS.forEach(meal=>{
+          (allData[k]?.[meal]?.[i]||[]).slice(0,2).forEach(item=>{
+            const chip=document.createElement("div");chip.className="month-meal-chip";
+            chip.style.cssText=`background:${mealDotColors[meal]}22;color:${mealDotColors[meal]};`;
+            chip.innerText=item.text;chipsWrap.appendChild(chip);
+          });
+        });
+      }else{
+        (allData[k]?.[currentMeal]?.[i]||[]).slice(0,3).forEach(item=>{
+          const chip=document.createElement("div");chip.className="month-meal-chip";
+          chip.style.cssText="background:#47556922;color:#94a3b8;";
+          chip.innerText=item.text;chipsWrap.appendChild(chip);
+        });
+      }
+      if(chipsWrap.children.length)col.appendChild(chipsWrap);
+    }
+    container.appendChild(col);
   }
 }
 function _renderMonthPanel(container,year,month){
@@ -5364,18 +5392,19 @@ document.addEventListener("keydown",e=>{
   if(e.key==="Escape"&&_tutActive){e.stopPropagation();endTutorial();}
 });
 
-// Month view: horizontal swipe with slide animation
+// Month/Week view: horizontal swipe with slide animation
 {
   const _cal=document.getElementById("cal");
   if(_cal){
     let _pid=null,_sx=0,_sy=0,_tracking=false,_hLocked=false;
-    const _wrap=()=>_cal.querySelector(".month-slider-wrap");
+    const _wrap=()=>_cal.querySelector(".month-slider-wrap")||_cal.querySelector(".week-slider-wrap");
     _cal.addEventListener("pointerdown",e=>{
-      if(calView!=="month")return;
+      if(calView!=="month"&&calView!=="week")return;
       _pid=e.pointerId;_sx=e.clientX;_sy=e.clientY;_tracking=true;_hLocked=false;
     });
     _cal.addEventListener("pointermove",e=>{
-      if(!_tracking||e.pointerId!==_pid||calView!=="month")return;
+      if(!_tracking||e.pointerId!==_pid)return;
+      if(calView!=="month"&&calView!=="week")return;
       const dx=e.clientX-_sx,dy=e.clientY-_sy;
       if(!_hLocked){
         if(Math.abs(dx)<8&&Math.abs(dy)<8)return;
@@ -5393,13 +5422,14 @@ document.addEventListener("keydown",e=>{
       if(!_tracking||e.pointerId!==_pid)return;
       const dx=e.clientX-_sx,wasH=_hLocked;
       _tracking=false;_hLocked=false;_pid=null;
-      if(calView!=="month"||touchDragState){_snapBack();return;}
+      if((calView!=="month"&&calView!=="week")||touchDragState){_snapBack();return;}
       const w=_wrap();if(!w)return;
       if(!wasH||Math.abs(dx)<50){_snapBack();return;}
       const dir=dx<0?1:-1;
       w.style.transition="transform 0.3s cubic-bezier(.25,.46,.45,.94)";
       w.style.transform=dir>0?"translateX(-66.666%)":"translateX(0%)";
-      setTimeout(()=>moveMonth(dir),300);
+      if(calView==="month")setTimeout(()=>moveMonth(dir),300);
+      else setTimeout(()=>moveWeek(dir),300);
     };
     _cal.addEventListener("pointerup",_onEnd);
     _cal.addEventListener("pointercancel",e=>{
