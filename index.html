@@ -5690,6 +5690,49 @@ document.addEventListener("keydown",e=>{
   if(e.key==="Escape"&&_tutActive){e.stopPropagation();endTutorial();}
 });
 
+// 月ビュー: 横スワイプで月送り
+// touch-action:pan-y が .calendar.month-view に設定済みのため
+// passive:true + e.preventDefault()なし で縦スクロールを妨げずに動作する
+{
+  const _cal=document.getElementById("cal");
+  if(_cal){
+    let _sx=0,_sy=0,_tracking=false,_hLocked=false;
+    const _wrap=()=>_cal.querySelector(".month-slider-wrap");
+    _cal.addEventListener("touchstart",e=>{
+      if(calView!=="month")return;
+      const t=e.touches[0];_sx=t.clientX;_sy=t.clientY;_tracking=true;_hLocked=false;
+    },{passive:true});
+    _cal.addEventListener("touchmove",e=>{
+      if(!_tracking||calView!=="month")return;
+      const t=e.touches[0];
+      const dx=t.clientX-_sx,dy=t.clientY-_sy;
+      if(!_hLocked){
+        if(Math.abs(dx)<8&&Math.abs(dy)<8)return;
+        if(Math.abs(dy)>=Math.abs(dx)){_tracking=false;return;}
+        _hLocked=true;
+      }
+      const w=_wrap();if(!w)return;
+      w.style.transition="none";
+      w.style.transform=`translateX(calc(-33.333% + ${dx}px))`;
+    },{passive:true}); // passive:true: 縦スクロールを妨げない
+    const _snapBack=()=>{const w=_wrap();if(w){w.style.transition="transform 0.25s cubic-bezier(.25,.46,.45,.94)";w.style.transform="translateX(-33.333%)";}};
+    _cal.addEventListener("touchend",e=>{
+      if(!_tracking)return;
+      const t=e.changedTouches[0];
+      const dx=t.clientX-_sx,wasH=_hLocked;
+      _tracking=false;_hLocked=false;
+      if(calView!=="month"||touchDragState){_snapBack();return;}
+      const w=_wrap();if(!w)return;
+      if(!wasH||Math.abs(dx)<50){_snapBack();return;}
+      const dir=dx<0?1:-1;
+      w.style.transition="transform 0.3s cubic-bezier(.25,.46,.45,.94)";
+      w.style.transform=dir>0?"translateX(-66.666%)":"translateX(0%)";
+      setTimeout(()=>moveMonth(dir),300);
+    },{passive:true});
+    _cal.addEventListener("touchcancel",()=>{_tracking=false;_hLocked=false;_snapBack();},{passive:true});
+  }
+}
+
 
 </script>
 
