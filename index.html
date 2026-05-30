@@ -99,7 +99,7 @@ body[data-card-density="detailed"] .card.has-image .card-img{width:80px;height:8
 .bottom-sheet.sheet-peek{height:28px!important;overflow:hidden;}
 .sheet-handle{display:flex;justify-content:center;align-items:center;padding:12px 0 7px;flex-shrink:0;touch-action:none;cursor:grab;user-select:none;}
 .sheet-handle:active{cursor:grabbing;}
-.handle-bar{width:52px;height:6px;background:#475569;border-radius:3px;pointer-events:none;}
+.handle-bar{width:80px;height:8px;background:#475569;border-radius:4px;pointer-events:none;}
 .sheet-search{display:flex;align-items:center;padding:0 8px 7px;gap:6px;flex-shrink:0;}
 .active-filter-bar{display:none;gap:5px;padding:0 8px 7px;flex-wrap:wrap;flex-shrink:0;}
 .active-filter-bar.show{display:flex;}
@@ -591,10 +591,8 @@ body[data-theme="pink"] .guest-banner .dismiss{color:#f9a8d4;}
 .calendar.month-view{display:block;height:calc(100svh - 140px);overflow:hidden;touch-action:pan-y;}
 .month-slider-wrap{display:flex;height:100%;width:300%;will-change:transform;touch-action:pan-y;}
 .month-panel{flex:0 0 33.333%;width:33.333%;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;}
-.calendar.week-view{display:block;overflow:hidden;touch-action:pan-y;}
-.week-slider-wrap{display:flex;height:100%;width:300%;will-change:transform;touch-action:pan-y;}
-.week-panel{flex:0 0 33.333%;width:33.333%;display:grid;grid-template-columns:repeat(7,minmax(120px,1fr));overflow-y:auto;overflow-x:auto;-webkit-overflow-scrolling:touch;align-content:start;}
-.week-panel.side-panel{opacity:0.7;pointer-events:none;}
+.calendar.week-view{display:block;overflow:hidden;}
+.week-panel{width:100%;display:grid;grid-template-columns:repeat(7,minmax(120px,1fr));overflow-y:auto;overflow-x:auto;-webkit-overflow-scrolling:touch;align-content:start;}
 @media(max-width:760px){.week-panel{grid-template-columns:1fr;overflow-x:hidden;}}
 .month-weekday-row{display:grid;grid-template-columns:repeat(7,1fr);border-bottom:1px solid #334155;background:#0f172a;position:sticky;top:0;z-index:10;}
 .month-weekday-cell{font-size:9px;text-align:center;padding:4px 2px;font-weight:bold;color:#64748b;letter-spacing:.3px;}
@@ -825,12 +823,6 @@ body[data-theme="pink"] .tut-fab{background:#ffe4ef;color:#db2777;border-color:#
       <option value="夜">🌙 夜</option>
       <option value="全">📋 全</option>
     </select>
-    <div class="meal-tabs" id="mealTabs">
-      <button class="meal-tab" data-meal="朝" onclick="changeMeal('朝')" title="朝食">🌄</button>
-      <button class="meal-tab active" data-meal="昼" onclick="changeMeal('昼')" title="昼食">☀️</button>
-      <button class="meal-tab" data-meal="夜" onclick="changeMeal('夜')" title="夕食">🌙</button>
-      <button class="meal-tab" data-meal="全" onclick="changeMeal('全')" title="全食">📋</button>
-    </div>
     <div class="more-menu" id="moreMenuWrap">
       <button class="btn more-btn" onclick="toggleMoreMenu(event)">•••</button>
       <div class="more-panel" id="morePanel">
@@ -851,6 +843,12 @@ body[data-theme="pink"] .tut-fab{background:#ffe4ef;color:#db2777;border-color:#
   <div class="sheet-handle" id="sheetHandle">
     <div class="handle-bar"></div>
     <div class="sheet-hint-text" id="sheetHintText" style="display:none">↕ ドラッグ調整 ／ ダブルタップで隠す</div>
+  </div>
+  <div class="meal-tabs" id="mealTabs" style="padding:0 8px 6px;background:transparent;">
+    <button class="meal-tab" data-meal="朝" onclick="changeMeal('朝')" title="朝食">🌄</button>
+    <button class="meal-tab active" data-meal="昼" onclick="changeMeal('昼')" title="昼食">☀️</button>
+    <button class="meal-tab" data-meal="夜" onclick="changeMeal('夜')" title="夕食">🌙</button>
+    <button class="meal-tab" data-meal="全" onclick="changeMeal('全')" title="全食">📋</button>
   </div>
   <div class="sheet-search">
     <div class="search-wrap">
@@ -2726,17 +2724,9 @@ function render(){
   const start=getWeekStart(baseDate);
   const end=new Date(start);end.setDate(start.getDate()+6);
   document.getElementById("label").innerText=`${start.getMonth()+1}/${start.getDate()}〜${end.getMonth()+1}/${end.getDate()}`;
-  const wrapW=document.createElement("div");wrapW.className="week-slider-wrap";
-  wrapW.style.transform="translateX(-33.333%)";
-  const wPanels=[0,1,2].map(()=>{const p=document.createElement("div");p.className="week-panel";wrapW.appendChild(p);return p;});
-  cal.appendChild(wrapW);
-  const prevWkDate=new Date(start);prevWkDate.setDate(start.getDate()-7);
-  const nextWkDate=new Date(start);nextWkDate.setDate(start.getDate()+7);
-  wPanels[0].classList.add("side-panel");
-  wPanels[2].classList.add("side-panel");
-  _renderWeekPanel(wPanels[0],prevWkDate,false);
-  _renderWeekPanel(wPanels[1],baseDate,true);
-  _renderWeekPanel(wPanels[2],nextWkDate,false);
+  const panel=document.createElement("div");panel.className="week-panel";
+  cal.appendChild(panel);
+  _renderWeekPanel(panel,baseDate,true);
   renderPool();
 }
 
@@ -4544,44 +4534,81 @@ function showMonthDayMenu(dateObj,wk,dayIdx){
   const dow=["日","月","火","水","木","金","土"][dateObj.getDay()];
   const overlay=document.createElement("div");
   overlay.id="monthDayMenu";
-  overlay.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:300;display:flex;align-items:flex-end;justify-content:center;";
+  overlay.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:300;display:flex;align-items:flex-start;justify-content:center;padding-top:8vh;";
   const panel=document.createElement("div");
-  panel.style.cssText="background:#1e293b;border-radius:18px 18px 0 0;padding:20px 20px 28px;width:100%;max-width:500px;max-height:75vh;overflow-y:auto;box-shadow:0 -4px 24px rgba(0,0,0,0.4);";
-  // ドラッグバー
-  const bar=document.createElement("div");bar.style.cssText="width:40px;height:4px;background:#334155;border-radius:2px;margin:0 auto 16px;";panel.appendChild(bar);
-  // タイトル
-  const title=document.createElement("div");title.style.cssText="font-size:17px;font-weight:700;color:#f1f5f9;margin-bottom:18px;text-align:center;";
-  title.innerText=`${mo}月${da}日（${dow}）`;panel.appendChild(title);
+  panel.style.cssText="background:#1e293b;border-radius:18px;padding:18px 18px 20px;width:calc(100% - 32px);max-width:500px;max-height:82vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,0.5);";
+  // タイトル行
+  const titleRow=document.createElement("div");titleRow.style.cssText="display:flex;align-items:center;margin-bottom:14px;";
+  const title=document.createElement("div");title.style.cssText="font-size:17px;font-weight:700;color:#f1f5f9;flex:1;";title.innerText=`${mo}月${da}日（${dow}）`;
+  const xBtn=document.createElement("button");xBtn.style.cssText="background:none;border:none;color:#64748b;font-size:20px;cursor:pointer;padding:0 2px;line-height:1;";xBtn.innerText="✕";xBtn.onclick=()=>overlay.remove();
+  titleRow.appendChild(title);titleRow.appendChild(xBtn);panel.appendChild(titleRow);
   // 食事セクション
   const mealsToShow=currentMeal==="全"?MEALS:[currentMeal];
   mealsToShow.forEach(meal=>{
     const items=(allData[wk]?.[meal]?.[dayIdx]||[]);
-    const section=document.createElement("div");section.style.cssText="margin-bottom:14px;background:#0f172a;border-radius:10px;padding:10px 12px;";
-    const header=document.createElement("div");header.style.cssText="display:flex;align-items:center;gap:8px;margin-bottom:8px;";
+    const section=document.createElement("div");section.style.cssText="margin-bottom:8px;background:#0f172a;border-radius:10px;padding:9px 12px;";
+    const header=document.createElement("div");header.style.cssText="display:flex;align-items:center;gap:8px;margin-bottom:6px;";
     const lbl=document.createElement("span");lbl.style.cssText=`font-size:12px;font-weight:700;color:${mealColors[meal]};background:${mealColors[meal]}22;padding:2px 10px;border-radius:999px;`;lbl.innerText=meal;header.appendChild(lbl);
-    const addBtn=document.createElement("button");addBtn.style.cssText="margin-left:auto;font-size:12px;padding:4px 12px;background:#334155;color:#94a3b8;border:1px solid #475569;border-radius:6px;cursor:pointer;";addBtn.innerText="＋ 追加";
+    const addBtn=document.createElement("button");addBtn.style.cssText="margin-left:auto;font-size:12px;padding:3px 10px;background:#334155;color:#94a3b8;border:1px solid #475569;border-radius:6px;cursor:pointer;";addBtn.innerText="＋ 新規追加";
     addBtn.onclick=()=>{overlay.remove();openNewCard(dayIdx,wk,meal);};header.appendChild(addBtn);section.appendChild(header);
     if(!items.length){
       const empty=document.createElement("div");empty.style.cssText="font-size:12px;color:#475569;";empty.innerText="まだ登録なし";section.appendChild(empty);
     }else{
       const chipsWrap=document.createElement("div");chipsWrap.style.cssText="display:flex;flex-wrap:wrap;gap:5px;";
       items.forEach(item=>{
-        const chip=document.createElement("div");chip.style.cssText=`font-size:12px;padding:4px 10px;border-radius:6px;background:${mealColors[meal]}22;color:${mealColors[meal]};cursor:pointer;`;
-        chip.innerText=item.text;
-        chipsWrap.appendChild(chip);
+        const chip=document.createElement("div");chip.style.cssText=`font-size:12px;padding:3px 9px;border-radius:6px;background:${mealColors[meal]}22;color:${mealColors[meal]};`;chip.innerText=item.text;chipsWrap.appendChild(chip);
       });
       section.appendChild(chipsWrap);
     }
     panel.appendChild(section);
   });
-  // 閉じるボタン
-  const closeBtn=document.createElement("button");closeBtn.style.cssText="width:100%;margin-top:8px;padding:12px;background:#334155;color:#94a3b8;border:none;border-radius:10px;font-size:14px;cursor:pointer;";closeBtn.innerText="閉じる";closeBtn.onclick=()=>overlay.remove();panel.appendChild(closeBtn);
+  // ─── プールから選ぶ ───
+  if(pool&&pool.length){
+    const poolSec=document.createElement("div");poolSec.style.cssText="margin-top:14px;";
+    const poolHeader=document.createElement("div");poolHeader.style.cssText="font-size:12px;font-weight:600;color:#94a3b8;margin-bottom:8px;letter-spacing:0.05em;";poolHeader.innerText="📋 プールから追加";poolSec.appendChild(poolHeader);
+    const grid=document.createElement("div");grid.style.cssText="display:grid;grid-template-columns:repeat(2,1fr);gap:6px;";
+    pool.forEach((item)=>{
+      const tagColor=TC?.[item.tag]||"#475569";
+      const card=document.createElement("div");
+      card.style.cssText="background:#0f172a;border:1px solid #1e293b;border-radius:8px;padding:8px 10px;cursor:pointer;display:flex;flex-direction:column;gap:3px;transition:background 0.15s,border-color 0.15s;";
+      card.onmouseenter=()=>{card.style.background="#1e293b";card.style.borderColor="#334155";};
+      card.onmouseleave=()=>{card.style.background="#0f172a";card.style.borderColor="#1e293b";};
+      const name=document.createElement("div");name.style.cssText="font-size:13px;color:#f1f5f9;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;";name.innerText=item.text;
+      card.appendChild(name);
+      if(item.tag){const tagEl=document.createElement("div");tagEl.style.cssText=`font-size:10px;color:${tagColor};`;tagEl.innerText=item.tag;card.appendChild(tagEl);}
+      const parts=[];if(item.calories)parts.push(item.calories+"kcal");if(item.cost)parts.push(item.cost+(settings.currency||"円"));
+      if(parts.length){const info=document.createElement("div");info.style.cssText="font-size:10px;color:#64748b;";info.innerText=parts.join(" · ");card.appendChild(info);}
+      card.onclick=()=>{
+        const addToDay=(m)=>{
+          if(!allData[wk])allData[wk]={};
+          MEALS.forEach(ml=>{if(!allData[wk][ml])allData[wk][ml]=Array.from({length:7},()=>[]);});
+          allData[wk][m][dayIdx].push(createPlannedItemFromSource(item,true));
+          save();render();overlay.remove();showToast(`${mo}月${da}日 ${m}に追加しました`);
+        };
+        if(currentMeal!=="全"){
+          addToDay(currentMeal);
+        }else{
+          // 食事帯を選ばせる
+          grid.style.display="none";
+          poolHeader.innerText=`「${item.text}」をどの食事に？`;
+          const picker=document.createElement("div");picker.style.cssText="display:flex;gap:8px;margin-top:4px;";
+          MEALS.forEach(m=>{
+            const mb=document.createElement("button");mb.style.cssText=`flex:1;padding:11px 0;background:${mealColors[m]}22;color:${mealColors[m]};border:1px solid ${mealColors[m]}44;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;`;mb.innerText=m;
+            mb.onclick=()=>addToDay(m);picker.appendChild(mb);
+          });
+          poolSec.appendChild(picker);
+        }
+      };
+      grid.appendChild(card);
+    });
+    poolSec.appendChild(grid);panel.appendChild(poolSec);
+  }
   overlay.appendChild(panel);
   overlay.addEventListener("click",e=>{if(e.target===overlay)overlay.remove();});
   document.body.appendChild(overlay);
   // アニメーション
-  panel.style.transform="translateY(100%)";panel.style.transition="transform 0.25s ease";
-  requestAnimationFrame(()=>requestAnimationFrame(()=>{panel.style.transform="translateY(0)";}));
+  panel.style.cssText+=";opacity:0;transform:translateY(-10px) scale(0.97);transition:opacity 0.18s ease,transform 0.18s ease;";
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{panel.style.opacity="1";panel.style.transform="translateY(0) scale(1)";}));
 }
 function _renderMonthPanel(container,year,month){
   container.innerHTML="";
@@ -5439,25 +5466,24 @@ document.addEventListener("keydown",e=>{
   if(e.key==="Escape"&&_tutActive){e.stopPropagation();endTutorial();}
 });
 
-// Month/Week view: horizontal swipe with slide animation
+// Month view: horizontal swipe with slide animation (touch events)
 {
   const _cal=document.getElementById("cal");
   if(_cal){
-    let _pid=null,_sx=0,_sy=0,_tracking=false,_hLocked=false;
-    const _wrap=()=>_cal.querySelector(".month-slider-wrap")||_cal.querySelector(".week-slider-wrap");
-    _cal.addEventListener("pointerdown",e=>{
-      if(calView!=="month"&&calView!=="week")return;
-      _pid=e.pointerId;_sx=e.clientX;_sy=e.clientY;_tracking=true;_hLocked=false;
-    });
-    _cal.addEventListener("pointermove",e=>{
-      if(!_tracking||e.pointerId!==_pid)return;
-      if(calView!=="month"&&calView!=="week")return;
-      const dx=e.clientX-_sx,dy=e.clientY-_sy;
+    let _sx=0,_sy=0,_tracking=false,_hLocked=false;
+    const _wrap=()=>_cal.querySelector(".month-slider-wrap");
+    _cal.addEventListener("touchstart",e=>{
+      if(calView!=="month")return;
+      const t=e.touches[0];_sx=t.clientX;_sy=t.clientY;_tracking=true;_hLocked=false;
+    },{passive:true});
+    _cal.addEventListener("touchmove",e=>{
+      if(!_tracking||calView!=="month")return;
+      const t=e.touches[0];
+      const dx=t.clientX-_sx,dy=t.clientY-_sy;
       if(!_hLocked){
         if(Math.abs(dx)<8&&Math.abs(dy)<8)return;
         if(Math.abs(dy)>=Math.abs(dx)){_tracking=false;return;}
         _hLocked=true;
-        if(_cal.setPointerCapture)_cal.setPointerCapture(_pid);
       }
       e.preventDefault();
       const w=_wrap();if(!w)return;
@@ -5465,24 +5491,20 @@ document.addEventListener("keydown",e=>{
       w.style.transform=`translateX(calc(-33.333% + ${dx}px))`;
     },{passive:false});
     const _snapBack=()=>{const w=_wrap();if(w){w.style.transition="transform 0.25s cubic-bezier(.25,.46,.45,.94)";w.style.transform="translateX(-33.333%)";}};
-    const _onEnd=e=>{
-      if(!_tracking||e.pointerId!==_pid)return;
-      const dx=e.clientX-_sx,wasH=_hLocked;
-      _tracking=false;_hLocked=false;_pid=null;
-      if((calView!=="month"&&calView!=="week")||touchDragState){_snapBack();return;}
+    _cal.addEventListener("touchend",e=>{
+      if(!_tracking)return;
+      const t=e.changedTouches[0];
+      const dx=t.clientX-_sx,wasH=_hLocked;
+      _tracking=false;_hLocked=false;
+      if(calView!=="month"||touchDragState){_snapBack();return;}
       const w=_wrap();if(!w)return;
       if(!wasH||Math.abs(dx)<50){_snapBack();return;}
       const dir=dx<0?1:-1;
       w.style.transition="transform 0.3s cubic-bezier(.25,.46,.45,.94)";
       w.style.transform=dir>0?"translateX(-66.666%)":"translateX(0%)";
-      if(calView==="month")setTimeout(()=>moveMonth(dir),300);
-      else setTimeout(()=>moveWeek(dir),300);
-    };
-    _cal.addEventListener("pointerup",_onEnd);
-    _cal.addEventListener("pointercancel",e=>{
-      if(e.pointerId!==_pid)return;
-      _tracking=false;_hLocked=false;_pid=null;_snapBack();
+      setTimeout(()=>moveMonth(dir),300);
     });
+    _cal.addEventListener("touchcancel",()=>{_tracking=false;_hLocked=false;_snapBack();});
   }
 }
 
