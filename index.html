@@ -589,10 +589,10 @@ body[data-theme="pink"] .guest-banner button{background:#db2777;}
 body[data-theme="pink"] .guest-banner .dismiss{color:#f9a8d4;}
 /* ===== MONTH VIEW ===== */
 .calendar.month-view{display:block;height:calc(100svh - 140px);overflow:hidden;}
-.month-slider-wrap{display:flex;height:100%;width:300%;will-change:transform;}
+.month-slider-wrap{display:flex;height:100%;width:300%;will-change:transform;touch-action:pan-y;}
 .month-panel{flex:0 0 33.333%;width:33.333%;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;}
 .calendar.week-view{display:block;overflow:hidden;}
-.week-slider-wrap{display:flex;height:100%;width:300%;will-change:transform;}
+.week-slider-wrap{display:flex;height:100%;width:300%;will-change:transform;touch-action:pan-y;}
 .week-panel{flex:0 0 33.333%;width:33.333%;display:grid;grid-template-columns:repeat(7,minmax(120px,1fr));overflow-y:auto;overflow-x:auto;-webkit-overflow-scrolling:touch;align-content:start;}
 .week-panel.side-panel{opacity:0.7;pointer-events:none;}
 @media(max-width:760px){.week-panel{grid-template-columns:1fr;overflow-x:hidden;}}
