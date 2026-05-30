@@ -595,7 +595,7 @@ body[data-theme="pink"] .guest-banner .dismiss{color:#f9a8d4;}
 .week-panel{width:100%;display:grid;grid-template-columns:repeat(7,minmax(120px,1fr));overflow-y:auto;overflow-x:auto;-webkit-overflow-scrolling:touch;align-content:start;}
 @media(max-width:760px){.week-panel{grid-template-columns:1fr;overflow-x:hidden;}}
 .month-weekday-row{display:grid;grid-template-columns:repeat(7,1fr);border-bottom:1px solid #334155;background:#0f172a;position:sticky;top:0;z-index:10;}
-.month-weekday-cell{font-size:9px;text-align:center;padding:4px 2px;font-weight:bold;color:#64748b;letter-spacing:.3px;}
+.month-weekday-cell{font-size:13px;text-align:center;padding:7px 2px;font-weight:bold;color:#64748b;letter-spacing:.5px;}
 .month-weekday-cell.sun{color:#f87171;}.month-weekday-cell.sat{color:#60a5fa;}
 .month-week-row{display:grid;grid-template-columns:repeat(7,1fr);}
 .month-day{border-right:1px solid #334155;border-bottom:1px solid #334155;padding:3px 3px 14px;min-height:72px;cursor:pointer;transition:background .1s;position:relative;overflow:hidden;}
@@ -605,7 +605,7 @@ body[data-theme="pink"] .guest-banner .dismiss{color:#f9a8d4;}
 .month-day.other-month{opacity:.3;}
 .month-day-num{font-size:11px;font-weight:bold;line-height:1.6;display:inline-block;width:18px;text-align:center;}
 .month-meal-chips{display:flex;flex-direction:column;gap:1px;margin-top:1px;}
-.month-meal-chip{font-size:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:1px 3px;border-radius:3px;line-height:1.35;}
+.month-meal-chip{font-size:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:1px 3px;border-radius:3px;line-height:1.35;cursor:pointer;}
 .month-day-cost{font-size:8px;color:#22c55e;position:absolute;bottom:2px;right:3px;font-weight:bold;}
 .month-summary-row{display:flex;align-items:center;gap:10px;padding:5px 12px;background:#0f172a;border-top:1px solid #334155;font-size:11px;color:#94a3b8;flex-wrap:wrap;}
 .month-summary-row .ms-chip{background:#1e293b;border-radius:6px;padding:3px 8px;color:#e2e8f0;font-size:11px;}
@@ -828,6 +828,7 @@ body[data-theme="pink"] .tut-fab{background:#ffe4ef;color:#db2777;border-color:#
       <div class="more-panel" id="morePanel">
         <button class="more-item" onclick="autoSuggest();closeMoreMenu()">🧠 週おまかせ</button>
         <button class="more-item" onclick="openRecognizeModal();closeMoreMenu()">📷 料理認識</button>
+        <button class="more-item" id="exportMonthBtn" onclick="exportMonthImage();closeMoreMenu()" style="display:none">🖼 月を画像保存</button>
         <div class="more-sep"></div>
         <button class="more-item danger" id="clearWeekBtn" onclick="clearCurrentWeek();closeMoreMenu()">🗑 週を全消し</button>
         <button class="more-item danger" id="clearMonthBtn" onclick="clearCurrentMonth();closeMoreMenu()" style="display:none">🗑 月を全消し</button>
@@ -4323,8 +4324,10 @@ function toggleCalView(){
   if(btn)btn.innerText=calView==="week"?"週":"月";
   const cwb=document.getElementById("clearWeekBtn");
   const cmb=document.getElementById("clearMonthBtn");
+  const emb=document.getElementById("exportMonthBtn");
   if(cwb)cwb.style.display=calView==="week"?"":"none";
   if(cmb)cmb.style.display=calView==="month"?"":"none";
+  if(emb)emb.style.display=calView==="month"?"":"none";
   render();
 }
 function clearCurrentWeek(){
@@ -4348,6 +4351,165 @@ function clearCurrentMonth(){
   }
   save();render();showToast(`${y}年${mo+1}月の予定を全消しました`);
 }
+
+function exportMonthImage(){
+  const year=baseDate.getFullYear(),month=baseDate.getMonth();
+  const dayOrder=settings.weekStartMonday?[1,2,3,4,5,6,0]:[0,1,2,3,4,5,6];
+  const SCALE=2;
+  const cellW=148,cellH=122,headerH=76,dayHdrH=40;
+  const cols=7;
+  const totalW=cellW*cols;
+
+  // collect rows
+  const rows=[];
+  let d=new Date(getWeekStart(new Date(year,month,1)).getTime());
+  while(true){
+    const week=[];
+    for(let i=0;i<7;i++){
+      const date=new Date(d.getTime());
+      const isThisMonth=date.getMonth()===month&&date.getFullYear()===year;
+      const wk=weekKey(date);
+      const ws=getWeekStart(new Date(date.getTime()));
+      const di=Math.max(0,Math.min(6,Math.round((date.getTime()-ws.getTime())/864e5)));
+      const meals={};
+      MEALS.forEach(m=>{meals[m]=allData[wk]?.[m]?.[di]||[];});
+      week.push({date,isThisMonth,meals});
+      d.setDate(d.getDate()+1);
+    }
+    rows.push(week);
+    if(d.getFullYear()>year||(d.getFullYear()===year&&d.getMonth()>month))break;
+  }
+
+  const totalH=headerH+dayHdrH+rows.length*cellH+26;
+  const canvas=document.createElement("canvas");
+  canvas.width=totalW*SCALE;canvas.height=totalH*SCALE;
+  const ctx=canvas.getContext("2d");
+  ctx.scale(SCALE,SCALE);
+
+  const font=s=>`${s}px "Hiragino Sans","Meiryo","Yu Gothic","sans-serif"`;
+
+  // Background
+  ctx.fillStyle="#fffef7";
+  ctx.fillRect(0,0,totalW,totalH);
+
+  // Header gradient
+  const grad=ctx.createLinearGradient(0,0,totalW,0);
+  grad.addColorStop(0,"#ffe066");grad.addColorStop(0.35,"#ff8fab");
+  grad.addColorStop(0.65,"#74c0fc");grad.addColorStop(1,"#69db7c");
+  ctx.fillStyle=grad;
+  ctx.fillRect(0,0,totalW,headerH);
+
+  // Header polka dots
+  const dotPal=["#ff6b6b","#ffd43b","#51cf66","#339af0","#f06595","#cc5de8"];
+  for(let i=0;i<26;i++){
+    const x=(i+0.5)*(totalW/26),r=3.5;
+    [8,headerH-8].forEach(y=>{
+      ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);
+      ctx.fillStyle=dotPal[i%dotPal.length];ctx.fill();
+    });
+  }
+
+  // Header title
+  ctx.shadowColor="rgba(0,0,0,0.18)";ctx.shadowBlur=4;ctx.shadowOffsetY=2;
+  ctx.fillStyle="#1e293b";ctx.font=`bold 26px "Hiragino Sans","Meiryo","sans-serif"`;
+  ctx.textAlign="center";ctx.textBaseline="middle";
+  ctx.fillText(`${year}年 ${month+1}月 献立カレンダー`,totalW/2,headerH/2);
+  ctx.shadowColor="transparent";ctx.shadowBlur=0;ctx.shadowOffsetY=0;
+
+  // Day header row
+  const dowBg=["#ffc9c9","#e9fac8","#e9fac8","#e9fac8","#e9fac8","#e9fac8","#bac8ff"];
+  const dowFg=["#c92a2a","#2f6b1e","#2f6b1e","#2f6b1e","#2f6b1e","#2f6b1e","#1971c2"];
+  dayOrder.forEach((dow,i)=>{
+    ctx.fillStyle=dowBg[i];
+    ctx.fillRect(i*cellW,headerH,cellW,dayHdrH);
+    ctx.fillStyle=dowFg[i];
+    ctx.font=`bold 17px "Hiragino Sans","Meiryo","sans-serif"`;
+    ctx.textAlign="center";ctx.textBaseline="middle";
+    ctx.fillText(DAYS[dow],i*cellW+cellW/2,headerH+dayHdrH/2);
+  });
+  ctx.fillStyle="#c9d6e3";ctx.fillRect(0,headerH+dayHdrH,totalW,1);
+
+  const mealColor={"朝":"#d97706","昼":"#1d4ed8","夜":"#6d28d9"};
+  const mealLabel={"朝":"朝","昼":"昼","夜":"夜"};
+  const today=new Date();
+
+  rows.forEach((week,ri)=>{
+    const rowY=headerH+dayHdrH+ri*cellH;
+    ctx.fillStyle=ri%2===0?"#ffffff":"#f0f7ff";
+    ctx.fillRect(0,rowY,totalW,cellH);
+
+    week.forEach((day,ci)=>{
+      if(!day.isThisMonth){
+        ctx.fillStyle="#f1f5f9";ctx.fillRect(ci*cellW,rowY,cellW,cellH);
+        ctx.fillStyle="#bfc9d4";ctx.font=font(12);
+        ctx.textAlign="right";ctx.textBaseline="top";
+        ctx.fillText(day.date.getDate(),ci*cellW+cellW-5,rowY+4);
+        return;
+      }
+
+      const dow=day.date.getDay();
+      const isToday=day.date.toDateString()===today.toDateString();
+
+      if(isToday){
+        ctx.fillStyle="#2563eb";
+        ctx.beginPath();ctx.arc(ci*cellW+16,rowY+15,13,0,Math.PI*2);ctx.fill();
+        ctx.fillStyle="#fff";
+      }else{
+        ctx.fillStyle=dow===0?"#c92a2a":dow===6?"#1971c2":"#1e293b";
+      }
+      ctx.font=`bold 15px "Hiragino Sans","Meiryo","sans-serif"`;
+      ctx.textAlign="center";ctx.textBaseline="middle";
+      ctx.fillText(day.date.getDate(),ci*cellW+16,rowY+15);
+
+      let ty=rowY+30;
+      const maxW=cellW-9;
+      MEALS.forEach(meal=>{
+        const items=day.meals[meal]||[];
+        if(!items.length)return;
+        if(ty+10>rowY+cellH-4)return;
+        ctx.fillStyle=mealColor[meal]+"33";
+        ctx.fillRect(ci*cellW+4,ty,22,10);
+        ctx.fillStyle=mealColor[meal];
+        ctx.font=`bold 8px "Hiragino Sans","Meiryo","sans-serif"`;
+        ctx.textAlign="center";ctx.textBaseline="middle";
+        ctx.fillText(mealLabel[meal],ci*cellW+15,ty+5);
+        ty+=12;
+        items.slice(0,3).forEach(item=>{
+          if(ty+10>rowY+cellH-2)return;
+          ctx.fillStyle=mealColor[meal];
+          ctx.font=font(10.5);ctx.textAlign="left";ctx.textBaseline="top";
+          let text=item.text;
+          while(ctx.measureText(text).width>maxW&&text.length>1)text=text.slice(0,-1);
+          if(text!==item.text)text=text.slice(0,-1)+"…";
+          ctx.fillText(text,ci*cellW+5,ty);
+          ty+=13;
+        });
+        if(items.length>3&&ty+10<=rowY+cellH-2){
+          ctx.fillStyle="#94a3b8";ctx.font=font(9);ctx.textAlign="left";ctx.textBaseline="top";
+          ctx.fillText(`+${items.length-3}件`,ci*cellW+5,ty);ty+=11;
+        }
+        ty+=2;
+      });
+    });
+    ctx.fillStyle="#c9d6e3";ctx.fillRect(0,rowY+cellH,totalW,1);
+  });
+
+  for(let c=1;c<cols;c++){ctx.fillStyle="#c9d6e3";ctx.fillRect(c*cellW,headerH,1,totalH-headerH);}
+  ctx.strokeStyle="#8fafc7";ctx.lineWidth=2;ctx.strokeRect(1,1,totalW-2,totalH-2);
+
+  ctx.fillStyle="#94a3b8";ctx.font=font(10);ctx.textAlign="right";ctx.textBaseline="bottom";
+  ctx.fillText(`${year}年${month+1}月`,totalW-6,totalH-5);
+
+  canvas.toBlob(blob=>{
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement("a");
+    a.download=`献立カレンダー_${year}年${month+1}月.png`;
+    a.href=url;a.click();
+    setTimeout(()=>URL.revokeObjectURL(url),3000);
+  },"image/png");
+  showToast("📅 画像を保存しました");
+}
+
 // ===== MONTH VIEW HELPERS =====
 function getAllItemsForDate(d){
   const wk=weekKey(d);
@@ -4643,21 +4805,25 @@ function _renderMonthPanel(container,year,month){
       if(currentMeal==="全"){
         MEALS.forEach(meal=>{
           const items=allData[wk]?.[meal]?.[dayIdx]||[];
-          items.slice(0,2).forEach(item=>{
+          items.slice(0,2).forEach((item,ii)=>{
             dayCost+=(item.cost||0);
             const chip=document.createElement("div");chip.className="month-meal-chip";
             chip.style.cssText=`background:${mealColors[meal]}22;color:${mealColors[meal]};`;
-            chip.innerText=item.text;chipsDiv.appendChild(chip);
+            chip.innerText=item.text;
+            chip.addEventListener("click",e=>{e.stopPropagation();openEdit({wk,di:dayIdx,ii,meal});});
+            chipsDiv.appendChild(chip);
           });
           if(items.length>2){const more=document.createElement("div");more.className="month-meal-chip";more.style.color="#64748b";more.innerText=`+${items.length-2}`;chipsDiv.appendChild(more);}
         });
       }else{
         const items=allData[wk]?.[currentMeal]?.[dayIdx]||[];
         items.forEach(item=>dayCost+=(item.cost||0));
-        items.slice(0,3).forEach(item=>{
+        items.slice(0,3).forEach((item,ii)=>{
           const chip=document.createElement("div");chip.className="month-meal-chip";
           chip.style.cssText=`background:${TC[item.tag]||"#475569"}22;color:${TC[item.tag]||"#94a3b8"};`;
-          chip.innerText=item.text;chipsDiv.appendChild(chip);
+          chip.innerText=item.text;
+          chip.addEventListener("click",e=>{e.stopPropagation();openEdit({wk,di:dayIdx,ii,meal:currentMeal});});
+          chipsDiv.appendChild(chip);
         });
         if(items.length>3){const more=document.createElement("div");more.className="month-meal-chip";more.style.color="#64748b";more.innerText=`+${items.length-3}件`;chipsDiv.appendChild(more);}
       }
