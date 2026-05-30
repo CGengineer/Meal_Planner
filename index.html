@@ -14,18 +14,28 @@
 html,body{height:100%;}
 body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#0f172a;color:#f1f5f9;height:100svh;min-height:100svh;overflow:hidden;padding-bottom:64px;}
 body.no-x-nav{overscroll-behavior-x:none;touch-action:pan-y;}
-.header{display:flex;justify-content:space-between;align-items:center;padding:8px 14px;gap:8px;flex-wrap:wrap;border-bottom:1px solid #334155;background:#0f172a;position:sticky;top:0;z-index:100;}
-.title{font-size:16px;font-weight:bold;white-space:nowrap;}
+.header{display:flex;justify-content:space-between;align-items:center;padding:6px 12px;gap:8px;border-bottom:1px solid #334155;background:#0f172a;position:sticky;top:0;z-index:100;}
+.title{font-size:15px;font-weight:bold;white-space:nowrap;}
 .header-left{display:flex;align-items:center;gap:8px;flex-shrink:0;}
-.actions{display:flex;gap:5px;align-items:center;flex-wrap:nowrap;min-width:0;}
+.header-nav{display:flex;align-items:center;gap:2px;flex:1;justify-content:center;}
+.header-right{display:flex;align-items:center;gap:5px;flex-shrink:0;}
+.nav-btn{padding:2px 12px;font-size:20px;min-height:32px;line-height:1;background:#1e293b;}
+.nav-label{font-size:13px;font-weight:600;white-space:nowrap;min-width:88px;text-align:center;color:#f1f5f9;padding:0 2px;}
+.today-btn{padding:4px 9px;font-size:12px;min-height:32px;background:#0f766e;}
+.today-btn:hover{background:#0d9488!important;}
+.view-btn{padding:4px 10px;font-size:13px;min-height:32px;font-weight:600;}
+.more-btn{padding:4px 11px;min-height:32px;font-size:14px;letter-spacing:2px;background:#1e293b;}
 .btn{background:#334155;padding:7px 11px;border-radius:8px;cursor:pointer;border:none;color:#f1f5f9;font-size:12px;white-space:nowrap;transition:background .1s;font-family:inherit;min-height:34px;}
 .btn:hover{background:#475569;}.btn:active{transform:scale(.93);background:#1e293b;}
 .btn.primary{background:#2563eb;}.btn.primary:hover{background:#3b82f6;}
 .more-menu{position:relative;}
-.more-panel{display:none;position:absolute;right:0;top:calc(100% + 6px);background:#1e293b;border:1px solid #334155;border-radius:10px;padding:6px;min-width:150px;box-shadow:0 8px 24px rgba(0,0,0,.45);z-index:220;}
-.more-panel.open{display:flex;flex-direction:column;gap:5px;}
-.more-item{background:#334155;border:none;color:#f1f5f9;border-radius:8px;padding:7px 9px;font-size:12px;text-align:left;cursor:pointer;font-family:inherit;}
-.more-item:hover{background:#475569;}
+.more-panel{display:none;position:absolute;right:0;top:calc(100% + 6px);background:#1e293b;border:1px solid #334155;border-radius:10px;padding:5px;min-width:155px;box-shadow:0 8px 24px rgba(0,0,0,.5);z-index:220;}
+.more-panel.open{display:flex;flex-direction:column;gap:2px;}
+.more-sep{height:1px;background:#334155;margin:3px 4px;}
+.more-item{background:transparent;border:none;color:#e2e8f0;border-radius:7px;padding:9px 12px;font-size:13px;text-align:left;cursor:pointer;font-family:inherit;white-space:nowrap;}
+.more-item:hover{background:#334155;}
+.more-item.danger{color:#fca5a5;}
+.more-item.danger:hover{background:#450a0a;}
 /* Calendar */
 .calendar{display:grid;grid-template-columns:repeat(7,minmax(120px,1fr));height:calc(100svh - 140px);border-top:1px solid #334155;overflow-y:auto;overflow-x:auto;-webkit-overflow-scrolling:touch;}
 .day{border-right:1px solid #334155;border-bottom:1px solid #334155;padding:8px 7px;display:flex;flex-direction:column;gap:6px;min-height:clamp(200px,calc(80svh - 140px),600px);overflow:visible;transition:background .12s;}
@@ -51,7 +61,7 @@ body.no-x-nav{overscroll-behavior-x:none;touch-action:pan-y;}
 .pool-assign-hint .btn{padding:4px 8px;font-size:11px;min-height:28px;}
 .day.today{background:#1a2332;}.day.sun .day-header{color:#f87171;}.day.sat .day-header{color:#60a5fa;}
 /* Card */
-.card{background:#1e293b;border-radius:8px;padding:7px 7px 5px;cursor:grab;position:relative;border-left:3px solid #475569;font-size:12px;transition:background .1s,transform .16s ease,opacity .16s ease,background-color .1s;user-select:none;touch-action:pan-y;min-height:88px;}
+.card{background:#1e293b;border-radius:8px;padding:7px 7px 5px;cursor:grab;position:relative;border-left:3px solid #475569;font-size:12px;transition:background .1s,transform .16s ease,opacity .16s ease,background-color .1s;user-select:none;touch-action:pan-y;min-height:88px;overflow:hidden;}
 .card:hover{background:#263348;}
 .card.is-draggable .card-text,.pool-card.is-draggable .card-text{cursor:grab;user-select:none;}
 .card.is-draggable .card-text:active,.pool-card.is-draggable .card-text:active{cursor:grabbing;}
@@ -102,7 +112,7 @@ body[data-card-density="detailed"] .card.has-image .card-img{width:80px;height:8
 .filter-acc-body.open{display:flex;}
 .pool-grid{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:6px 8px 8px;overflow-y:auto;align-content:start;-webkit-overflow-scrolling:touch;}
 .pool-empty{grid-column:1/-1;text-align:center;color:#475569;font-size:12px;padding:20px 0;}
-.pool-card{background:#334155;border-radius:8px;padding:7px 26px 6px 9px;cursor:grab;position:relative;font-size:12px;border-left:3px solid #475569;user-select:none;touch-action:pan-y;min-height:88px;}
+.pool-card{background:#334155;border-radius:8px;padding:7px 26px 6px 9px;cursor:grab;position:relative;font-size:12px;border-left:3px solid #475569;user-select:none;touch-action:pan-y;min-height:88px;overflow:hidden;}
 .pool-card:hover{background:#3d4f65;}.pool-card .card-edit-btn{opacity:0;transition:opacity .15s;}.pool-card:hover .card-edit-btn{opacity:1;}
 .card:not(.is-draggable),.pool-card:not(.is-draggable){cursor:default;}
 .card,.pool-card,.card-text{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;}
@@ -190,7 +200,7 @@ body.touch-dnd-active,body.touch-dnd-active *{-webkit-user-select:none!important
 .sheet-restore-btn{display:none;position:fixed;right:max(12px,env(safe-area-inset-right));bottom:calc(76px + env(safe-area-inset-bottom));z-index:360;background:#1d4ed8;color:#f8fafc;border:none;border-radius:999px;min-width:44px;min-height:44px;padding:0 14px;font-size:16px;cursor:pointer;box-shadow:0 10px 28px rgba(15,23,42,.45);}
 .sheet-restore-btn.show{display:inline-flex;align-items:center;justify-content:center;}
 body.ui-focus .header .title{opacity:.8;}
-body.ui-focus .trash-bin,body.ui-focus .header .actions .meal-select{display:none;}
+body.ui-focus .trash-bin,body.ui-focus #mealSelect{display:none;}
 body.ui-edit #bottomSheet{min-height:100px;}
 
 /* Auth Screen */
@@ -257,10 +267,10 @@ linear-gradient(125deg,#020617 0%,#0b1120 40%,#111827 100%);overflow:auto;}
   body[data-card-density="minimal"] .card.has-image .card-img{width:60px;height:60px;}
   body[data-card-density="detailed"] .card.has-image .card-img-wrap{width:72px;min-width:72px;}
   body[data-card-density="detailed"] .card.has-image .card-img{width:72px;height:72px;}
-  .header{padding:8px 10px;gap:6px;}
-  .title{font-size:15px;}
-  .actions{width:100%;overflow-x:auto;padding-bottom:2px;-webkit-overflow-scrolling:touch;}
-  .actions::-webkit-scrollbar{display:none;}
+  .header{padding:5px 8px;gap:5px;}
+  .title{display:none;}
+  .header-nav{flex:0 0 auto;}
+  .nav-label{min-width:72px;}
   .more-panel{right:0;left:auto;max-width:86vw;}
   body{padding-bottom:calc(64px + env(safe-area-inset-bottom));}
   .toast{bottom:calc(70px + env(safe-area-inset-bottom));}
@@ -326,8 +336,10 @@ body[data-theme="light"] .btn:active{background:#f1f5f9;}
 body[data-theme="light"] .btn.primary{background:#2563eb;color:#fff;}
 body[data-theme="light"] .btn.primary:hover{background:#3b82f6;}
 body[data-theme="light"] .more-panel{background:#ffffff;border-color:#e2e8f0;box-shadow:0 8px 24px rgba(0,0,0,.12);}
-body[data-theme="light"] .more-item{background:#f1f5f9;color:#0f172a;}
-body[data-theme="light"] .more-item:hover{background:#e2e8f0;}
+body[data-theme="light"] .more-item{background:transparent;color:#0f172a;}
+body[data-theme="light"] .more-item:hover{background:#f1f5f9;}
+body[data-theme="light"] .more-item.danger{color:#dc2626;}
+body[data-theme="light"] .more-sep{background:#e2e8f0;}
 body[data-theme="light"] .calendar{border-color:#e2e8f0;}
 body[data-theme="light"] .day{border-color:#e2e8f0;}
 body[data-theme="light"] .day.today{background:#eff6ff;}
@@ -442,8 +454,10 @@ body[data-theme="pink"] .btn:active{background:#ffe4ef;}
 body[data-theme="pink"] .btn.primary{background:#db2777;color:#fff;box-shadow:0 4px 14px rgba(219,39,119,.35);}
 body[data-theme="pink"] .btn.primary:hover{background:#ec4899;}
 body[data-theme="pink"] .more-panel{background:#ffe4ef;border-color:#f9a8d4;box-shadow:0 8px 24px rgba(100,0,50,.12);}
-body[data-theme="pink"] .more-item{background:#fce7f3;color:#831843;}
-body[data-theme="pink"] .more-item:hover{background:#fbcfe8;}
+body[data-theme="pink"] .more-item{background:transparent;color:#831843;}
+body[data-theme="pink"] .more-item:hover{background:#fce7f3;}
+body[data-theme="pink"] .more-item.danger{color:#be123c;}
+body[data-theme="pink"] .more-sep{background:#f9a8d4;}
 body[data-theme="pink"] .calendar{border-color:#f9a8d4;}
 body[data-theme="pink"] .day{border-color:#f9a8d4;}
 body[data-theme="pink"] .day.today{background:#fff5f9;}
@@ -694,6 +708,26 @@ body[data-theme="pink"] .tut-fab{background:#ffe4ef;color:#db2777;border-color:#
 .pool-assign-flash{animation:assign-glow .38s ease-out!important;}
 .bd-item{transition:background .1s,transform .18s cubic-bezier(.34,1.4,.64,1);}
 .more-item{transition:background .1s,transform .18s cubic-bezier(.34,1.4,.64,1);}
+/* ===== カードシャイン（鏡反射） ===== */
+@keyframes card-shine{
+  0%{transform:translateX(-130%) skewX(-20deg);}
+  100%{transform:translateX(230%) skewX(-20deg);}
+}
+.card::after,.pool-card::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(105deg,
+    transparent 25%,
+    rgba(255,255,255,0.12) 42%,
+    rgba(255,255,255,0.52) 50%,
+    rgba(255,255,255,0.12) 58%,
+    transparent 75%
+  );
+  transform:translateX(-130%) skewX(-20deg);
+  pointer-events:none;z-index:10;border-radius:inherit;
+}
+.card.shining::after,.pool-card.shining::after{
+  animation:card-shine 1s cubic-bezier(0.25,0.46,0.45,0.94) forwards;
+}
 
 </style>
 </head>
@@ -756,22 +790,30 @@ body[data-theme="pink"] .tut-fab{background:#ffe4ef;color:#db2777;border-color:#
     <button class="bd-open-btn" id="bdOpenBtn" onclick="openBoardDrawer()" title="ボード管理">☰</button>
     <div class="title" id="headerTitle">🍱 献立ボード</div>
   </div>
-  <div class="actions">
-    <button class="btn" id="navPrevBtn" onclick="navPrev()">⬅週</button>
-    <span id="label" style="font-size:12px;white-space:nowrap;"></span>
-    <button class="btn" id="navNextBtn" onclick="navNext()">週➡</button>
-    <button class="btn" id="todayBtn" onclick="goToday()" style="background:#0f766e">📅 今日</button>
-    <button class="btn" id="viewToggleBtn" onclick="toggleCalView()" title="週/月 切替" style="padding:5px 9px;font-size:13px;">週</button>
-    <button class="btn" id="clearWeekBtn" onclick="clearCurrentWeek()" title="この週の予定を全消し" style="padding:5px 9px;font-size:12px;background:#7f1d1d;color:#fca5a5;">週全消し</button>
-    <button class="btn" id="clearMonthBtn" onclick="clearCurrentMonth()" title="この月の予定を全消し" style="display:none;padding:5px 9px;font-size:12px;background:#7f1d1d;color:#fca5a5;">月全消し</button>
+  <div class="header-nav">
+    <button class="btn nav-btn" id="navPrevBtn" onclick="navPrev()">‹</button>
+    <span id="label" class="nav-label"></span>
+    <button class="btn nav-btn" id="navNextBtn" onclick="navNext()">›</button>
+  </div>
+  <div class="header-right">
+    <button class="btn today-btn" id="todayBtn" onclick="goToday()">今日</button>
+    <button class="btn view-btn" id="viewToggleBtn" onclick="toggleCalView()" title="週/月 切替">週</button>
     <select class="meal-select" id="mealSelect" onchange="changeMeal(this.value)">
       <option value="朝">🌅 朝</option>
       <option value="昼" selected>☀️ 昼</option>
       <option value="夜">🌙 夜</option>
-      <option value="全">📋 全食</option>
+      <option value="全">📋 全</option>
     </select>
-    <button class="btn" onclick="autoSuggest()">🧠 週おまかせ</button>
-    <button class="btn" onclick="openRecognizeModal()" title="料理写真を撮ってレシピを取得">📷 認識</button>
+    <div class="more-menu" id="moreMenuWrap">
+      <button class="btn more-btn" onclick="toggleMoreMenu(event)">•••</button>
+      <div class="more-panel" id="morePanel">
+        <button class="more-item" onclick="autoSuggest();closeMoreMenu()">🧠 週おまかせ</button>
+        <button class="more-item" onclick="openRecognizeModal();closeMoreMenu()">📷 料理認識</button>
+        <div class="more-sep"></div>
+        <button class="more-item danger" id="clearWeekBtn" onclick="clearCurrentWeek();closeMoreMenu()">🗑 週を全消し</button>
+        <button class="more-item danger" id="clearMonthBtn" onclick="clearCurrentMonth();closeMoreMenu()" style="display:none">🗑 月を全消し</button>
+      </div>
+    </div>
   </div>
 </div>
 <div class="budget-bar-wrap" id="budgetBarWrap"></div>
@@ -2439,6 +2481,22 @@ document.addEventListener("keydown",e=>{
 // ===== UTILS =====
 function escHtml(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
 
+// カードシャイン（鏡反射）
+function triggerCardShine(el){
+  el.classList.remove("shining");
+  void el.offsetWidth;
+  el.classList.add("shining");
+  el.addEventListener("animationend",()=>el.classList.remove("shining"),{once:true});
+}
+document.addEventListener("touchstart",e=>{
+  const card=e.target.closest(".card,.pool-card");
+  if(card)triggerCardShine(card);
+},{passive:true});
+document.addEventListener("mousedown",e=>{
+  const card=e.target.closest(".card,.pool-card");
+  if(card)triggerCardShine(card);
+});
+
 // ===== TOAST =====
 function showToast(msg){
   const t=document.getElementById("toast");t.innerText=msg;t.classList.add("show");
@@ -2611,8 +2669,6 @@ function render(){
   const start=getWeekStart(baseDate);
   const end=new Date(start);end.setDate(start.getDate()+6);
   document.getElementById("label").innerText=`${start.getMonth()+1}/${start.getDate()}〜${end.getMonth()+1}/${end.getDate()}`;
-  const _pB=document.getElementById("navPrevBtn");const _nB=document.getElementById("navNextBtn");
-  if(_pB)_pB.innerText="⬅週";if(_nB)_nB.innerText="週➡";
 
   for(let i=0;i<7;i++){
     const d=new Date(start);d.setDate(start.getDate()+i);
@@ -4322,8 +4378,6 @@ function renderMonth(){
   document.body.dataset.cardDensity=settings.cardDensity||"standard";
   const year=baseDate.getFullYear(),month=baseDate.getMonth();
   document.getElementById("label").innerText=`${year}年${month+1}月`;
-  const pB=document.getElementById("navPrevBtn");const nB=document.getElementById("navNextBtn");
-  if(pB)pB.innerText="⬅月";if(nB)nB.innerText="月➡";
   const wrap=document.createElement("div");wrap.className="month-slider-wrap";
   wrap.style.transform="translateX(-33.333%)";
   const panels=[0,1,2].map(()=>{const p=document.createElement("div");p.className="month-panel";wrap.appendChild(p);return p;});
