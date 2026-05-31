@@ -3315,13 +3315,31 @@ function addIngRow(val){
   Object.keys(pantry).forEach(k=>{const o=document.createElement("option");o.value=k;dl.appendChild(o);});
   row.appendChild(dl);
 
-  const nameInp=document.createElement("input");nameInp.className="form-input";
-  nameInp.value=ingName;nameInp.placeholder="食材名";
-  nameInp.setAttribute("list",dlId);nameInp.style.flex="2";
+  const qDlId="qdl-"+Math.random().toString(36).slice(2);
+  const qDl=document.createElement("datalist");qDl.id=qDlId;
+  ["少々","適量","1個","2個","3個","4個","1/2個","1本","2本","1枚","2枚","1切れ","1パック","1袋","1缶",
+   "50g","80g","100g","150g","200g","250g","300g","400g","500g",
+   "大さじ1","大さじ2","大さじ3","小さじ1","小さじ2","小さじ1/2",
+   "1カップ","1/2カップ","100ml","200ml","300ml","400ml","1合","2合"]
+    .forEach(q=>{const o=document.createElement("option");o.value=q;qDl.appendChild(o);});
+  row.appendChild(qDl);
 
-  const qtyInp=document.createElement("input");qtyInp.className="form-input";
+  const cbxStyle="background:#1e293b;border:1px solid #334155;border-radius:8px;color:#f1f5f9;padding:4px 8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;min-height:32px;outline:none;min-width:0;";
+  const cbxFocus=el=>{el.addEventListener("focus",()=>el.style.borderColor="#3b82f6");el.addEventListener("blur",()=>el.style.borderColor="#334155");};
+
+  const nameInp=document.createElement("input");
+  nameInp.className="ing-name";
+  nameInp.value=ingName;nameInp.placeholder="食材名";
+  nameInp.setAttribute("list",dlId);
+  nameInp.style.cssText=cbxStyle+"flex:2;";
+  cbxFocus(nameInp);
+
+  const qtyInp=document.createElement("input");
+  qtyInp.className="ing-qty";
   qtyInp.value=ingQty;qtyInp.placeholder="量";
-  qtyInp.style.flex="1";qtyInp.style.minWidth="0";
+  qtyInp.setAttribute("list",qDlId);
+  qtyInp.style.cssText=cbxStyle+"flex:1;";
+  cbxFocus(qtyInp);
 
   const del=document.createElement("button");del.innerText="✕";del.onclick=()=>row.remove();
 
@@ -3601,9 +3619,8 @@ function saveEdit(){
   const ings=[];
   const ingredientInventory={};
   [...document.querySelectorAll("#eIngList .ing-row")].forEach(row=>{
-    const inputs=row.querySelectorAll("input.form-input");
-    const name=(inputs[0]?.value||"").trim();
-    const qty=(inputs[1]?.value||"").trim();
+    const name=(row.querySelector("input.ing-name")?.value||"").trim();
+    const qty=(row.querySelector("input.ing-qty")?.value||"").trim();
     if(!name)return;
     ings.push(qty?name+" "+qty:name);
   });
