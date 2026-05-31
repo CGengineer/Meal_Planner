@@ -3308,23 +3308,25 @@ function addIngRow(val){
   const inp=document.createElement("input");inp.className="form-input";inp.value=val;inp.placeholder="例: 鶏肉 200g";
   const del=document.createElement("button");del.innerText="✕";del.onclick=()=>row.remove();
   row.appendChild(inp);
-  // 予定カード編集時のみ 📦 ボタンを表示
   if(editTarget&&editTarget.wk){
-    const pantryBtn=document.createElement("button");pantryBtn.type="button";
-    pantryBtn.title="在庫管理に追加／削除";
-    const update=()=>{
-      const v=inp.value.trim();const has=!!pantry[v];
-      pantryBtn.className="ing-pantry-btn"+(has?" in-pantry":"");
-      pantryBtn.innerText=has?"📦 在庫中":"📦+";
+    const cb=document.createElement("input");cb.type="checkbox";
+    cb.style.cssText="width:16px;height:16px;cursor:pointer;accent-color:#22c55e;flex-shrink:0;";
+    const syncStyle=(has)=>{
+      inp.style.textDecoration=has?"line-through":"";
+      inp.style.color=has?"#4ade80":"";
+      inp.style.opacity=has?"0.7":"1";
     };
-    update();
-    pantryBtn.onclick=()=>{
-      const v=inp.value.trim();if(!v)return;
-      if(pantry[v]){pantryRemove(v);}else{pantryAdd(v);}
-      update();
+    cb.checked=!!pantry[inp.value.trim()];
+    syncStyle(cb.checked);
+    cb.onchange=()=>{
+      const v=inp.value.trim();if(!v){cb.checked=!cb.checked;return;}
+      if(cb.checked)pantryAdd(v);else pantryRemove(v);
+      syncStyle(cb.checked);
     };
-    inp.addEventListener("blur",update);
-    row.appendChild(pantryBtn);
+    inp.addEventListener("blur",()=>{
+      const has=!!pantry[inp.value.trim()];cb.checked=has;syncStyle(has);
+    });
+    row.appendChild(cb);
   }
   row.appendChild(del);list.appendChild(row);
 }
@@ -3919,7 +3921,7 @@ function showShop(){
   combined.forEach(day=>(day||[]).forEach(item=>(item.ingredients||[]).forEach(ing=>{
     if(!ing)return;
     if(!ingMap[ing])ingMap[ing]={need:[],stock:[]};
-    if(pantry[ing]===true)ingMap[ing].stock.push(item.text);
+    if(!!pantry[ing])ingMap[ing].stock.push(item.text);
     else ingMap[ing].need.push(item.text);
   })));
   const list=document.getElementById("shopList");list.innerHTML="";
