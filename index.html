@@ -62,7 +62,7 @@ body.no-x-nav{overscroll-behavior-x:none;touch-action:pan-y;}
 .meal-dot{width:5px;height:5px;border-radius:50%;background:#334155;}
 .day-header{padding-bottom:14px;}
 .weekday-mode-btn.active{background:#f59e0b!important;color:#0f172a!important;}
-.day.assignment-target{background:#10243a;box-shadow:inset 0 0 0 1px #22d3ee;}
+.day.assignment-target{background:#172036;box-shadow:inset 0 0 0 2px #3b82f6;}
 @keyframes daySelect{from{box-shadow:inset 0 0 0 0px #3b82f6;}to{box-shadow:inset 0 0 0 2px #3b82f6;}}
 .day.cal-day-selected{box-shadow:inset 0 0 0 2px #3b82f6!important;background:#172036!important;animation:daySelect .18s ease-out;}
 @keyframes monthDaySelect{from{background:transparent;}to{background:rgba(255,255,255,0.12);}}
@@ -185,6 +185,21 @@ body.touch-dnd-active,body.touch-dnd-active *{-webkit-user-select:none!important
 .shop-item.checked label{text-decoration:line-through;color:#475569;}
 .shop-item label{cursor:pointer;flex:1;font-size:13px;}
 .shop-source{font-size:10px;color:#475569;white-space:nowrap;}
+.shop-item.stocked{background:#052e16;}.shop-item.stocked label{color:#4ade80;}
+.shop-stocked-sep{font-size:11px;color:#4ade80;margin:8px 0 4px;padding-left:2px;}
+.shop-tabs{display:flex;border-bottom:1px solid #1e293b;margin-bottom:10px;}
+.shop-tab-btn{flex:1;background:transparent;border:none;border-bottom:2px solid transparent;color:#64748b;padding:8px 0;font-size:13px;cursor:pointer;font-family:inherit;transition:color .1s;}
+.shop-tab-btn.active{color:#f1f5f9;border-bottom-color:#3b82f6;}
+.pantry-list{display:flex;flex-direction:column;gap:5px;max-height:48vh;overflow-y:auto;}
+.pantry-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:7px;background:#0f172a;font-size:13px;color:#f1f5f9;}
+.pantry-item-name{flex:1;}
+.pantry-item-del{background:transparent;border:none;color:#64748b;cursor:pointer;font-size:15px;line-height:1;padding:2px 5px;}
+.pantry-item-del:hover{color:#ef4444;}
+.pantry-add-row{display:flex;gap:6px;margin-top:8px;}
+.pantry-empty{color:#64748b;text-align:center;font-size:13px;padding:20px 0;}
+.ing-pantry-btn{background:transparent;border:1px solid #334155;border-radius:4px;color:#64748b;cursor:pointer;font-size:10px;padding:2px 5px;white-space:nowrap;transition:background .1s,color .1s;}
+.ing-pantry-btn.in-pantry{background:#052e16;border-color:#166534;color:#4ade80;}
+.card-buy-badge{font-size:9px;background:#7f1d1d33;color:#fca5a5;border-radius:3px;padding:1px 4px;white-space:nowrap;line-height:1.4;}
 /* Settings */
 .setting-account{display:flex;align-items:center;gap:10px;padding:10px 0 12px;border-bottom:1px solid #334155;margin-bottom:6px;}
 .setting-avatar{width:44px;height:44px;border-radius:999px;object-fit:cover;border:1px solid #475569;background:#0f172a;flex-shrink:0;display:block;}
@@ -336,6 +351,52 @@ linear-gradient(125deg,#020617 0%,#0b1120 40%,#111827 100%);overflow:auto;}
 .bd-board-header{display:flex;align-items:center;gap:10px;padding:14px;border-bottom:1px solid #1e293b;}
 .bd-board-header .pico{font-size:28px;}
 .bd-board-header .bname{font-size:15px;font-weight:bold;color:#f1f5f9;}
+/* ===== AI ASSISTANT ===== */
+.ai-fab{position:fixed;right:max(12px,env(safe-area-inset-right));bottom:calc(152px + env(safe-area-inset-bottom));z-index:360;background:linear-gradient(135deg,#7c3aed,#db2777);color:#fff;border:none;border-radius:999px;width:48px;height:48px;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 18px rgba(124,58,237,.45);transition:transform .15s,box-shadow .15s,opacity .2s;line-height:1;font-family:inherit;}
+.ai-fab:hover{transform:scale(1.12);box-shadow:0 6px 26px rgba(124,58,237,.65);}
+.ai-fab:active{transform:scale(.93);}
+.ai-panel{position:fixed;right:max(12px,env(safe-area-inset-right));bottom:calc(214px + env(safe-area-inset-bottom));width:min(360px,calc(100vw - 24px));max-height:62vh;background:#1e293b;border:1px solid #334155;border-radius:16px;box-shadow:0 16px 48px rgba(0,0,0,.55);z-index:361;display:flex;flex-direction:column;overflow:hidden;transform:translateY(20px) scale(.96);opacity:0;pointer-events:none;transition:transform .25s cubic-bezier(.32,.72,0,1),opacity .22s;}
+.ai-panel.open{transform:translateY(0) scale(1);opacity:1;pointer-events:auto;}
+.ai-panel-head{display:flex;align-items:center;padding:10px 12px;border-bottom:1px solid #334155;flex-shrink:0;gap:8px;}
+.ai-panel-title{flex:1;font-size:13px;font-weight:bold;color:#f1f5f9;}
+.ai-plan-btn{background:linear-gradient(135deg,#7c3aed,#db2777);border:none;color:#fff;border-radius:6px;padding:4px 9px;font-size:11px;cursor:pointer;font-family:inherit;font-weight:bold;white-space:nowrap;}
+.ai-plan-btn:hover{opacity:.88;}
+.ai-panel-close{background:transparent;border:none;color:#64748b;font-size:16px;cursor:pointer;padding:4px 6px;border-radius:5px;line-height:1;font-family:inherit;}
+.ai-panel-close:hover{background:#334155;color:#f1f5f9;}
+.ai-chat-log{flex:1;overflow-y:auto;padding:10px 10px 6px;display:flex;flex-direction:column;gap:8px;-webkit-overflow-scrolling:touch;min-height:80px;}
+.ai-msg{display:flex;gap:6px;align-items:flex-end;}
+.ai-msg-user{flex-direction:row-reverse;}
+.ai-avatar{font-size:18px;line-height:1;flex-shrink:0;padding-bottom:2px;}
+.ai-bubble{background:#334155;color:#e2e8f0;border-radius:12px 12px 12px 2px;padding:8px 10px;font-size:12px;line-height:1.6;max-width:85%;word-break:break-word;}
+.ai-msg-user .ai-bubble{background:#2563eb;color:#f1f5f9;border-radius:12px 12px 2px 12px;}
+.ai-dots{display:flex;gap:3px;align-items:center;padding:10px 12px;}
+.ai-dots span{width:6px;height:6px;border-radius:50%;background:#94a3b8;animation:aiDot 1.2s ease-in-out infinite;}
+.ai-dots span:nth-child(2){animation-delay:.2s;}
+.ai-dots span:nth-child(3){animation-delay:.4s;}
+@keyframes aiDot{0%,80%,100%{opacity:.3;transform:scale(.8);}40%{opacity:1;transform:scale(1.1);}}
+.ai-quick-btns{display:flex;gap:5px;padding:6px 8px;flex-shrink:0;overflow-x:auto;border-top:1px solid #0f172a;scrollbar-width:none;}
+.ai-quick-btns::-webkit-scrollbar{display:none;}
+.ai-quick-btns button{background:#0f172a;border:1px solid #334155;color:#cbd5e1;border-radius:999px;padding:4px 10px;font-size:11px;cursor:pointer;font-family:inherit;white-space:nowrap;flex-shrink:0;transition:background .1s;}
+.ai-quick-btns button:hover{background:#1e293b;color:#f1f5f9;}
+.ai-panel-input-row{display:flex;gap:6px;padding:8px 10px;border-top:1px solid #334155;flex-shrink:0;}
+.ai-input{flex:1;background:#0f172a;border:1px solid #334155;border-radius:8px;color:#f1f5f9;padding:8px 10px;font-size:14px;font-family:inherit;outline:none;min-width:0;}
+.ai-input:focus{border-color:#7c3aed;}
+.ai-input::placeholder{color:#475569;}
+.ai-send-btn{background:linear-gradient(135deg,#7c3aed,#db2777);border:none;color:#fff;border-radius:8px;padding:8px 14px;font-size:12px;cursor:pointer;font-family:inherit;font-weight:bold;white-space:nowrap;flex-shrink:0;}
+.ai-send-btn:hover{opacity:.88;}
+body.auth-locked .ai-fab{pointer-events:none;filter:blur(1px) brightness(.6);}
+body[data-theme="light"] .ai-panel{background:#ffffff;border-color:#e2e8f0;box-shadow:0 16px 48px rgba(0,0,0,.12);}
+body[data-theme="light"] .ai-panel-head{border-color:#e2e8f0;}
+body[data-theme="light"] .ai-panel-title{color:#0f172a;}
+body[data-theme="light"] .ai-panel-close:hover{background:#f1f5f9;color:#0f172a;}
+body[data-theme="light"] .ai-bubble{background:#f1f5f9;color:#0f172a;}
+body[data-theme="light"] .ai-input{background:#f8fafc;border-color:#e2e8f0;color:#0f172a;}
+body[data-theme="light"] .ai-quick-btns button{background:#f8fafc;border-color:#e2e8f0;color:#334155;}
+body[data-theme="light"] .ai-panel-input-row{border-color:#e2e8f0;}
+@media(max-width:760px){
+  .ai-fab{bottom:calc(148px + env(safe-area-inset-bottom));width:44px;height:44px;font-size:20px;}
+  .ai-panel{right:8px;bottom:calc(206px + env(safe-area-inset-bottom));width:calc(100vw - 16px);max-height:58vh;}
+}
 /* ===== LIGHT THEME ===== */
 body[data-theme="light"]{background:#f1f5f9;color:#0f172a;}
 body[data-theme="light"] .header{background:#ffffff;border-color:#e2e8f0;}
@@ -359,7 +420,7 @@ body[data-theme="light"] .day.sat .day-header{color:#2563eb;}
 body[data-theme="light"] .meal-dot{background:#cbd5e1;}
 body[data-theme="light"] .day-assign-btn{background:#1d4ed8;}
 body[data-theme="light"] .day-preset-btn{color:#94a3b8;}
-body[data-theme="light"] .day.assignment-target{background:#eff6ff;box-shadow:inset 0 0 0 1px #22d3ee;}
+body[data-theme="light"] .day.assignment-target{background:#eff6ff;box-shadow:inset 0 0 0 2px #3b82f6;}
 body[data-theme="light"] .card{background:#ffffff;border-left-color:#cbd5e1;}
 body[data-theme="light"] .card:hover{background:#f8fafc;}
 body[data-theme="light"] .card-badge{background:#f1f5f9;}
@@ -486,7 +547,7 @@ body[data-theme="pink"] .day-assign-btn.active{background:#be185d;}
 body[data-theme="pink"] .day-preset-btn{color:#f9a8d4;}
 body[data-theme="pink"] .day-preset-btn:hover{color:#db2777;}
 body[data-theme="pink"] .day-preset-btn.has-presets{color:#db2777;}
-body[data-theme="pink"] .day.assignment-target{background:#fce7f3;box-shadow:inset 0 0 0 1px #f472b6;}
+body[data-theme="pink"] .day.assignment-target{background:#fce7f3;box-shadow:inset 0 0 0 2px #db2777;}
 body[data-theme="pink"] .card{background:#fff5f9;border-left-color:#f9a8d4;}
 body[data-theme="pink"] .card:hover{background:#ffe4ef;}
 body[data-theme="pink"] .card-badge{background:#fce7f3;color:#831843;}
@@ -833,6 +894,7 @@ body[data-theme="pink"] .tut-fab{background:#ffe4ef;color:#db2777;border-color:#
       <button class="btn more-btn" onclick="toggleMoreMenu(event)">•••</button>
       <div class="more-panel" id="morePanel">
         <button class="more-item" onclick="autoSuggest();closeMoreMenu()">🧠 週おまかせ</button>
+        <button class="more-item" onclick="aiPlanNutritionWeek().then(()=>closeMoreMenu())">🌸 AI栄養プラン（週）</button>
         <button class="more-item" onclick="openRecognizeModal();closeMoreMenu()">📷 料理認識</button>
         <button class="more-item" id="exportMonthBtn" onclick="exportMonthImage();closeMoreMenu()" style="display:none">🖼 月を画像保存</button>
         <div class="more-sep"></div>
@@ -1108,11 +1170,24 @@ body[data-theme="pink"] .tut-fab{background:#ffe4ef;color:#db2777;border-color:#
 <!-- ===== Shopping Modal ===== -->
 <div class="overlay" id="shopOverlay">
   <div class="modal">
-    <h2>🛒 今週の買い物リスト</h2>
-    <div class="shop-list" id="shopList"></div>
+    <h2>🛒 買い物 &amp; 在庫</h2>
+    <div class="shop-tabs">
+      <button class="shop-tab-btn active" id="shopTab1" onclick="switchShopTab('buy')">🛒 買い物リスト</button>
+      <button class="shop-tab-btn" id="shopTab2" onclick="switchShopTab('pantry')">📦 在庫管理</button>
+    </div>
+    <div id="shopBuySection">
+      <div class="shop-list" id="shopList"></div>
+    </div>
+    <div id="shopPantrySection" style="display:none">
+      <div class="pantry-list" id="pantryList"></div>
+      <div class="pantry-add-row">
+        <input class="form-input" id="pantryAddInput" placeholder="食材を入力（例: たまねぎ）" style="flex:1;font-size:13px" onkeydown="if(event.key==='Enter')pantryAddFromInput()">
+        <button class="btn primary" onclick="pantryAddFromInput()" style="padding:6px 12px;font-size:13px;white-space:nowrap">追加</button>
+      </div>
+    </div>
     <div class="modal-actions">
       <button class="btn" onclick="closeOverlay('shopOverlay')">閉じる</button>
-      <button class="btn primary" onclick="copyShop()">📋 コピー</button>
+      <button class="btn primary" id="shopCopyBtn" onclick="copyShop()">📋 コピー</button>
     </div>
   </div>
 </div>
@@ -1152,6 +1227,7 @@ let baseDate=new Date();
 let allData={};
 let pool=[];
 let dayPresets=[];
+let pantry={}; // { [ingredientName]: true } - global pantry/stock
 let undoStack=[];
 let editTarget=null;
 let currentImage="";
@@ -1162,7 +1238,8 @@ let settings={
   showCalories:true,showStars:true,showDifficulty:true,
   showCost:true,showNutritionColor:true,showPlannedCardImage:true,currency:"円",
   cardDensity:"standard",uiMode:"standard",sheetLevel:4,sheetScale:10,sheetHeight:null,sheetHidden:false,
-  dailyCalorieGoal:0,weekStartMonday:false,theme:"dark",weeklyBudget:0,monthlyBudget:0,visionApiKey:"",anthropicApiKey:""
+  dailyCalorieGoal:0,weekStartMonday:false,theme:"dark",weeklyBudget:0,monthlyBudget:0,visionApiKey:"",anthropicApiKey:"",
+  fitnessGoal:"",bodyWeight:60,bodyHeight:165,bodyAge:30,bodySex:"male",activityLevel:"medium"
 };
 let calView="week"; // "week" | "month"
 let weekdayMode=false;
@@ -1324,6 +1401,118 @@ function getWeekStart(d){
 }
 function weekKey(d){return getWeekStart(d).toISOString().slice(0,10);}
 function curKey(){return weekKey(baseDate);}
+
+// ===== FITNESS GOAL =====
+const FITNESS_GOALS={
+  diet:  {label:"🥗 ダイエット",   color:"#22c55e",  desc:"体脂肪を減らす"},
+  muscle:{label:"💪 筋トレ",       color:"#f97316",  desc:"筋肉を増やす"},
+  health:{label:"❤️ 健康維持",     color:"#3b82f6",  desc:"健康的な体を維持する"},
+  bulk:  {label:"🏋️ バルクアップ", color:"#a855f7",  desc:"筋肉量を大きく増やす"},
+};
+function calcGoalTargets(){
+  const g=settings.fitnessGoal;
+  if(!g)return null;
+  const w=Math.max(1,Number(settings.bodyWeight)||60);
+  const h=Math.max(1,Number(settings.bodyHeight)||165);
+  const a=Math.max(1,Number(settings.bodyAge)||30);
+  const sex=settings.bodySex||"male";
+  const act=settings.activityLevel||"medium";
+  // Mifflin-St Jeor BMR
+  const bmr=sex==="male"?(10*w+6.25*h-5*a+5):(10*w+6.25*h-5*a-161);
+  const actMul={low:1.2,medium:1.55,high:1.725};
+  const tdee=Math.round(bmr*(actMul[act]||1.55));
+  let cal,prot,fat,carbs;
+  if(g==="diet"){
+    cal=Math.max(1200,tdee-500);
+    prot=Math.round(w*2.0); fat=Math.round(cal*0.25/9); carbs=Math.round((cal-prot*4-fat*9)/4);
+  }else if(g==="muscle"){
+    cal=tdee+200;
+    prot=Math.round(w*2.2); fat=Math.round(cal*0.25/9); carbs=Math.round((cal-prot*4-fat*9)/4);
+  }else if(g==="bulk"){
+    cal=tdee+400;
+    prot=Math.round(w*2.5); fat=Math.round(cal*0.25/9); carbs=Math.round((cal-prot*4-fat*9)/4);
+  }else{ // health
+    cal=tdee;
+    prot=Math.round(w*1.2); fat=Math.round(cal*0.3/9); carbs=Math.round((cal-prot*4-fat*9)/4);
+  }
+  return{calories:cal,protein:prot,fat:Math.max(fat,0),carbs:Math.max(carbs,0),tdee};
+}
+function applyGoalToCalorieTarget(){
+  const t=calcGoalTargets();
+  if(t){settings.dailyCalorieGoal=t.calories;save();render();}
+}
+function _refreshGoalPreview(container){
+  const box=container.querySelector("#goalPreviewBox");if(!box)return;
+  box.innerHTML="";
+  const t=calcGoalTargets();
+  if(!t||!settings.fitnessGoal){box.style.cssText="";return;}
+  const gdef=FITNESS_GOALS[settings.fitnessGoal]||{};
+  box.style.cssText="background:#1e293b;border-radius:10px;padding:10px 12px;";
+  const title=document.createElement("div");
+  title.style.cssText="font-size:11px;color:"+gdef.color+";font-weight:bold;margin-bottom:8px;";
+  title.innerText="✅ 1日あたりの推奨摂取量";
+  box.appendChild(title);
+  const grid=document.createElement("div");grid.style.cssText="display:grid;grid-template-columns:1fr 1fr;gap:4px;";
+  [["🔥 カロリー",t.calories+"kcal","#f59e0b"],["🥩 タンパク質",t.protein+"g","#f97316"],
+   ["🍚 炭水化物",t.carbs+"g","#3b82f6"],["🫒 脂質",t.fat+"g","#a855f7"]
+  ].forEach(([label,val,color])=>{
+    const cell=document.createElement("div");cell.style.cssText="background:#0f172a;border-radius:7px;padding:6px 8px;";
+    cell.innerHTML="<div style=\"font-size:9px;color:#64748b;\">"+label+"</div><div style=\"font-size:14px;font-weight:bold;color:"+color+";\">"+val+"</div>";
+    grid.appendChild(cell);
+  });
+  box.appendChild(grid);
+  const tNote=document.createElement("div");tNote.style.cssText="font-size:10px;color:#475569;margin-top:6px;";
+  tNote.innerText="消費カロリー（TDEE）: "+t.tdee.toLocaleString()+" kcal/日";
+  box.appendChild(tNote);
+}
+function buildGoalAdviceMessages(actual,target,days){
+  // actual/target are weekly totals (daily×7)
+  const msgs=[];
+  const calRatio=target.calories>0?actual.calories/(target.calories*days):0;
+  const protRatio=target.protein>0?actual.protein/(target.protein*days):0;
+  const carbRatio=target.carbs>0?actual.carbs/(target.carbs*days):0;
+  const fatRatio=target.fat>0?actual.fat/(target.fat*days):0;
+  const g=settings.fitnessGoal;
+
+  // Calorie advice
+  if(calRatio>1.15){
+    const over=Math.round(actual.calories-(target.calories*days));
+    msgs.push({type:"warn",icon:"⚠️",text:`カロリーが目標より ${over.toLocaleString()}kcal 超過しています。揚げ物・スイーツ・白米の量を見直しましょう。`});
+  }else if(calRatio<0.75&&actual.calories>0){
+    msgs.push({type:"info",icon:"ℹ️",text:`カロリーが目標を大きく下回っています。極端な食事制限は筋肉の分解につながります。`});
+  }else if(calRatio>=0.9&&calRatio<=1.1){
+    msgs.push({type:"ok",icon:"✅",text:`カロリーは目標どおりです！この調子を維持しましょう。`});
+  }
+
+  // Protein advice
+  if(protRatio<0.75&&actual.protein>0){
+    const short=Math.round(target.protein*days-actual.protein);
+    const hint=g==="diet"?"鶏胸肉・ヨーグルト・豆腐":g==="muscle"||g==="bulk"?"プロテイン・卵・魚・鶏胸肉":"豆腐・納豆・魚";
+    msgs.push({type:"warn",icon:"🥩",text:`タンパク質が目標より約 ${short}g 不足しています。${hint}を積極的に取り入れましょう。`});
+  }else if(protRatio>=0.9){
+    msgs.push({type:"ok",icon:"✅",text:`タンパク質は十分に摂れています！`});
+  }
+
+  // Fat advice
+  if(fatRatio>1.2&&actual.fat>0){
+    msgs.push({type:"warn",icon:"🫒",text:`脂質が多めです。揚げ物を蒸す・焼くに変え、脂身の少ない部位を選びましょう。`});
+  }
+
+  // Carb advice
+  if(g==="diet"&&carbRatio>1.15&&actual.carbs>0){
+    msgs.push({type:"warn",icon:"🍚",text:`ダイエット中は炭水化物をやや抑えめにしましょう。白米→玄米・こんにゃく、パン→全粒粉パンがおすすめです。`});
+  }
+  if(g==="bulk"&&carbRatio<0.75&&actual.carbs>0){
+    msgs.push({type:"info",icon:"🍚",text:`バルクアップには炭水化物（エネルギー源）が重要です。ご飯・パスタ・サツマイモを増やしましょう。`});
+  }
+
+  // Zero data
+  if(actual.calories===0){
+    msgs.push({type:"info",icon:"📋",text:"まだ献立が登録されていません。カードの「栄養」タブに値を入力すると達成状況が確認できます。"});
+  }
+  return msgs;
+}
+
 const MEALS=["朝","昼","夜"];
 function weekData(){
   const k=curKey();
@@ -1490,7 +1679,10 @@ function clearTouchDrag(){
 function _runAutoScroll(){
   if(!_asDir){_asRAF=null;return;}
   const cal=document.getElementById("cal");
-  if(cal)cal.scrollTop+=_asDir*_asSpeed;
+  if(cal){
+    const scrollable=cal.querySelector(".week-panel")||[...cal.querySelectorAll(".month-panel")][1]||cal;
+    scrollable.scrollTop+=_asDir*_asSpeed;
+  }
   _asRAF=requestAnimationFrame(_runAutoScroll);
 }
 function _updateAutoScroll(clientY){
@@ -1702,7 +1894,7 @@ function normalizeCurrentState(parsedSettings){
 function saveLocalOnly(){
   if(isGuestMode)return; // ゲストモードではローカルストレージに保存しない
   try{
-    localStorage.setItem("kb_v2",JSON.stringify({allData,pool,imageRegistry,dayPresets}));
+    localStorage.setItem("kb_v2",JSON.stringify({allData,pool,imageRegistry,dayPresets,pantry}));
     localStorage.setItem("kb_settings",JSON.stringify(settings));
   }catch(e){showToast("保存エラー（ストレージ上限の可能性）");}
 }
@@ -1722,6 +1914,7 @@ function load(){
       pool=p.pool||[];
       dayPresets=Array.isArray(p.dayPresets)?p.dayPresets:[];
       imageRegistry=(p&&typeof p.imageRegistry==="object"&&p.imageRegistry)||{};
+      pantry=(p&&typeof p.pantry==="object"&&p.pantry)||{};
     } else if(legacy_d){
       const p=JSON.parse(legacy_d);
       if(p.allData){allData=p.allData;pool=p.pool||[];}
@@ -1921,7 +2114,7 @@ async function sanitizeForCloud(){
     }
     safePresets.push({...preset,items:safeItems});
   }
-  return JSON.parse(JSON.stringify({allData:safeAllData,pool:safePool,dayPresets:safePresets,settings,imageRegistry:cloudImageRegistry}));
+  return JSON.parse(JSON.stringify({allData:safeAllData,pool:safePool,dayPresets:safePresets,settings,imageRegistry:cloudImageRegistry,pantry}));
 }
 function clearCloudErrorState(){
   const hadError=!!cloudErrorState;
@@ -2024,6 +2217,7 @@ function applyRemoteState(data){
   allData=remoteAllData;
   pool=mergedPool;
   dayPresets=remotePresets.length?remotePresets:dayPresets;
+  if(data&&typeof data.pantry==="object")pantry={...pantry,...data.pantry};
   normalizeCurrentState(activeBoardId?null:(data&&data.settings)||null);
   rebuildImageRegistry({...cloudKnownImageRegistry,...imageRegistry});
   saveLocalOnly();
@@ -2682,6 +2876,8 @@ function removePlannedCard(target){
   const day=allData[target.wk]?.[target.meal]?.[target.di];
   if(!day||target.ii<0||target.ii>=day.length)return;
   pushUndo();
+  const item=day[target.ii];
+  pantryRestoreFromItem(item);
   day.splice(target.ii,1);
   save();
   render();
@@ -2801,6 +2997,15 @@ function mkCardEl(item,target){
     const b=document.createElement("span");b.className="card-badge";b.style.color="#cbd5e1";
     b.style.background=tone.bg;b.style.color=tone.fg;
     b.innerText="📦 在庫 "+invCt.stocked+"/"+invCt.total;meta.appendChild(b);
+  }
+  // Global pantry buy badge (scheduled cards only)
+  if(target&&(item.ingredients||[]).length>0){
+    const needBuy=(item.ingredients||[]).filter(ing=>ing&&!pantry[ing]);
+    if(needBuy.length>0){
+      const b=document.createElement("span");b.className="card-buy-badge";
+      b.title="要購入: "+needBuy.join("、");
+      b.innerText="🛒 "+needBuy.length+"品";meta.appendChild(b);
+    }
   }
   if((item.cookTime||0)>0){
     const b=document.createElement("span");b.className="card-badge";
@@ -3057,7 +3262,10 @@ function deleteFromEdit(){
     closeOverlay("editOverlay");save();renderPool();showToastWithUndo("削除しました");
   }else if(editTarget.wk){
     const day=allData[editTarget.wk]?.[editTarget.meal]?.[editTarget.di];
-    if(day&&editTarget.ii>=0&&editTarget.ii<day.length)day.splice(editTarget.ii,1);
+    if(day&&editTarget.ii>=0&&editTarget.ii<day.length){
+      pantryRestoreFromItem(day[editTarget.ii]);
+      day.splice(editTarget.ii,1);
+    }
     closeOverlay("editOverlay");save();render();showToastWithUndo("予定を削除しました");
   }
 }
@@ -3089,8 +3297,24 @@ function addIngRow(val){
   stock.checked=arguments.length>1?!!arguments[1]:false;
   const stockTxt=document.createElement("span");stockTxt.innerText="在庫";
   stockWrap.appendChild(stock);stockWrap.appendChild(stockTxt);
+  // Global pantry toggle
+  const inPantry=()=>!!pantry[inp.value.trim()];
+  const pantryBtn=document.createElement("button");pantryBtn.type="button";
+  pantryBtn.title="在庫管理に追加／削除";
+  const updatePantryBtn=()=>{
+    const v=inp.value.trim();const has=!!pantry[v];
+    pantryBtn.className="ing-pantry-btn"+(has?" in-pantry":"");
+    pantryBtn.innerText=has?"📦 在庫中":"📦+";
+  };
+  updatePantryBtn();
+  pantryBtn.onclick=()=>{
+    const v=inp.value.trim();if(!v)return;
+    if(pantry[v]){pantryRemove(v);}else{pantryAdd(v);}
+    updatePantryBtn();
+  };
+  inp.addEventListener("blur",updatePantryBtn);
   const del=document.createElement("button");del.innerText="✕";del.onclick=()=>row.remove();
-  row.appendChild(inp);row.appendChild(stockWrap);row.appendChild(del);list.appendChild(row);
+  row.appendChild(inp);row.appendChild(stockWrap);row.appendChild(pantryBtn);row.appendChild(del);list.appendChild(row);
 }
 
 // ===== AI 自動入力 =====
@@ -3458,12 +3682,82 @@ function showGraph(){
   const totalFat=dayStats.reduce((s,d)=>s+d.fat,0);
   const totalCost=dayStats.reduce((s,d)=>s+d.cost,0);
   const maxMacro=Math.max(totalProt,totalCarbs,totalFat,1);
+  const goalTarget=calcGoalTargets();
 
   const g=document.getElementById("graphContent");g.innerHTML="";
 
+  // ===== 🎯 Goal Achievement Section =====
+  if(goalTarget){
+    const gdef=FITNESS_GOALS[settings.fitnessGoal]||{};
+    const goalSec=document.createElement("div");goalSec.style.cssText="margin-bottom:14px;";
+    const goalHdr=document.createElement("div");
+    goalHdr.style.cssText="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;";
+    const goalTitle=document.createElement("div");
+    goalTitle.style.cssText="font-size:13px;font-weight:bold;color:"+(gdef.color||"#3b82f6")+";";
+    goalTitle.innerText="🎯 "+gdef.label+" 達成状況（今週）";
+    const editGoalBtn=document.createElement("button");
+    editGoalBtn.className="btn";editGoalBtn.style.cssText="padding:2px 8px;font-size:10px;";
+    editGoalBtn.innerText="目標変更";
+    editGoalBtn.onclick=()=>{closeOverlay("graphOverlay");showSettings();};
+    goalHdr.appendChild(goalTitle);goalHdr.appendChild(editGoalBtn);goalSec.appendChild(goalHdr);
+    const periodNote=document.createElement("div");
+    periodNote.style.cssText="font-size:10px;color:#64748b;margin-bottom:8px;";
+    periodNote.innerText="週間目標 vs 週計実績（TDEE: "+goalTarget.tdee.toLocaleString()+" kcal/日）";
+    goalSec.appendChild(periodNote);
+    [{label:"🔥 カロリー",actual:totalCal,target:goalTarget.calories*7,unit:"kcal",color:"#f59e0b"},
+     {label:"🥩 タンパク質",actual:totalProt,target:goalTarget.protein*7,unit:"g",color:"#f97316"},
+     {label:"🍚 炭水化物",actual:totalCarbs,target:goalTarget.carbs*7,unit:"g",color:"#3b82f6"},
+     {label:"🫒 脂質",actual:totalFat,target:goalTarget.fat*7,unit:"g",color:"#a855f7"}
+    ].forEach(({label,actual,target,unit,color})=>{
+      const ratio=target>0?actual/target:0;
+      const pct=Math.min(ratio*100,100);
+      const barColor=ratio>1.15?"#ef4444":ratio<0.75?"#475569":color;
+      const aRow=document.createElement("div");aRow.style.cssText="margin-bottom:8px;";
+      const topRow=document.createElement("div");topRow.style.cssText="display:flex;justify-content:space-between;font-size:10px;color:#94a3b8;margin-bottom:3px;";
+      const leftLbl=document.createElement("span");leftLbl.innerText=label;
+      const rightVal=document.createElement("span");
+      rightVal.innerText=actual.toLocaleString()+unit+" / 目標"+target.toLocaleString()+unit+(target>0?" ("+Math.round(ratio*100)+"%)":"");
+      rightVal.style.color=ratio>1.15?"#ef4444":ratio>=0.9?color:"#64748b";
+      topRow.appendChild(leftLbl);topRow.appendChild(rightVal);
+      const track=document.createElement("div");track.style.cssText="height:8px;background:#1e293b;border-radius:4px;overflow:hidden;position:relative;";
+      const fill=document.createElement("div");
+      fill.style.cssText="width:"+pct+"%;height:100%;background:"+barColor+";border-radius:4px;";
+      track.appendChild(fill);
+      const tMarker=document.createElement("div");
+      tMarker.style.cssText="position:absolute;top:0;bottom:0;right:0;width:2px;background:#334155;";
+      track.appendChild(tMarker);
+      aRow.appendChild(topRow);aRow.appendChild(track);goalSec.appendChild(aRow);
+    });
+    const msgs=buildGoalAdviceMessages({calories:totalCal,protein:totalProt,carbs:totalCarbs,fat:totalFat},goalTarget,7);
+    if(msgs.length){
+      const advTitle=document.createElement("div");
+      advTitle.style.cssText="font-size:11px;color:#64748b;font-weight:bold;margin:10px 0 6px;";
+      advTitle.innerText="💡 アドバイス";goalSec.appendChild(advTitle);
+      msgs.forEach(m=>{
+        const bgc=m.type==="ok"?"#052e16":m.type==="warn"?"#431407":"#1e293b";
+        const fgc=m.type==="ok"?"#86efac":m.type==="warn"?"#fdba74":"#cbd5e1";
+        const msgEl=document.createElement("div");
+        msgEl.style.cssText="display:flex;gap:7px;align-items:flex-start;padding:7px 9px;border-radius:8px;margin-bottom:5px;font-size:11px;line-height:1.55;background:"+bgc+";color:"+fgc+";";
+        const ic=document.createElement("span");ic.style.cssText="flex-shrink:0;font-size:15px;";ic.innerText=m.icon;
+        const tx=document.createElement("span");tx.innerText=m.text;
+        msgEl.appendChild(ic);msgEl.appendChild(tx);goalSec.appendChild(msgEl);
+      });
+    }
+    g.appendChild(goalSec);
+    const sep=document.createElement("div");sep.style.cssText="height:1px;background:#334155;margin:4px 0 12px;";g.appendChild(sep);
+  }else{
+    const noGoal=document.createElement("div");
+    noGoal.style.cssText="background:#1e293b;border-radius:10px;padding:16px;text-align:center;margin-bottom:14px;";
+    noGoal.innerHTML='<div style="font-size:26px;margin-bottom:6px;">🎯</div><div style="font-size:13px;font-weight:bold;color:#f1f5f9;margin-bottom:4px;">目標を設定してアドバイスをもらおう</div><div style="font-size:11px;color:#64748b;margin-bottom:10px;">ダイエット・筋トレ・健康維持などの目標を設定すると<br>必要な栄養素と達成状況を確認できます</div>';
+    const setBtn=document.createElement("button");setBtn.className="btn primary";setBtn.style.cssText="font-size:12px;";
+    setBtn.innerText="目標を設定する";
+    setBtn.onclick=()=>{closeOverlay("graphOverlay");showSettings();};
+    noGoal.appendChild(setBtn);g.appendChild(noGoal);
+  }
+
   if(totalCal===0){
     const hint=document.createElement("p");hint.className="msec-hint";
-    hint.style.cssText="text-align:center;padding:8px 0;";
+    hint.style.cssText="text-align:center;padding:4px 0 10px;";
     hint.innerText="まだカロリーが登録されていません。献立カードの「栄養」タブにカロリーを入力するとグラフに反映されます";
     g.appendChild(hint);
   }
@@ -3484,32 +3778,48 @@ function showGraph(){
   });
   g.appendChild(sumDiv);
 
-  // Calorie bar chart
+  // Calorie bar chart with goal line
   const t1=document.createElement("div");t1.style.cssText="font-size:11px;color:#64748b;margin-bottom:6px;";t1.innerText="📊 日別カロリー";g.appendChild(t1);
   const bars=document.createElement("div");bars.className="graph-bars";
+  const goalDailyLine=goalTarget?goalTarget.calories:0;
+  const maxCalW=Math.max(maxCal,goalDailyLine,1);
   dayStats.forEach(stat=>{
-    const wrap=document.createElement("div");wrap.className="graph-bar-wrap";
+    const wrap=document.createElement("div");wrap.className="graph-bar-wrap";wrap.style.position="relative";
     const bar=document.createElement("div");bar.className="graph-bar";
-    const pct=stat.calories>0?Math.max(4,Math.round(stat.calories/maxCal*100)):0;
+    const pct=stat.calories>0?Math.max(4,Math.round(stat.calories/maxCalW*100)):0;
     bar.style.height=pct+"%";
     if(stat.calories>600)bar.classList.add("high");else if(stat.calories>400)bar.classList.add("mid");
     const val=document.createElement("div");val.className="graph-bar-val";val.innerText=stat.calories||"";
     const lbl=document.createElement("div");lbl.className="graph-bar-label";lbl.innerText=stat.label;
-    wrap.appendChild(bar);wrap.appendChild(val);wrap.appendChild(lbl);bars.appendChild(wrap);
+    wrap.appendChild(bar);wrap.appendChild(val);wrap.appendChild(lbl);
+    if(goalDailyLine>0){
+      const gPct=Math.min(Math.round(goalDailyLine/maxCalW*100),98);
+      const gLine=document.createElement("div");
+      gLine.style.cssText="position:absolute;bottom:"+gPct+"%;left:2px;right:2px;height:2px;background:#3b82f6;border-radius:1px;pointer-events:none;opacity:.7;";
+      wrap.appendChild(gLine);
+    }
+    bars.appendChild(wrap);
   });
   g.appendChild(bars);
+  if(goalDailyLine>0){
+    const gLeg=document.createElement("div");gLeg.style.cssText="font-size:10px;color:#3b82f6;text-align:right;margin-top:2px;";
+    gLeg.innerText="— 目標ライン "+goalDailyLine.toLocaleString()+"kcal/日";g.appendChild(gLeg);
+  }
 
   // Macro bars
   if(totalProt||totalCarbs||totalFat){
     const t2=document.createElement("div");t2.style.cssText="font-size:11px;color:#64748b;margin:12px 0 8px;";t2.innerText="🥗 週計マクロ栄養素";g.appendChild(t2);
-    [["タンパク質",totalProt,"#f97316"],["炭水化物",totalCarbs,"#3b82f6"],["脂質",totalFat,"#a855f7"]].forEach(([label,val,color])=>{
+    const mt=goalTarget?[goalTarget.protein*7,goalTarget.carbs*7,goalTarget.fat*7]:[0,0,0];
+    [[totalProt,"タンパク質","#f97316",mt[0]],[totalCarbs,"炭水化物","#3b82f6",mt[1]],[totalFat,"脂質","#a855f7",mt[2]]].forEach(([val,label,color,tgt])=>{
+      const maxV=Math.max(val,tgt,maxMacro,1);
       const row=document.createElement("div");row.className="macro-row";
       const lbl=document.createElement("div");lbl.className="macro-label";lbl.innerText=label;
-      const track=document.createElement("div");track.className="macro-track";
+      const track=document.createElement("div");track.className="macro-track";track.style.position="relative";
       const fill=document.createElement("div");fill.className="macro-fill";
-      fill.style.cssText="width:"+Math.round(val/maxMacro*100)+"%;background:"+color+";";
+      fill.style.cssText="width:"+Math.min(Math.round(val/maxV*100),100)+"%;background:"+color+";";
       track.appendChild(fill);
-      const v=document.createElement("div");v.className="macro-val";v.innerText=val+"g";
+      if(tgt>0){const tl=document.createElement("div");tl.style.cssText="position:absolute;top:0;bottom:0;left:"+Math.min(Math.round(tgt/maxV*100),100)+"%;width:2px;background:#ffffff40;transform:translateX(-1px);";track.appendChild(tl);}
+      const v=document.createElement("div");v.className="macro-val";v.innerText=val+"g"+(tgt>0?" / 目標"+tgt+"g":"");
       row.appendChild(lbl);row.appendChild(track);row.appendChild(v);g.appendChild(row);
     });
   }
@@ -3517,30 +3827,107 @@ function showGraph(){
   document.getElementById("graphOverlay").classList.add("open");
 }
 
+// ===== PANTRY =====
+function pantryAdd(ing){if(ing){pantry[ing]=true;save();}}
+function pantryRemove(ing){delete pantry[ing];save();}
+function pantryRestoreFromItem(item){
+  const ings=item?.ingredients||[];
+  ings.forEach(ing=>{if(ing)pantry[ing]=true;});
+  if(ings.length)save();
+}
+function switchShopTab(tab){
+  const buySection=document.getElementById("shopBuySection");
+  const pantrySection=document.getElementById("shopPantrySection");
+  const t1=document.getElementById("shopTab1");const t2=document.getElementById("shopTab2");
+  const copyBtn=document.getElementById("shopCopyBtn");
+  if(tab==="buy"){
+    if(buySection)buySection.style.display="";if(pantrySection)pantrySection.style.display="none";
+    if(t1)t1.classList.add("active");if(t2)t2.classList.remove("active");
+    if(copyBtn)copyBtn.style.display="";
+  }else{
+    if(buySection)buySection.style.display="none";if(pantrySection)pantrySection.style.display="";
+    if(t1)t1.classList.remove("active");if(t2)t2.classList.add("active");
+    if(copyBtn)copyBtn.style.display="none";
+    renderPantryList();
+  }
+}
+function renderPantryList(){
+  const list=document.getElementById("pantryList");if(!list)return;list.innerHTML="";
+  const keys=Object.keys(pantry).filter(k=>pantry[k]).sort();
+  if(!keys.length){
+    const empty=document.createElement("div");empty.className="pantry-empty";
+    empty.innerText="在庫が登録されていません\n下の入力欄から追加してください";
+    list.appendChild(empty);return;
+  }
+  keys.forEach(ing=>{
+    const row=document.createElement("div");row.className="pantry-item";
+    const name=document.createElement("span");name.className="pantry-item-name";name.innerText=ing;
+    const del=document.createElement("button");del.className="pantry-item-del";del.title="削除";del.innerText="✕";
+    del.onclick=()=>{pantryRemove(ing);renderPantryList();};
+    row.appendChild(name);row.appendChild(del);list.appendChild(row);
+  });
+}
+function pantryAddFromInput(){
+  const inp=document.getElementById("pantryAddInput");if(!inp)return;
+  const val=inp.value.trim();
+  if(!val){showToast("食材名を入力してください");return;}
+  if(pantry[val]){showToast(`「${val}」はすでに在庫にあります`);inp.value="";return;}
+  pantryAdd(val);inp.value="";renderPantryList();
+  showToast(`📦 「${val}」を在庫に追加しました`);
+}
+
 // ===== SHOPPING =====
 function showShop(){
+  const buySection=document.getElementById("shopBuySection");
+  const pantrySection=document.getElementById("shopPantrySection");
+  const t1=document.getElementById("shopTab1");const t2=document.getElementById("shopTab2");
+  const copyBtn=document.getElementById("shopCopyBtn");
+  if(buySection)buySection.style.display="";if(pantrySection)pantrySection.style.display="none";
+  if(t1)t1.classList.add("active");if(t2)t2.classList.remove("active");
+  if(copyBtn)copyBtn.style.display="";
   const combined=allMealData(curKey());const ingMap={};
-  const wd=combined;
-  wd.forEach(day=>(day||[]).forEach(item=>(item.ingredients||[]).forEach(ing=>{
-    if(ing){
-      if(!ingMap[ing])ingMap[ing]={need:[],stock:[]};
-      if(item.ingredientInventory?.[ing]===true)ingMap[ing].stock.push(item.text);
-      else ingMap[ing].need.push(item.text);
-    }
+  combined.forEach(day=>(day||[]).forEach(item=>(item.ingredients||[]).forEach(ing=>{
+    if(!ing)return;
+    if(!ingMap[ing])ingMap[ing]={need:[],stock:[]};
+    if(pantry[ing]===true)ingMap[ing].stock.push(item.text);
+    else ingMap[ing].need.push(item.text);
   })));
-  const keys=Object.keys(ingMap);const list=document.getElementById("shopList");list.innerHTML="";
-  const needKeys=keys.filter(ing=>ingMap[ing].need.length>0);
-  if(!needKeys.length){
+  const list=document.getElementById("shopList");list.innerHTML="";
+  const needKeys=Object.keys(ingMap).filter(ing=>ingMap[ing].need.length>0);
+  const stockKeys=Object.keys(ingMap).filter(ing=>ingMap[ing].need.length===0);
+  if(!Object.keys(ingMap).length){
     list.innerHTML="<p style=\"color:#64748b;text-align:center;font-size:13px\">食材が登録されていません</p>";
   }else{
-    needKeys.forEach((ing,i)=>{
-      const row=document.createElement("div");row.className="shop-item";
-      const cb=document.createElement("input");cb.type="checkbox";cb.id="si"+i;
-      cb.onchange=()=>row.classList.toggle("checked",cb.checked);
-      const lbl=document.createElement("label");lbl.htmlFor="si"+i;lbl.innerText=ing;
-      const src=document.createElement("span");src.className="shop-source";src.innerText="("+ingMap[ing].need.join("・")+")";
-      row.appendChild(cb);row.appendChild(lbl);row.appendChild(src);list.appendChild(row);
-    });
+    if(!needKeys.length){
+      const ok=document.createElement("p");ok.style.cssText="color:#4ade80;text-align:center;font-size:13px;padding:8px 0";
+      ok.innerText="✅ 今週の食材はすべて在庫にあります";list.appendChild(ok);
+    }else{
+      needKeys.forEach((ing,i)=>{
+        const row=document.createElement("div");row.className="shop-item";
+        const cb=document.createElement("input");cb.type="checkbox";cb.id="si"+i;
+        cb.onchange=()=>row.classList.toggle("checked",cb.checked);
+        const lbl=document.createElement("label");lbl.htmlFor="si"+i;lbl.innerText=ing;
+        const src=document.createElement("span");src.className="shop-source";src.innerText="("+ingMap[ing].need.join("・")+")";
+        const addBtn=document.createElement("button");addBtn.className="ing-pantry-btn";addBtn.innerText="📦 在庫に";
+        addBtn.onclick=()=>{
+          pantryAdd(ing);
+          row.querySelector("input[type=checkbox]").checked=true;row.classList.add("checked");addBtn.style.display="none";
+          showToast(`📦 「${ing}」を在庫に追加しました`);
+        };
+        row.appendChild(cb);row.appendChild(lbl);row.appendChild(src);row.appendChild(addBtn);list.appendChild(row);
+      });
+    }
+    if(stockKeys.length){
+      const sep=document.createElement("div");sep.className="shop-stocked-sep";sep.innerText="✅ 在庫あり";list.appendChild(sep);
+      stockKeys.forEach((ing,i)=>{
+        const row=document.createElement("div");row.className="shop-item stocked";
+        const cb=document.createElement("input");cb.type="checkbox";cb.id="ss"+i;cb.checked=true;
+        cb.onchange=()=>row.classList.toggle("checked",cb.checked);
+        const lbl=document.createElement("label");lbl.htmlFor="ss"+i;lbl.innerText=ing;
+        const src=document.createElement("span");src.className="shop-source";src.innerText="("+ingMap[ing].stock.join("・")+")";
+        row.appendChild(cb);row.appendChild(lbl);row.appendChild(src);list.appendChild(row);
+      });
+    }
   }
   document.getElementById("shopOverlay").classList.add("open");
 }
@@ -3659,6 +4046,80 @@ function showSettings(){
   const goalUnit=document.createElement("span");goalUnit.style.cssText="font-size:11px;color:#94a3b8;";goalUnit.innerText="kcal（0で無効）";
   goalWrap.appendChild(goalI);goalWrap.appendChild(goalUnit);
   goalRow.appendChild(goalL);goalRow.appendChild(goalWrap);c.appendChild(goalRow);
+
+  // ===== FITNESS GOAL SECTION =====
+  const fitSec=document.createElement("div");fitSec.className="msec";
+  const fitTitle=document.createElement("div");fitTitle.className="msec-title";fitTitle.innerText="🎯 フィットネス目標";fitSec.appendChild(fitTitle);
+  const fitHint=document.createElement("p");fitHint.className="msec-hint";
+  fitHint.innerText="目標を設定すると、体格から必要カロリー・栄養素を自動計算し、グラフで達成状況とアドバイスを確認できます。";
+  fitSec.appendChild(fitHint);
+
+  // Body profile rows
+  const profileGrid=document.createElement("div");profileGrid.style.cssText="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;";
+  [
+    {label:"体重 (kg)",key:"bodyWeight",min:1,max:300,step:0.5},
+    {label:"身長 (cm)",key:"bodyHeight",min:50,max:250,step:0.5},
+    {label:"年齢",key:"bodyAge",min:1,max:120,step:1},
+  ].forEach(({label,key,min,max,step})=>{
+    const cell=document.createElement("div");
+    const lbl=document.createElement("div");lbl.style.cssText="font-size:10px;color:#64748b;margin-bottom:3px;";lbl.innerText=label;
+    const inp=document.createElement("input");inp.className="form-input";inp.type="number";inp.min=String(min);inp.max=String(max);inp.step=String(step);inp.inputMode="decimal";
+    inp.style.cssText="width:100%;padding:4px 6px;";inp.value=settings[key]||"";
+    inp.oninput=()=>{settings[key]=parseFloat(inp.value)||0;save();_refreshGoalPreview(fitSec);};
+    cell.appendChild(lbl);cell.appendChild(inp);profileGrid.appendChild(cell);
+  });
+  // Sex select
+  const sexCell=document.createElement("div");
+  const sexLbl=document.createElement("div");sexLbl.style.cssText="font-size:10px;color:#64748b;margin-bottom:3px;";sexLbl.innerText="性別";
+  const sexSel=document.createElement("select");sexSel.className="form-input";sexSel.style.cssText="width:100%;padding:4px 6px;";
+  [["male","男性"],["female","女性"]].forEach(([v,t])=>{const o=document.createElement("option");o.value=v;o.innerText=t;sexSel.appendChild(o);});
+  sexSel.value=settings.bodySex||"male";
+  sexSel.onchange=()=>{settings.bodySex=sexSel.value;save();_refreshGoalPreview(fitSec);};
+  sexCell.appendChild(sexLbl);sexCell.appendChild(sexSel);profileGrid.appendChild(sexCell);
+  fitSec.appendChild(profileGrid);
+
+  // Activity level
+  const actRow=document.createElement("div");actRow.className="setting-row";
+  const actL=document.createElement("span");actL.style.fontSize="13px";actL.innerText="活動量";
+  const actSel=document.createElement("select");actSel.className="form-input";actSel.style.cssText="width:150px;padding:4px 6px;";
+  [["low","低め（デスクワーク中心）"],["medium","普通（週2-3回運動）"],["high","高め（毎日運動）"]].forEach(([v,t])=>{
+    const o=document.createElement("option");o.value=v;o.innerText=t;actSel.appendChild(o);
+  });
+  actSel.value=settings.activityLevel||"medium";
+  actSel.onchange=()=>{settings.activityLevel=actSel.value;save();_refreshGoalPreview(fitSec);};
+  actRow.appendChild(actL);actRow.appendChild(actSel);fitSec.appendChild(actRow);
+
+  // Goal type picker
+  const goalTypeLabel=document.createElement("div");goalTypeLabel.style.cssText="font-size:10px;color:#64748b;margin:10px 0 6px;";goalTypeLabel.innerText="目標タイプ";
+  fitSec.appendChild(goalTypeLabel);
+  const goalBtns=document.createElement("div");goalBtns.style.cssText="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;";
+  Object.entries(FITNESS_GOALS).forEach(([gkey,gdef])=>{
+    const btn=document.createElement("button");
+    const isActive=settings.fitnessGoal===gkey;
+    btn.style.cssText="padding:8px 6px;border-radius:9px;border:2px solid "+(isActive?gdef.color:"#334155")+";background:"+(isActive?gdef.color+"22":"#1e293b")+";color:"+(isActive?gdef.color:"#94a3b8")+";font-size:12px;font-weight:bold;cursor:pointer;font-family:inherit;transition:all .15s;text-align:center;";
+    btn.innerHTML=gdef.label+"<br><span style='font-size:10px;font-weight:normal;opacity:.8;'>"+gdef.desc+"</span>";
+    btn.onclick=()=>{
+      settings.fitnessGoal=settings.fitnessGoal===gkey?"":gkey;
+      if(settings.fitnessGoal){
+        const t=calcGoalTargets();if(t){settings.dailyCalorieGoal=t.calories;goalI.value=t.calories;save();render();}
+      }
+      save();_refreshGoalPreview(fitSec);showSettings();
+    };
+    goalBtns.appendChild(btn);
+  });
+  // "No goal" button
+  const noGoalBtn=document.createElement("button");
+  const isNone=!settings.fitnessGoal;
+  noGoalBtn.style.cssText="padding:8px 6px;border-radius:9px;border:2px solid "+(isNone?"#64748b":"#334155")+";background:"+(isNone?"#64748b22":"#1e293b")+";color:"+(isNone?"#94a3b8":"#475569")+";font-size:12px;cursor:pointer;font-family:inherit;grid-column:1/-1;";
+  noGoalBtn.innerText="目標なし（設定しない）";
+  noGoalBtn.onclick=()=>{settings.fitnessGoal="";save();showSettings();};
+  goalBtns.appendChild(noGoalBtn);
+  fitSec.appendChild(goalBtns);
+
+  // Targets preview
+  const previewDiv=document.createElement("div");previewDiv.id="goalPreviewBox";fitSec.appendChild(previewDiv);
+  _refreshGoalPreview(fitSec);
+  c.appendChild(fitSec);
 
   // 予算管理
   const budgetSec=document.createElement("div");budgetSec.className="msec";
@@ -5744,8 +6205,279 @@ document.addEventListener("keydown",e=>{
   }
 }
 
+// ===== AI ASSISTANT (s子) =====
+let _aiHistory=[];
+let _aiOpen=false;
+
+function openAiAssistant(){
+  _aiOpen=true;
+  const panel=document.getElementById("aiPanel");
+  if(!panel)return;
+  panel.classList.add("open");
+  const inp=document.getElementById("aiInput");
+  if(inp)setTimeout(()=>inp.focus(),200);
+  if(!_aiHistory.length){
+    _aiAddMsg("assistant","こんにちは！AIアシスタントのs子です🌸\n\n以下のことができます：\n• 「今週の献立を組んで」- 自動割り当て\n• 「月曜の朝昼夜を提案して」- 栄養バランス計画\n• 「使い方を教えて」- アプリの説明\n• 「グラフを見せて」- 栄養確認\n\nAPIキー設定でよりスマートになります！");
+  }
+}
+
+function closeAiAssistant(){
+  _aiOpen=false;
+  const panel=document.getElementById("aiPanel");
+  if(panel)panel.classList.remove("open");
+}
+
+function _aiAddMsg(role,text){
+  _aiHistory.push({role,content:text});
+  _aiRender();
+}
+
+function _aiRender(){
+  const log=document.getElementById("aiChatLog");
+  if(!log)return;
+  log.innerHTML=_aiHistory.map(msg=>{
+    const isUser=msg.role==="user";
+    const escaped=msg.content.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\n/g,"<br>");
+    return`<div class="ai-msg ${isUser?"ai-msg-user":"ai-msg-bot"}">
+      ${!isUser?'<span class="ai-avatar">🌸</span>':""}
+      <div class="ai-bubble">${escaped}</div>
+    </div>`;
+  }).join("");
+  log.scrollTop=log.scrollHeight;
+}
+
+async function sendAiMessage(){
+  const inp=document.getElementById("aiInput");
+  if(!inp)return;
+  const text=inp.value.trim();
+  if(!text)return;
+  inp.value="";
+  _aiAddMsg("user",text);
+
+  const log=document.getElementById("aiChatLog");
+  const typing=document.createElement("div");
+  typing.className="ai-msg ai-msg-bot";
+  typing.innerHTML='<span class="ai-avatar">🌸</span><div class="ai-bubble ai-dots"><span></span><span></span><span></span></div>';
+  if(log){log.appendChild(typing);log.scrollTop=log.scrollHeight;}
+
+  try{
+    const reply=await _callAiApi(text);
+    typing.remove();
+    _aiAddMsg("assistant",reply);
+    await _execAiActions(text,reply);
+  }catch(e){
+    typing.remove();
+    _aiAddMsg("assistant","エラーが発生しました: "+e.message+"\n\n設定からAnthropicのAPIキーを入力してください。");
+  }
+}
+
+async function _callAiApi(userMsg){
+  const key=(settings.anthropicApiKey||"").trim();
+  if(!key)return _aiLocalCmd(userMsg);
+
+  const dayNames=["日","月","火","水","木","金","土"];
+  const wd=weekData();
+  const weekSummary=wd.map((day,i)=>{
+    const d=new Date(baseDate);
+    d.setDate(d.getDate()-d.getDay()+i);
+    const label=`${d.getMonth()+1}/${d.getDate()}(${dayNames[d.getDay()]})`;
+    const items=day.map(it=>it.text).join(", ");
+    return`${label}: ${items||"未設定"}`;
+  }).join("\n");
+
+  const poolSummary=pool.slice(0,30).map(it=>`${it.text}(${it.tag},${it.calories||0}kcal)`).join(", ");
+  const goalInfo=settings.fitnessGoal?`フィットネス目標:${settings.fitnessGoal},体重:${settings.bodyWeight}kg`:"";
+  const calGoal=settings.dailyCalorieGoal?`1日カロリー目標:${settings.dailyCalorieGoal}kcal`:"";
+
+  const systemPrompt=`あなたは献立管理アプリ「献立ボード」のAIアシスタント「s子」です。フレンドリーで簡潔な日本語で答えてください（200文字以内）。
+
+【現在の状態】
+今週の献立(現在の食事帯: ${currentMeal}):
+${weekSummary}
+
+プールの料理: ${poolSummary||"なし"}
+${goalInfo}
+${calGoal}
+
+【実行できるアクション】（返答に含めると自動実行します）:
+[ACTION:auto_week] - 今週を自動割り当て
+[ACTION:auto_day:0] - 0=日〜6=土の曜日に割り当て(例:[ACTION:auto_day:1]で月曜)
+[ACTION:ai_plan_day:0] - 指定曜日の朝昼夜をAI栄養プランで計画
+[ACTION:ai_plan_week] - 週全体をAI栄養プランで計画
+[ACTION:clear_week] - 今週をクリア
+[ACTION:show_graph] - グラフを開く
+[ACTION:show_shop] - 買い物リストを開く`;
+
+  const msgs=_aiHistory.slice(-8)
+    .filter(m=>m.role==="user"||m.role==="assistant")
+    .map(m=>({role:m.role==="assistant"?"assistant":"user",content:m.content}));
+  if(msgs.length&&msgs[msgs.length-1].role==="user")msgs.pop();
+  msgs.push({role:"user",content:userMsg});
+
+  const res=await fetch("https://api.anthropic.com/v1/messages",{
+    method:"POST",
+    headers:{"x-api-key":key,"anthropic-version":"2023-06-01","content-type":"application/json","anthropic-dangerous-direct-browser-access":"true"},
+    body:JSON.stringify({model:"claude-haiku-4-5-20251001",max_tokens:600,system:systemPrompt,messages:msgs}),
+    signal:AbortSignal.timeout(22000)
+  });
+  if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error((e.error?.message)||"Claude API エラー "+res.status);}
+  const data=await res.json();
+  return data.content?.[0]?.text||"（応答なし）";
+}
+
+function _aiLocalCmd(msg){
+  const m=msg.toLowerCase();
+  if(m.includes("使い方")||m.includes("ヘルプ")||m.includes("help")){
+    return"📖 使い方ガイド\n\n1. 下のパネルに料理を追加（＋ボタン）\n2. カレンダーにドラッグ＆ドロップで配置\n3. 🌄☀️🌙タブで朝昼夜を切替\n4. •••メニュー→「週おまかせ」で自動割り当て\n5. 📊グラフで栄養を確認\n\nAPIキーを設定するとよりスマートになります！";
+  }
+  if(m.includes("今週")||m.includes("おまかせ")||m.includes("自動")){
+    autoSuggest();return"今週の献立を自動割り当てしました🎉";
+  }
+  if(m.includes("グラフ")||m.includes("栄養")||m.includes("カロリー")){
+    showGraph();return"📊 グラフを開きました！カロリーや栄養バランスを確認できます。";
+  }
+  if(m.includes("買い物")||m.includes("買物")||m.includes("ショッピング")){
+    showShop();return"🛒 買い物リストを開きました！";
+  }
+  if(m.includes("クリア")||m.includes("全消し")){
+    return"削除するには「•••メニュー」→「週を全消し」、または各カードのゴミ箱アイコンを使ってください。";
+  }
+  return"こんにちは！s子です🌸\n設定からAnthropicのAPIキーを入力すると、献立提案・栄養アドバイスをもっとスマートに行えます！\n\n「今週おまかせ」「使い方を教えて」「グラフを見せて」などと話しかけてみてください。";
+}
+
+async function _execAiActions(userMsg,reply){
+  const actions=reply.match(/\[ACTION:[^\]]+\]/g)||[];
+  for(const a of actions){
+    const inner=a.slice(8,-1);
+    const parts=inner.split(":");
+    const cmd=parts[0];
+    if(cmd==="auto_week"){autoSuggest();}
+    else if(cmd==="auto_day"){const di=parseInt(parts[1]);if(!isNaN(di))autoSuggestDay(di);}
+    else if(cmd==="ai_plan_day"){const di=parseInt(parts[1]);if(!isNaN(di))await aiPlanNutritionDay(di);}
+    else if(cmd==="ai_plan_week"){await aiPlanNutritionWeek();}
+    else if(cmd==="clear_week"){clearCurrentWeek();}
+    else if(cmd==="show_graph"){showGraph();}
+    else if(cmd==="show_shop"){showShop();}
+  }
+}
+
+// AI栄養プラン: 特定日の朝昼夜を栄養バランスを考えて自動割り当て
+async function aiPlanNutritionDay(dayIndex){
+  if(!pool.length){showToast("プールに献立がありません");return;}
+  const dayNames=["日","月","火","水","木","金","土"];
+  const date=new Date(baseDate);
+  date.setDate(date.getDate()-date.getDay()+dayIndex);
+  const dayLabel=`${date.getMonth()+1}/${date.getDate()}(${dayNames[date.getDay()]})`;
+  const key=(settings.anthropicApiKey||"").trim();
+  const wk=curKey();
+  if(!allData[wk])allData[wk]={};
+  MEALS.forEach(m=>{if(!allData[wk][m])allData[wk][m]=Array.from({length:7},()=>[]);});
+
+  if(key){
+    showToast(`${dayLabel} の栄養プラン計算中...🌸`);
+    try{
+      const poolInfo=pool.slice(0,60).map(it=>({
+        id:it.id,name:it.text,tag:it.tag||"その他",
+        cal:it.calories||0,pro:it.protein||0,carb:it.carbs||0,fat:it.fat||0,
+        time:it.cookTime||0
+      }));
+      const targets=calcGoalTargets();
+      const goalKcal=settings.dailyCalorieGoal||(targets?targets.calories:2000);
+      const isWeekday=dayIndex>=1&&dayIndex<=5;
+      const prompt=`以下のプールから朝・昼・夜の献立を各1品選んでください。
+栄養目標: 1日${goalKcal}kcal${targets?`,タンパク質${Math.round(targets.protein)}g,脂質${Math.round(targets.fat)}g,炭水化物${Math.round(targets.carbs)}g`:""}
+${settings.fitnessGoal?"フィットネス目標: "+settings.fitnessGoal:""}
+${isWeekday?"平日なので朝食と昼食は調理時間30分以内を優先してください":"週末なのでゆっくり調理できます"}
+
+プール: ${JSON.stringify(poolInfo)}
+
+朝食30%・昼食40%・夕食30%のカロリー配分で選んでください。
+JSONのみ返してください（説明不要）:
+[{"meal":"朝","id":"xxx"},{"meal":"昼","id":"xxx"},{"meal":"夜","id":"xxx"}]`;
+
+      const res=await fetch("https://api.anthropic.com/v1/messages",{
+        method:"POST",
+        headers:{"x-api-key":key,"anthropic-version":"2023-06-01","content-type":"application/json","anthropic-dangerous-direct-browser-access":"true"},
+        body:JSON.stringify({model:"claude-haiku-4-5-20251001",max_tokens:300,messages:[{role:"user",content:prompt}]}),
+        signal:AbortSignal.timeout(20000)
+      });
+      if(res.ok){
+        const data=await res.json();
+        const text=data.content?.[0]?.text||"";
+        const m=text.match(/\[[\s\S]*?\]/);
+        if(m){
+          const plan=JSON.parse(m[0]);
+          pushUndo();
+          for(const entry of plan){
+            const src=pool.find(p=>p.id===entry.id);
+            if(!src)continue;
+            if(!MEALS.includes(entry.meal))continue;
+            if(!allData[wk][entry.meal][dayIndex])allData[wk][entry.meal][dayIndex]=[];
+            allData[wk][entry.meal][dayIndex].push(createPlannedItemFromSource(src,true));
+          }
+          save();render();
+          showToast(`${dayLabel} の朝昼夜をAIで計画しました🌸`);
+          return;
+        }
+      }
+    }catch(e){console.warn("AI plan failed:",e.message);}
+  }
+
+  // フォールバック: ランダム割り当て
+  pushUndo();
+  const shuffled=[...pool].sort(()=>Math.random()-.5);
+  let idx=0;
+  for(const mealTime of MEALS){
+    if(!allData[wk][mealTime][dayIndex])allData[wk][mealTime][dayIndex]=[];
+    if(allData[wk][mealTime][dayIndex].length)continue;
+    const pick=shuffled[idx%shuffled.length];
+    if(pick)allData[wk][mealTime][dayIndex].push(createPlannedItemFromSource(pick,true));
+    idx++;
+  }
+  save();render();
+  showToast(`${dayLabel} の朝昼夜を割り当てました`);
+}
+
+// 週全体の朝昼夜をAI栄養プランで計画
+async function aiPlanNutritionWeek(){
+  if(!pool.length){showToast("プールに献立がありません");return;}
+  showToast("1週間の栄養プランを計算中...🌸");
+  for(let i=0;i<7;i++){
+    await aiPlanNutritionDay(i);
+  }
+  showToast("1週間の栄養プランが完成しました🎉");
+}
+
+// Escape key closes AI panel
+document.addEventListener("keydown",e=>{
+  if(e.key==="Escape"&&_aiOpen){e.stopPropagation();closeAiAssistant();}
+},{capture:false});
 
 </script>
+
+<!-- ===== AI Assistant FAB ===== -->
+<button class="ai-fab" id="aiFab" onclick="openAiAssistant()" title="AIアシスタント s子" aria-label="AIアシスタント">🌸</button>
+
+<!-- ===== AI Chat Panel ===== -->
+<div class="ai-panel" id="aiPanel" role="dialog" aria-labelledby="aiPanelTitle" aria-modal="false">
+  <div class="ai-panel-head">
+    <span class="ai-panel-title" id="aiPanelTitle">🌸 s子 - AIアシスタント</span>
+    <button class="ai-plan-btn" onclick="aiPlanNutritionWeek()" title="今週の朝昼夜を栄養バランスで自動計画">📅 週プラン</button>
+    <button class="ai-panel-close" onclick="closeAiAssistant()" aria-label="閉じる">✕</button>
+  </div>
+  <div class="ai-chat-log" id="aiChatLog"></div>
+  <div class="ai-quick-btns">
+    <button onclick="document.getElementById('aiInput').value='今週の献立を組んで';sendAiMessage()">📅 今週おまかせ</button>
+    <button onclick="document.getElementById('aiInput').value='月曜の朝昼夜を提案して';sendAiMessage()">🌸 朝昼夜プラン</button>
+    <button onclick="document.getElementById('aiInput').value='栄養バランスを見せて';sendAiMessage()">🥗 栄養確認</button>
+    <button onclick="document.getElementById('aiInput').value='使い方を教えて';sendAiMessage()">📖 使い方</button>
+    <button onclick="document.getElementById('aiInput').value='買い物リストを出して';sendAiMessage()">🛒 買い物</button>
+  </div>
+  <div class="ai-panel-input-row">
+    <input class="ai-input" id="aiInput" type="text" placeholder="s子に話しかける..." onkeydown="if(event.key==='Enter'&&!event.isComposing)sendAiMessage()" autocomplete="off">
+    <button class="ai-send-btn" onclick="sendAiMessage()">送信</button>
+  </div>
+</div>
 
 <!-- ===== Tutorial FAB ===== -->
 <button class="tut-fab" id="tutFab" onclick="startTutorial()" title="使い方ガイド" aria-label="使い方ガイド">？</button>
