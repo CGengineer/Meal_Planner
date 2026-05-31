@@ -3303,29 +3303,50 @@ function openNewCard(directDayIndex,directWk,directMeal){
 
 function addIngRow(val){
   val=val||"";
+  const spaceIdx=val.indexOf(" ");
+  const ingName=spaceIdx>0?val.slice(0,spaceIdx):val;
+  const ingQty=spaceIdx>0?val.slice(spaceIdx+1):"";
+
   const list=document.getElementById("eIngList");
   const row=document.createElement("div");row.className="ing-row";
-  const inp=document.createElement("input");inp.className="form-input";inp.value=val;inp.placeholder="例: 鶏肉 200g";
+
+  const dlId="pdl-"+Math.random().toString(36).slice(2);
+  const dl=document.createElement("datalist");dl.id=dlId;
+  Object.keys(pantry).forEach(k=>{const o=document.createElement("option");o.value=k;dl.appendChild(o);});
+  row.appendChild(dl);
+
+  const nameInp=document.createElement("input");nameInp.className="form-input";
+  nameInp.value=ingName;nameInp.placeholder="食材名";
+  nameInp.setAttribute("list",dlId);nameInp.style.flex="2";
+
+  const qtyInp=document.createElement("input");qtyInp.className="form-input";
+  qtyInp.value=ingQty;qtyInp.placeholder="量";
+  qtyInp.style.flex="1";qtyInp.style.minWidth="0";
+
   const del=document.createElement("button");del.innerText="✕";del.onclick=()=>row.remove();
-  row.appendChild(inp);
+
+  row.appendChild(nameInp);
+  row.appendChild(qtyInp);
+
   if(editTarget&&editTarget.wk){
     const cb=document.createElement("input");cb.type="checkbox";
     cb.style.cssText="width:16px;height:16px;cursor:pointer;accent-color:#22c55e;flex-shrink:0;";
     const syncStyle=(has)=>{
-      inp.style.textDecoration=has?"line-through":"";
-      inp.style.color=has?"#4ade80":"";
-      inp.style.opacity=has?"0.7":"1";
+      nameInp.style.textDecoration=has?"line-through":"";
+      nameInp.style.color=has?"#4ade80":"";
+      nameInp.style.opacity=has?"0.7":"1";
     };
-    cb.checked=!!pantry[inp.value.trim()];
+    const getName=()=>nameInp.value.trim();
+    cb.checked=!!pantry[getName()];
     syncStyle(cb.checked);
     cb.onchange=()=>{
-      const v=inp.value.trim();if(!v){cb.checked=!cb.checked;return;}
+      const v=getName();if(!v){cb.checked=!cb.checked;return;}
       if(cb.checked)pantryAdd(v);else pantryRemove(v);
       syncStyle(cb.checked);
     };
-    inp.addEventListener("blur",()=>{
-      const has=!!pantry[inp.value.trim()];cb.checked=has;syncStyle(has);
-    });
+    const resync=()=>{const has=!!pantry[getName()];cb.checked=has;syncStyle(has);};
+    nameInp.addEventListener("change",resync);
+    nameInp.addEventListener("blur",resync);
     row.appendChild(cb);
   }
   row.appendChild(del);list.appendChild(row);
@@ -3580,10 +3601,11 @@ function saveEdit(){
   const ings=[];
   const ingredientInventory={};
   [...document.querySelectorAll("#eIngList .ing-row")].forEach(row=>{
-    const input=row.querySelector("input.form-input");
-    const v=(input?.value||"").trim();
-    if(!v)return;
-    ings.push(v);
+    const inputs=row.querySelectorAll("input.form-input");
+    const name=(inputs[0]?.value||"").trim();
+    const qty=(inputs[1]?.value||"").trim();
+    if(!name)return;
+    ings.push(qty?name+" "+qty:name);
   });
   const isPoolTarget=editTarget.type==="pool";
   let nextImageId=(currentImageId||"").trim();
