@@ -1186,8 +1186,17 @@ body[data-theme="pink"] .tut-fab{background:#ffe4ef;color:#db2777;border-color:#
       <input class="pantry-search" id="pantrySearch" placeholder="🔍 食材を検索..." oninput="renderPantryList(this.value)">
       <div class="pantry-list" id="pantryList"></div>
       <div class="pantry-add-row">
-        <input class="form-input" id="pantryAddInput" placeholder="食材名（例: たまねぎ）" style="flex:1;font-size:13px;min-width:0" onkeydown="if(event.key==='Enter')document.getElementById('pantryQtyInput').focus()">
-        <input class="form-input" id="pantryQtyInput" type="text" placeholder="数量(例:3+1/4)" style="width:110px;font-size:13px;flex-shrink:0" onkeydown="if(event.key==='Enter')pantryAddFromInput()">
+        <datalist id="pantryIntOptions">
+          <option value="0"><option value="1"><option value="2"><option value="3"><option value="4">
+          <option value="5"><option value="6"><option value="7"><option value="8"><option value="9">
+          <option value="10"><option value="12"><option value="15"><option value="20">
+        </datalist>
+        <datalist id="pantryFracOptions">
+          <option value=""><option value="1/4"><option value="1/3"><option value="1/2"><option value="2/3"><option value="3/4">
+        </datalist>
+        <input class="form-input" id="pantryAddInput" placeholder="食材名（例: たまねぎ）" style="flex:1;font-size:13px;min-width:0" onkeydown="if(event.key==='Enter')document.getElementById('pantryIntInput').focus()">
+        <input class="form-input" id="pantryIntInput" type="text" inputmode="numeric" list="pantryIntOptions" placeholder="整数" style="width:54px;font-size:13px;flex-shrink:0" onkeydown="if(event.key==='Enter')document.getElementById('pantryFracInput').focus()">
+        <input class="form-input" id="pantryFracInput" type="text" list="pantryFracOptions" placeholder="端数" style="width:54px;font-size:13px;flex-shrink:0" onkeydown="if(event.key==='Enter')pantryAddFromInput()">
         <button class="btn primary" onclick="pantryAddFromInput()" style="padding:6px 10px;font-size:13px;white-space:nowrap;flex-shrink:0">追加</button>
       </div>
     </div>
@@ -3895,6 +3904,12 @@ function numToFrac(n){
   if(Math.abs(frac-closest[0])>0.08)return n.toFixed(1);
   return int>0?`${int}+${closest[1]}`:closest[1];
 }
+function _fracStr(frac){
+  if(frac<0.04)return"";
+  const map=[[1/4,"1/4"],[1/3,"1/3"],[1/2,"1/2"],[2/3,"2/3"],[3/4,"3/4"]];
+  const c=map.reduce((p,v)=>Math.abs(frac-v[0])<Math.abs(frac-p[0])?v:p);
+  return Math.abs(frac-c[0])<0.08?c[1]:"";
+}
 function _pantryEntry(ing){
   const e=pantry[ing];
   if(!e)return null;
@@ -3966,29 +3981,49 @@ function renderPantryList(filter){
     empty.innerText=filter?"一致する食材が見つかりません":"在庫が登録されていません\n下の入力欄から追加してください";
     list.appendChild(empty);return;
   }
+  const intDlId="pidl";const fracDlId="pfdl";
+  if(!document.getElementById(intDlId)){
+    const dl=document.createElement("datalist");dl.id=intDlId;
+    [0,1,2,3,4,5,6,7,8,9,10,12,15,20].forEach(n=>{const o=document.createElement("option");o.value=n;dl.appendChild(o);});
+    document.body.appendChild(dl);
+  }
+  if(!document.getElementById(fracDlId)){
+    const dl=document.createElement("datalist");dl.id=fracDlId;
+    ["","1/4","1/3","1/2","2/3","3/4"].forEach(v=>{const o=document.createElement("option");o.value=v;dl.appendChild(o);});
+    document.body.appendChild(dl);
+  }
   keys.forEach(ing=>{
     const entry=_pantryEntry(ing)||{count:0,unit:""};
+    const cnt=entry.count||0;
+    const intVal=Math.floor(cnt);
+    const fracVal=cnt-intVal;
     const row=document.createElement("div");row.className="pantry-item";
     const name=document.createElement("span");name.className="pantry-item-name";name.innerText=ing;
-    const qtyInp=document.createElement("input");qtyInp.className="pantry-qty-input";
-    qtyInp.type="text";
-    qtyInp.value=numToFrac(entry.count||0);qtyInp.placeholder="数量(例:3+1/4)";qtyInp.style.width="90px";
-    const save2=()=>{pantry[ing]={count:parseQtyStr(qtyInp.value).count,unit:""};save();};
-    qtyInp.onchange=save2;
+    const intInp=document.createElement("input");intInp.className="pantry-qty-input";
+    intInp.type="text";intInp.inputMode="numeric";intInp.setAttribute("list",intDlId);
+    intInp.value=String(intVal);intInp.placeholder="整数";intInp.style.width="46px";
+    const fracInp=document.createElement("input");fracInp.className="pantry-qty-input";
+    fracInp.type="text";fracInp.setAttribute("list",fracDlId);
+    fracInp.value=_fracStr(fracVal);fracInp.placeholder="端数";fracInp.style.width="44px";
+    const save2=()=>{const i=parseInt(intInp.value)||0;const f=parseQtyStr(fracInp.value).count;pantry[ing]={count:i+f,unit:""};save();};
+    intInp.onchange=save2;fracInp.onchange=save2;
     const del=document.createElement("button");del.className="pantry-item-del";del.title="削除";del.innerText="✕";
     del.onclick=()=>{pantryRemove(ing);renderPantryList(document.getElementById("pantrySearch")?.value||"");};
-    row.appendChild(name);row.appendChild(qtyInp);row.appendChild(del);list.appendChild(row);
+    row.appendChild(name);row.appendChild(intInp);row.appendChild(fracInp);row.appendChild(del);list.appendChild(row);
   });
 }
 function pantryAddFromInput(){
   const inp=document.getElementById("pantryAddInput");if(!inp)return;
-  const qtyInp=document.getElementById("pantryQtyInput");
+  const intInp=document.getElementById("pantryIntInput");
+  const fracInp=document.getElementById("pantryFracInput");
   const val=inp.value.trim();
   if(!val){showToast("食材名を入力してください");inp.focus();return;}
-  const count=parseQtyStr(qtyInp?.value||"").count||0;
+  const i=parseInt(intInp?.value||"")||0;
+  const f=parseQtyStr(fracInp?.value||"").count||0;
+  const count=i+f;
   const exists=!!pantry[val];
   pantryAdd(val,count,"");
-  inp.value="";if(qtyInp)qtyInp.value="";
+  inp.value="";if(intInp)intInp.value="";if(fracInp)fracInp.value="";
   renderPantryList(document.getElementById("pantrySearch")?.value||"");
   showToast(exists?`📦 「${val}」を更新しました`:`📦 「${val}」を在庫に追加しました`);
   inp.focus();
