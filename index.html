@@ -1251,6 +1251,7 @@ let pool=[];
 let dayPresets=[];
 let pantry={}; // { [ingredientName]: true } - global pantry/stock
 let shopPeriod='week';
+let shopGroupBy='ingredient'; // 'ingredient' | 'day'
 let undoStack=[];
 let editTarget=null;
 let currentImage="";
@@ -4081,6 +4082,31 @@ function showShop(){
   _renderShopBuyList();
   document.getElementById("shopOverlay").classList.add("open");
 }
+function _shopDateLabel(date){
+  return`${date.getMonth()+1}/${date.getDate()}(${DAYS[date.getDay()]})`;
+}
+function _shopSlotsWithDates(){
+  // 各日の {items, date} を返す
+  const todayDate=new Date();
+  if(shopPeriod==="today"){
+    const wk=weekKey(todayDate);
+    const start=getWeekStart(todayDate);
+    const d0=new Date(todayDate);d0.setHours(0,0,0,0);
+    const s0=new Date(start);s0.setHours(0,0,0,0);
+    const di=Math.round((d0-s0)/864e5);
+    const dayItems=di>=0&&di<7?MEALS.flatMap(m=>(allData[wk]?.[m]?.[di]||[])):[];
+    return[{items:dayItems,date:new Date(todayDate)}];
+  }else if(shopPeriod==="next"){
+    const nextDate=new Date(todayDate);nextDate.setDate(nextDate.getDate()+7);
+    const weekStart=getWeekStart(nextDate);
+    const days=allMealData(weekKey(nextDate));
+    return days.map((items,i)=>{const d=new Date(weekStart);d.setDate(weekStart.getDate()+i);return{items,date:d};});
+  }else{
+    const weekStart=getWeekStart(baseDate);
+    const days=allMealData(curKey());
+    return days.map((items,i)=>{const d=new Date(weekStart);d.setDate(weekStart.getDate()+i);return{items,date:d};});
+  }
+}
 function _shopCombined(){
   const todayDate=new Date();
   if(shopPeriod==="today"){
@@ -4109,25 +4135,48 @@ function _shopCombinedIngredients(item){
 function _renderShopBuyList(){
   const list=document.getElementById("shopList");if(!list)return;
   list.innerHTML="";
-  const combined=_shopCombined();
+  const periodLabel=shopPeriod==="today"?"今日":shopPeriod==="next"?"来週":"今週";
+  const slots=_shopSlotsWithDates();
+  // グループ切替ボタン行
+  const groupRow=document.createElement("div");
+  groupRow.style.cssText="display:flex;gap:5px;margin-bottom:10px;";
+  [["ingredient","まとめ表示"],["day","日別表示"]].forEach(([val,label])=>{
+    const b=document.createElement("button");
+    b.className="shop-tab-btn"+(shopGroupBy===val?" active":"");
+    b.style.cssText="flex:1;font-size:11px;padding:5px 0;min-height:28px;";
+    b.innerText=label;
+    b.onclick=()=>{shopGroupBy=val;_renderShopBuyList();};
+    groupRow.appendChild(b);
+  });
+  list.appendChild(groupRow);
+  if(shopGroupBy==="day"){
+    _renderShopDayView(list,slots,periodLabel);
+  }else{
+    _renderShopIngredientView(list,slots,periodLabel);
+  }
+}
+function _renderShopIngredientView(list,slots,periodLabel){
   const ingMap={};
-  combined.forEach(day=>(day||[]).forEach(item=>{
-    const ings=_shopCombinedIngredients(item);
-    ings.forEach(ingStr=>{
-      if(!ingStr)return;
-      const{name}=_ingParts(ingStr);
-      if(!ingMap[name])ingMap[name]={need:[],stock:[]};
-      const entry=_pantryEntry(name);
-      if(entry&&entry.count>0)ingMap[name].stock.push(item.text);
-      else ingMap[name].need.push(item.text);
+  slots.forEach(slot=>{
+    const dl=_shopDateLabel(slot.date);
+    (slot.items||[]).forEach(item=>{
+      const ings=_shopCombinedIngredients(item);
+      ings.forEach(ingStr=>{
+        if(!ingStr)return;
+        const{name}=_ingParts(ingStr);
+        if(!ingMap[name])ingMap[name]={need:[],stock:[]};
+        const entry=_pantryEntry(name);
+        const label=item.text+" "+dl;
+        if(entry&&entry.count>0)ingMap[name].stock.push(label);
+        else ingMap[name].need.push(label);
+      });
     });
-  }));
+  });
   const needKeys=Object.keys(ingMap).filter(n=>ingMap[n].need.length>0);
   const stockKeys=Object.keys(ingMap).filter(n=>ingMap[n].need.length===0);
-  const periodLabel=shopPeriod==="today"?"今日":shopPeriod==="next"?"来週":"今週";
   if(!Object.keys(ingMap).length){
-    list.innerHTML="<p style=\"color:#64748b;text-align:center;font-size:13px\">"+periodLabel+"の食材が登録されていません</p>";
-    return;
+    const p=document.createElement("p");p.style.cssText="color:#64748b;text-align:center;font-size:13px";
+    p.innerText=periodLabel+"の食材が登録されていません";list.appendChild(p);return;
   }
   if(!needKeys.length){
     const ok=document.createElement("p");ok.style.cssText="color:#4ade80;text-align:center;font-size:13px;padding:8px 0";
@@ -4138,7 +4187,8 @@ function _renderShopBuyList(){
       const cb=document.createElement("input");cb.type="checkbox";cb.id="si"+i;
       cb.onchange=()=>row.classList.toggle("checked",cb.checked);
       const lbl=document.createElement("label");lbl.htmlFor="si"+i;lbl.innerText=name;
-      const src=document.createElement("span");src.className="shop-source";src.innerText="("+ingMap[name].need.join("・")+")";
+      const src=document.createElement("span");src.className="shop-source";
+      src.innerText="("+ingMap[name].need.join("・")+")";
       row.appendChild(cb);row.appendChild(lbl);row.appendChild(src);list.appendChild(row);
     });
   }
@@ -4150,8 +4200,65 @@ function _renderShopBuyList(){
       const lbl=document.createElement("label");lbl.htmlFor="ss"+i;
       lbl.style.cssText="text-decoration:line-through;color:#4ade80;cursor:default;";
       lbl.innerText=name;
-      row.appendChild(cb);row.appendChild(lbl);list.appendChild(row);
+      const src=document.createElement("span");src.className="shop-source";
+      src.innerText="("+ingMap[name].stock.join("・")+")";
+      row.appendChild(cb);row.appendChild(lbl);row.appendChild(src);list.appendChild(row);
     });
+  }
+}
+function _renderShopDayView(list,slots,periodLabel){
+  let hasAny=false;
+  slots.forEach((slot,si)=>{
+    const ings_all={};
+    (slot.items||[]).forEach(item=>{
+      const ings=_shopCombinedIngredients(item);
+      ings.forEach(ingStr=>{
+        if(!ingStr)return;
+        const{name}=_ingParts(ingStr);
+        if(!ings_all[name])ings_all[name]={need:[],stock:[]};
+        const entry=_pantryEntry(name);
+        if(entry&&entry.count>0)ings_all[name].stock.push(item.text);
+        else ings_all[name].need.push(item.text);
+      });
+    });
+    if(!Object.keys(ings_all).length)return;
+    hasAny=true;
+    const dl=_shopDateLabel(slot.date);
+    const hdr=document.createElement("div");
+    hdr.style.cssText="font-size:12px;font-weight:bold;color:#93c5fd;margin:8px 0 4px;padding:5px 9px;background:#172036;border-radius:7px;border-left:3px solid #3b82f6;";
+    hdr.innerText="📅 "+dl;
+    list.appendChild(hdr);
+    const needK=Object.keys(ings_all).filter(n=>ings_all[n].need.length>0);
+    const stockK=Object.keys(ings_all).filter(n=>ings_all[n].need.length===0);
+    needK.forEach((name,i)=>{
+      const row=document.createElement("div");row.className="shop-item";
+      row.style.paddingLeft="16px";
+      const cb=document.createElement("input");cb.type="checkbox";cb.id=`sd${si}_${i}`;
+      cb.onchange=()=>row.classList.toggle("checked",cb.checked);
+      const lbl=document.createElement("label");lbl.htmlFor=`sd${si}_${i}`;lbl.innerText=name;
+      const src=document.createElement("span");src.className="shop-source";
+      src.innerText="("+ings_all[name].need.join("・")+")";
+      row.appendChild(cb);row.appendChild(lbl);row.appendChild(src);list.appendChild(row);
+    });
+    if(stockK.length){
+      const sep=document.createElement("div");sep.className="shop-stocked-sep";
+      sep.style.paddingLeft="16px";sep.innerText="✅ 在庫あり";list.appendChild(sep);
+      stockK.forEach((name,i)=>{
+        const row=document.createElement("div");row.className="shop-item stocked";
+        row.style.paddingLeft="16px";
+        const cb=document.createElement("input");cb.type="checkbox";cb.id=`sds${si}_${i}`;cb.checked=true;
+        const lbl=document.createElement("label");lbl.htmlFor=`sds${si}_${i}`;
+        lbl.style.cssText="text-decoration:line-through;color:#4ade80;cursor:default;";
+        lbl.innerText=name;
+        const src=document.createElement("span");src.className="shop-source";
+        src.innerText="("+ings_all[name].stock.join("・")+")";
+        row.appendChild(cb);row.appendChild(lbl);row.appendChild(src);list.appendChild(row);
+      });
+    }
+  });
+  if(!hasAny){
+    const p=document.createElement("p");p.style.cssText="color:#64748b;text-align:center;font-size:13px";
+    p.innerText=periodLabel+"の食材が登録されていません";list.appendChild(p);
   }
 }
 function copyShop(){
