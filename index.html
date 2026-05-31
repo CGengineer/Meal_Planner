@@ -3908,10 +3908,9 @@ function pantryRestoreFromItem(item){
     if(!ingStr)return;
     const{name,qty}=_ingParts(ingStr);
     if(!pantry[name])return;
-    const{count,unit}=parseQtyStr(qty);
-    if(count>0&&pantry[name].unit===unit){
-      pantry[name].count=(pantry[name].count||0)+count;
-    }
+    const{count}=parseQtyStr(qty);
+    const amt=count>0?count:1;
+    pantry[name].count=(pantry[name].count||0)+amt;
   });
   if(ings.length)save();
 }
@@ -3921,10 +3920,9 @@ function pantryConsumeFromItem(item){
     if(!ingStr)return;
     const{name,qty}=_ingParts(ingStr);
     if(!pantry[name])return;
-    const{count,unit}=parseQtyStr(qty);
-    if(count>0&&pantry[name].unit===unit){
-      pantry[name].count=Math.max(0,(pantry[name].count||0)-count);
-    }
+    const{count}=parseQtyStr(qty);
+    const amt=count>0?count:1;
+    pantry[name].count=Math.max(0,(pantry[name].count||0)-amt);
   });
   if(ings.length)save();
 }
