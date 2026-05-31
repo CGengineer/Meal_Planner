@@ -3307,7 +3307,26 @@ function addIngRow(val){
   const row=document.createElement("div");row.className="ing-row";
   const inp=document.createElement("input");inp.className="form-input";inp.value=val;inp.placeholder="例: 鶏肉 200g";
   const del=document.createElement("button");del.innerText="✕";del.onclick=()=>row.remove();
-  row.appendChild(inp);row.appendChild(del);list.appendChild(row);
+  row.appendChild(inp);
+  // 予定カード編集時のみ 📦 ボタンを表示
+  if(editTarget&&editTarget.wk){
+    const pantryBtn=document.createElement("button");pantryBtn.type="button";
+    pantryBtn.title="在庫管理に追加／削除";
+    const update=()=>{
+      const v=inp.value.trim();const has=!!pantry[v];
+      pantryBtn.className="ing-pantry-btn"+(has?" in-pantry":"");
+      pantryBtn.innerText=has?"📦 在庫中":"📦+";
+    };
+    update();
+    pantryBtn.onclick=()=>{
+      const v=inp.value.trim();if(!v)return;
+      if(pantry[v]){pantryRemove(v);}else{pantryAdd(v);}
+      update();
+    };
+    inp.addEventListener("blur",update);
+    row.appendChild(pantryBtn);
+  }
+  row.appendChild(del);list.appendChild(row);
 }
 
 // ===== AI 自動入力 =====
