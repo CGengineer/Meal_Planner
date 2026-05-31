@@ -185,7 +185,7 @@ body.touch-dnd-active,body.touch-dnd-active *{-webkit-user-select:none!important
 .shop-item.checked label{text-decoration:line-through;color:#475569;}
 .shop-item label{cursor:pointer;flex:1;font-size:13px;}
 .shop-source{font-size:10px;color:#475569;white-space:nowrap;}
-.shop-item.stocked{background:#052e16;}.shop-item.stocked label{color:#4ade80;}
+.shop-item.stocked{background:#052e16;}.shop-item.stocked label{color:#4ade80;text-decoration:line-through;}
 .shop-stocked-sep{font-size:11px;color:#4ade80;margin:8px 0 4px;padding-left:2px;}
 .shop-tabs{display:flex;border-bottom:1px solid #1e293b;margin-bottom:10px;}
 .shop-tab-btn{flex:1;background:transparent;border:none;border-bottom:2px solid transparent;color:#64748b;padding:8px 0;font-size:13px;cursor:pointer;font-family:inherit;transition:color .1s;}
@@ -3012,13 +3012,6 @@ function mkCardEl(item,target){
     const b=document.createElement("span");b.className="card-badge";b.style.color="#64748b";
     b.innerText="難"+starsHTML(item.difficulty,5);meta.appendChild(b);
   }
-  const invCt=inventoryCount(item);
-  if(showCardField("inventory")&&invCt.total>0){
-    const tone=inventoryBadgeTone(invCt.stocked,invCt.total);
-    const b=document.createElement("span");b.className="card-badge";b.style.color="#cbd5e1";
-    b.style.background=tone.bg;b.style.color=tone.fg;
-    b.innerText="📦 在庫 "+invCt.stocked+"/"+invCt.total;meta.appendChild(b);
-  }
   // Global pantry buy badge (scheduled cards only)
   if(target&&(item.ingredients||[]).length>0){
     const needBuy=(item.ingredients||[]).filter(ing=>ing&&!pantry[ing]);
@@ -4531,13 +4524,6 @@ function renderPool(){
       const b=document.createElement("span");b.className="card-badge";
       b.style.cssText="display:inline-block;margin-top:2px;color:#64748b;";
       b.innerText="難"+starsHTML(item.difficulty,5);main.appendChild(b);
-    }
-    const invCt=inventoryCount(item);
-    if(invCt.total>0){
-      const tone=inventoryBadgeTone(invCt.stocked,invCt.total);
-      const ib=document.createElement("span");ib.className="card-badge";
-      ib.style.cssText=`display:inline-block;margin-top:2px;color:${tone.fg};background:${tone.bg};`;
-      ib.innerText="📦 在庫 "+invCt.stocked+"/"+invCt.total;main.appendChild(ib);
     }
     if((item.cookTime||0)>0){
       const cb=document.createElement("span");cb.className="card-badge";
