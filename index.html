@@ -195,6 +195,10 @@ body.touch-dnd-active,body.touch-dnd-active *{-webkit-user-select:none!important
 .pantry-item-name{flex:1;}
 .pantry-item-del{background:transparent;border:none;color:#64748b;cursor:pointer;font-size:15px;line-height:1;padding:2px 5px;}
 .pantry-item-del:hover{color:#ef4444;}
+.pantry-qty-input{background:transparent;border:1px solid #334155;border-radius:4px;color:#94a3b8;font-size:11px;width:62px;padding:2px 4px;text-align:center;font-family:inherit;flex-shrink:0;}
+.pantry-qty-input:focus{outline:none;border-color:#3b82f6;color:#f1f5f9;}
+.pantry-search{background:#0f172a;border:1px solid #334155;border-radius:7px;color:#f1f5f9;font-size:13px;padding:6px 10px;width:100%;box-sizing:border-box;margin-bottom:8px;font-family:inherit;}
+.pantry-search:focus{outline:none;border-color:#3b82f6;}
 .pantry-add-row{display:flex;gap:6px;margin-top:8px;}
 .pantry-empty{color:#64748b;text-align:center;font-size:13px;padding:20px 0;}
 .ing-pantry-btn{background:transparent;border:1px solid #334155;border-radius:4px;color:#64748b;cursor:pointer;font-size:10px;padding:2px 5px;white-space:nowrap;transition:background .1s,color .1s;}
@@ -1179,12 +1183,29 @@ body[data-theme="pink"] .tut-fab{background:#ffe4ef;color:#db2777;border-color:#
       <div class="shop-list" id="shopList"></div>
     </div>
     <div id="shopPantrySection" style="display:none">
+      <input class="pantry-search" id="pantrySearch" placeholder="🔍 食材を検索..." oninput="renderPantryList(this.value)">
       <div class="pantry-list" id="pantryList"></div>
       <div class="pantry-add-row">
-        <input class="form-input" id="pantryAddInput" placeholder="食材を入力（例: たまねぎ）" style="flex:1;font-size:13px" onkeydown="if(event.key==='Enter')pantryAddFromInput()">
-        <button class="btn primary" onclick="pantryAddFromInput()" style="padding:6px 12px;font-size:13px;white-space:nowrap">追加</button>
+        <input class="form-input" id="pantryAddInput" placeholder="食材名（例: たまねぎ）" style="flex:1;font-size:13px;min-width:0" onkeydown="if(event.key==='Enter')document.getElementById('pantryQtyInput').focus()">
+        <input class="form-input" id="pantryQtyInput" placeholder="個数" list="pantryQtyOptions" style="width:80px;font-size:13px;flex-shrink:0" onkeydown="if(event.key==='Enter')pantryAddFromInput()">
+        <button class="btn primary" onclick="pantryAddFromInput()" style="padding:6px 10px;font-size:13px;white-space:nowrap;flex-shrink:0">追加</button>
       </div>
     </div>
+    <datalist id="pantryQtyOptions">
+      <option value="1/4個"></option>
+      <option value="1/3個"></option>
+      <option value="1/2個"></option>
+      <option value="1個"></option>
+      <option value="2個"></option>
+      <option value="3個"></option>
+      <option value="4個"></option>
+      <option value="5個"></option>
+      <option value="6個"></option>
+      <option value="7個"></option>
+      <option value="8個"></option>
+      <option value="9個"></option>
+      <option value="10個"></option>
+    </datalist>
     <div class="modal-actions">
       <button class="btn" onclick="closeOverlay('shopOverlay')">閉じる</button>
       <button class="btn primary" id="shopCopyBtn" onclick="copyShop()">📋 コピー</button>
@@ -3828,11 +3849,17 @@ function showGraph(){
 }
 
 // ===== PANTRY =====
-function pantryAdd(ing){if(ing){pantry[ing]=true;save();}}
+function _pantryEntry(ing){
+  const e=pantry[ing];
+  if(!e)return null;
+  if(e===true)return{qty:""};  // backward compat
+  return e;
+}
+function pantryAdd(ing,qty=""){if(ing){pantry[ing]={qty:String(qty||"")};save();}}
 function pantryRemove(ing){delete pantry[ing];save();}
 function pantryRestoreFromItem(item){
   const ings=item?.ingredients||[];
-  ings.forEach(ing=>{if(ing)pantry[ing]=true;});
+  ings.forEach(ing=>{if(ing&&!pantry[ing])pantry[ing]={qty:""};});
   if(ings.length)save();
 }
 function switchShopTab(tab){
@@ -3848,32 +3875,46 @@ function switchShopTab(tab){
     if(buySection)buySection.style.display="none";if(pantrySection)pantrySection.style.display="";
     if(t1)t1.classList.remove("active");if(t2)t2.classList.add("active");
     if(copyBtn)copyBtn.style.display="none";
-    renderPantryList();
+    const searchEl=document.getElementById("pantrySearch");
+    if(searchEl)searchEl.value="";
+    renderPantryList("");
+    setTimeout(()=>searchEl?.focus(),50);
   }
 }
-function renderPantryList(){
+function renderPantryList(filter){
+  filter=(filter||"").trim().toLowerCase();
   const list=document.getElementById("pantryList");if(!list)return;list.innerHTML="";
-  const keys=Object.keys(pantry).filter(k=>pantry[k]).sort();
+  const keys=Object.keys(pantry).filter(k=>pantry[k]&&(!filter||k.toLowerCase().includes(filter))).sort();
   if(!keys.length){
     const empty=document.createElement("div");empty.className="pantry-empty";
-    empty.innerText="在庫が登録されていません\n下の入力欄から追加してください";
+    empty.innerText=filter?"一致する食材が見つかりません":"在庫が登録されていません\n下の入力欄から追加してください";
     list.appendChild(empty);return;
   }
   keys.forEach(ing=>{
+    const entry=_pantryEntry(ing);
+    const qty=entry?.qty||"";
     const row=document.createElement("div");row.className="pantry-item";
     const name=document.createElement("span");name.className="pantry-item-name";name.innerText=ing;
+    const qtyInp=document.createElement("input");qtyInp.className="pantry-qty-input";
+    qtyInp.setAttribute("list","pantryQtyOptions");
+    qtyInp.value=qty;qtyInp.placeholder="個数";qtyInp.title="個数を入力（例: 3個, 200g）";
+    qtyInp.onchange=()=>{pantry[ing]={qty:qtyInp.value.trim()};save();};
     const del=document.createElement("button");del.className="pantry-item-del";del.title="削除";del.innerText="✕";
-    del.onclick=()=>{pantryRemove(ing);renderPantryList();};
-    row.appendChild(name);row.appendChild(del);list.appendChild(row);
+    del.onclick=()=>{pantryRemove(ing);renderPantryList(document.getElementById("pantrySearch")?.value||"");};
+    row.appendChild(name);row.appendChild(qtyInp);row.appendChild(del);list.appendChild(row);
   });
 }
 function pantryAddFromInput(){
   const inp=document.getElementById("pantryAddInput");if(!inp)return;
-  const val=inp.value.trim();
-  if(!val){showToast("食材名を入力してください");return;}
-  if(pantry[val]){showToast(`「${val}」はすでに在庫にあります`);inp.value="";return;}
-  pantryAdd(val);inp.value="";renderPantryList();
-  showToast(`📦 「${val}」を在庫に追加しました`);
+  const qtyInp=document.getElementById("pantryQtyInput");
+  const val=inp.value.trim();const qty=(qtyInp?.value||"").trim();
+  if(!val){showToast("食材名を入力してください");inp.focus();return;}
+  const exists=!!pantry[val];
+  pantryAdd(val,qty);
+  inp.value="";if(qtyInp)qtyInp.value="";
+  renderPantryList(document.getElementById("pantrySearch")?.value||"");
+  showToast(exists?`📦 「${val}」を更新しました`:`📦 「${val}」を在庫に追加しました`);
+  inp.focus();
 }
 
 // ===== SHOPPING =====
@@ -3923,7 +3964,8 @@ function showShop(){
         const row=document.createElement("div");row.className="shop-item stocked";
         const cb=document.createElement("input");cb.type="checkbox";cb.id="ss"+i;cb.checked=true;
         cb.onchange=()=>row.classList.toggle("checked",cb.checked);
-        const lbl=document.createElement("label");lbl.htmlFor="ss"+i;lbl.innerText=ing;
+        const entry=_pantryEntry(ing);const qtyTxt=entry?.qty?` [${entry.qty}]`:"";
+        const lbl=document.createElement("label");lbl.htmlFor="ss"+i;lbl.innerText=ing+qtyTxt;
         const src=document.createElement("span");src.className="shop-source";src.innerText="("+ingMap[ing].stock.join("・")+")";
         row.appendChild(cb);row.appendChild(lbl);row.appendChild(src);list.appendChild(row);
       });
