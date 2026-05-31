@@ -3306,29 +3306,8 @@ function addIngRow(val){
   const list=document.getElementById("eIngList");
   const row=document.createElement("div");row.className="ing-row";
   const inp=document.createElement("input");inp.className="form-input";inp.value=val;inp.placeholder="例: 鶏肉 200g";
-  const stockWrap=document.createElement("label");stockWrap.className="ing-stock";
-  const stock=document.createElement("input");stock.type="checkbox";stock.className="ing-stock-check";
-  stock.checked=arguments.length>1?!!arguments[1]:false;
-  const stockTxt=document.createElement("span");stockTxt.innerText="在庫";
-  stockWrap.appendChild(stock);stockWrap.appendChild(stockTxt);
-  // Global pantry toggle
-  const inPantry=()=>!!pantry[inp.value.trim()];
-  const pantryBtn=document.createElement("button");pantryBtn.type="button";
-  pantryBtn.title="在庫管理に追加／削除";
-  const updatePantryBtn=()=>{
-    const v=inp.value.trim();const has=!!pantry[v];
-    pantryBtn.className="ing-pantry-btn"+(has?" in-pantry":"");
-    pantryBtn.innerText=has?"📦 在庫中":"📦+";
-  };
-  updatePantryBtn();
-  pantryBtn.onclick=()=>{
-    const v=inp.value.trim();if(!v)return;
-    if(pantry[v]){pantryRemove(v);}else{pantryAdd(v);}
-    updatePantryBtn();
-  };
-  inp.addEventListener("blur",updatePantryBtn);
   const del=document.createElement("button");del.innerText="✕";del.onclick=()=>row.remove();
-  row.appendChild(inp);row.appendChild(stockWrap);row.appendChild(pantryBtn);row.appendChild(del);list.appendChild(row);
+  row.appendChild(inp);row.appendChild(del);list.appendChild(row);
 }
 
 // ===== AI 自動入力 =====
@@ -3581,11 +3560,9 @@ function saveEdit(){
   const ingredientInventory={};
   [...document.querySelectorAll("#eIngList .ing-row")].forEach(row=>{
     const input=row.querySelector("input.form-input");
-    const stock=row.querySelector(".ing-stock-check");
     const v=(input?.value||"").trim();
     if(!v)return;
     ings.push(v);
-    ingredientInventory[v]=!!stock?.checked;
   });
   const isPoolTarget=editTarget.type==="pool";
   let nextImageId=(currentImageId||"").trim();
