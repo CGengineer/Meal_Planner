@@ -4095,22 +4095,33 @@ function _shopCombined(){
     const nextDate=new Date(todayDate);nextDate.setDate(nextDate.getDate()+7);
     return allMealData(weekKey(nextDate));
   }else{
-    return allMealData(weekKey(todayDate));
+    // カレンダーで表示中の週を使う（curKey = weekKey(baseDate)）
+    return allMealData(curKey());
   }
+}
+function _shopCombinedIngredients(item){
+  // カレンダー上のアイテムに食材が無い場合、同名のプールカードから補完する
+  const ings=item.ingredients||[];
+  if(ings.length>0)return ings;
+  const poolMatch=pool.find(p=>p.text===item.text&&(p.ingredients||[]).length>0);
+  return poolMatch?poolMatch.ingredients:[];
 }
 function _renderShopBuyList(){
   const list=document.getElementById("shopList");if(!list)return;
   list.innerHTML="";
   const combined=_shopCombined();
   const ingMap={};
-  combined.forEach(day=>(day||[]).forEach(item=>(item.ingredients||[]).forEach(ingStr=>{
-    if(!ingStr)return;
-    const{name}=_ingParts(ingStr);
-    if(!ingMap[name])ingMap[name]={need:[],stock:[]};
-    const entry=_pantryEntry(name);
-    if(entry&&entry.count>0)ingMap[name].stock.push(item.text);
-    else ingMap[name].need.push(item.text);
-  })));
+  combined.forEach(day=>(day||[]).forEach(item=>{
+    const ings=_shopCombinedIngredients(item);
+    ings.forEach(ingStr=>{
+      if(!ingStr)return;
+      const{name}=_ingParts(ingStr);
+      if(!ingMap[name])ingMap[name]={need:[],stock:[]};
+      const entry=_pantryEntry(name);
+      if(entry&&entry.count>0)ingMap[name].stock.push(item.text);
+      else ingMap[name].need.push(item.text);
+    });
+  }));
   const needKeys=Object.keys(ingMap).filter(n=>ingMap[n].need.length>0);
   const stockKeys=Object.keys(ingMap).filter(n=>ingMap[n].need.length===0);
   const periodLabel=shopPeriod==="today"?"今日":shopPeriod==="next"?"来週":"今週";
