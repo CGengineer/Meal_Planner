@@ -195,7 +195,7 @@ body.touch-dnd-active,body.touch-dnd-active *{-webkit-user-select:none!important
 .pantry-item-name{flex:1;}
 .pantry-item-del{background:transparent;border:none;color:#64748b;cursor:pointer;font-size:15px;line-height:1;padding:2px 5px;}
 .pantry-item-del:hover{color:#ef4444;}
-.pantry-qty-input{background:transparent;border:1px solid #334155;border-radius:4px;color:#94a3b8;font-size:11px;width:62px;padding:2px 4px;text-align:center;font-family:inherit;flex-shrink:0;}
+.pantry-qty-input{background:transparent;border:1px solid #334155;border-radius:4px;color:#94a3b8;font-size:12px;padding:2px 4px;text-align:center;font-family:inherit;flex-shrink:0;min-width:0;}
 .pantry-qty-input:focus{outline:none;border-color:#3b82f6;color:#f1f5f9;}
 .pantry-search{background:#0f172a;border:1px solid #334155;border-radius:7px;color:#f1f5f9;font-size:13px;padding:6px 10px;width:100%;box-sizing:border-box;margin-bottom:8px;font-family:inherit;}
 .pantry-search:focus{outline:none;border-color:#3b82f6;}
@@ -1186,25 +1186,18 @@ body[data-theme="pink"] .tut-fab{background:#ffe4ef;color:#db2777;border-color:#
       <input class="pantry-search" id="pantrySearch" placeholder="🔍 食材を検索..." oninput="renderPantryList(this.value)">
       <div class="pantry-list" id="pantryList"></div>
       <div class="pantry-add-row">
-        <input class="form-input" id="pantryAddInput" placeholder="食材名（例: たまねぎ）" style="flex:1;font-size:13px;min-width:0" onkeydown="if(event.key==='Enter')document.getElementById('pantryQtyInput').focus()">
-        <input class="form-input" id="pantryQtyInput" placeholder="個数" list="pantryQtyOptions" style="width:80px;font-size:13px;flex-shrink:0" onkeydown="if(event.key==='Enter')pantryAddFromInput()">
+        <input class="form-input" id="pantryAddInput" placeholder="食材名（例: たまねぎ）" style="flex:1;font-size:13px;min-width:0" onkeydown="if(event.key==='Enter')document.getElementById('pantryCountInput').focus()">
+        <input class="form-input" id="pantryCountInput" type="number" min="0" step="0.5" placeholder="数量" style="width:62px;font-size:13px;flex-shrink:0" onkeydown="if(event.key==='Enter')document.getElementById('pantryUnitInput').focus()">
+        <input class="form-input" id="pantryUnitInput" placeholder="単位" list="pantryUnitOptions" style="width:62px;font-size:13px;flex-shrink:0" onkeydown="if(event.key==='Enter')pantryAddFromInput()">
         <button class="btn primary" onclick="pantryAddFromInput()" style="padding:6px 10px;font-size:13px;white-space:nowrap;flex-shrink:0">追加</button>
       </div>
     </div>
-    <datalist id="pantryQtyOptions">
-      <option value="1/4個"></option>
-      <option value="1/3個"></option>
-      <option value="1/2個"></option>
-      <option value="1個"></option>
-      <option value="2個"></option>
-      <option value="3個"></option>
-      <option value="4個"></option>
-      <option value="5個"></option>
-      <option value="6個"></option>
-      <option value="7個"></option>
-      <option value="8個"></option>
-      <option value="9個"></option>
-      <option value="10個"></option>
+    <datalist id="pantryUnitOptions">
+      <option value="個"></option><option value="本"></option><option value="枚"></option>
+      <option value="切れ"></option><option value="パック"></option><option value="袋"></option>
+      <option value="缶"></option><option value="g"></option><option value="kg"></option>
+      <option value="ml"></option><option value="L"></option><option value="大さじ"></option>
+      <option value="小さじ"></option><option value="カップ"></option><option value="合"></option>
     </datalist>
     <div class="modal-actions">
       <button class="btn" onclick="closeOverlay('shopOverlay')">閉じる</button>
@@ -1666,6 +1659,7 @@ function applyDropToDay(obj,col,clientX){
   }
 
   if(item&&changed){
+    if(obj.fromPool||shouldCopy)pantryConsumeFromItem(item);
     weekData()[di].push(item);
     trackNewCard(item?.id);
     save();
@@ -1870,6 +1864,7 @@ function assignPoolItemToSelectedDay(pidx){
   if(!src)return;
   pushUndo();
   const item=createPlannedItemFromSource(src,true);
+  pantryConsumeFromItem(item);
   weekData()[assignmentDayIndex].push(item);
   save();
   showToast(`${assignmentDateLabel(assignmentDayIndex)} に追加しました`);
@@ -2820,19 +2815,16 @@ function cardBorderColor(item){
   return TC[item.tag]||"#475569";
 }
 function starsHTML(v,max){let s="";for(let i=1;i<=max;i++)s+=i<=v?"★":"☆";return s;}
+function _ingInStock(ingStr){const{name}=_ingParts(ingStr);const e=_pantryEntry(name);return!!(e&&e.count>0);}
 function inventoryScore(item){
   const ings=item.ingredients||[];
   if(!ings.length)return 0;
-  const inv=item.ingredientInventory||{};
-  const stocked=ings.reduce((s,ing)=>s+(inv[ing]===true?1:0),0);
-  return stocked/ings.length;
+  return ings.reduce((s,ing)=>s+(_ingInStock(ing)?1:0),0)/ings.length;
 }
 function inventoryCount(item){
   const ings=item.ingredients||[];
   if(!ings.length)return{stocked:0,total:0};
-  const inv=item.ingredientInventory||{};
-  const stocked=ings.reduce((s,ing)=>s+(inv[ing]===true?1:0),0);
-  return{stocked,total:ings.length};
+  return{stocked:ings.reduce((s,ing)=>s+(_ingInStock(ing)?1:0),0),total:ings.length};
 }
 function inventoryBadgeTone(stocked,total){
   const ratio=total?stocked/total:0;
@@ -3014,7 +3006,7 @@ function mkCardEl(item,target){
   }
   // Global pantry buy badge (scheduled cards only)
   if(target&&(item.ingredients||[]).length>0){
-    const needBuy=(item.ingredients||[]).filter(ing=>ing&&!pantry[ing]);
+    const needBuy=(item.ingredients||[]).filter(ing=>ing&&!_ingInStock(ing));
     if(needBuy.length>0){
       const b=document.createElement("span");b.className="card-buy-badge";
       b.title="要購入: "+needBuy.join("、");
@@ -3355,14 +3347,14 @@ function addIngRow(val){
       nameInp.style.opacity=has?"0.7":"1";
     };
     const getName=()=>nameInp.value.trim();
-    cb.checked=!!pantry[getName()];
+    cb.checked=_ingInStock(getName());
     syncStyle(cb.checked);
     cb.onchange=()=>{
       const v=getName();if(!v){cb.checked=!cb.checked;return;}
-      if(cb.checked)pantryAdd(v);else pantryRemove(v);
+      if(cb.checked)pantryAdd(v,1,"");else pantryRemove(v);
       syncStyle(cb.checked);
     };
-    const resync=()=>{const has=!!pantry[getName()];cb.checked=has;syncStyle(has);};
+    const resync=()=>{const has=_ingInStock(getName());cb.checked=has;syncStyle(has);};
     nameInp.addEventListener("change",resync);
     nameInp.addEventListener("blur",resync);
     row.appendChild(cb);
@@ -3642,6 +3634,7 @@ function saveEdit(){
     if(!allData[targetWk])allData[targetWk]={};
     MEALS.forEach(m=>{if(!allData[targetWk][m])allData[targetWk][m]=Array.from({length:7},()=>[]);});
     const _planned=createPlannedItemFromSource(newItem,true);
+    pantryConsumeFromItem(_planned);
     allData[targetWk][targetMeal][editTarget.directDayIndex].push(_planned);
     trackNewCard(_planned?.id);
   }else if(editTarget.type==="pool"&&editTarget.pidx<0){
@@ -3879,17 +3872,60 @@ function showGraph(){
 }
 
 // ===== PANTRY =====
+function parseQtyStr(s){
+  s=(s||"").trim();
+  if(!s)return{count:0,unit:""};
+  const fr=s.match(/^(\d+)\/(\d+)\s*(.*)$/);
+  if(fr)return{count:parseFloat(fr[1])/parseFloat(fr[2]),unit:fr[3].trim()};
+  const pfx=s.match(/^(大さじ|小さじ|カップ)(\d+(?:\.\d+)?)\s*(.*)$/);
+  if(pfx)return{count:parseFloat(pfx[2]),unit:pfx[1]+(pfx[3].trim()||"")};
+  const nf=s.match(/^(\d+(?:\.\d+)?)\s*(.*)$/);
+  if(nf)return{count:parseFloat(nf[1]),unit:nf[2].trim()};
+  return{count:0,unit:s};
+}
 function _pantryEntry(ing){
   const e=pantry[ing];
   if(!e)return null;
-  if(e===true)return{qty:""};  // backward compat
-  return e;
+  if(e===true)return{count:0,unit:""}; // backward compat
+  if(typeof e.count==="number")return e; // new format
+  const p=parseQtyStr(e.qty||"");       // migrate old {qty:"2個"} format
+  return{count:p.count,unit:p.unit};
 }
-function pantryAdd(ing,qty=""){if(ing){pantry[ing]={qty:String(qty||"")};save();}}
+function pantryAdd(ing,count=0,unit=""){
+  if(!ing)return;
+  if(typeof count==="string"){const p=parseQtyStr(count);if(!unit)unit=p.unit;count=p.count;}
+  pantry[ing]={count:Number(count)||0,unit:String(unit||"")};
+  save();
+}
 function pantryRemove(ing){delete pantry[ing];save();}
+function _ingParts(ingStr){
+  const sp=ingStr.indexOf(" ");
+  return sp>0?{name:ingStr.slice(0,sp),qty:ingStr.slice(sp+1)}:{name:ingStr,qty:""};
+}
 function pantryRestoreFromItem(item){
   const ings=item?.ingredients||[];
-  ings.forEach(ing=>{if(ing&&!pantry[ing])pantry[ing]={qty:""};});
+  ings.forEach(ingStr=>{
+    if(!ingStr)return;
+    const{name,qty}=_ingParts(ingStr);
+    if(!pantry[name])return;
+    const{count,unit}=parseQtyStr(qty);
+    if(count>0&&pantry[name].unit===unit){
+      pantry[name].count=(pantry[name].count||0)+count;
+    }
+  });
+  if(ings.length)save();
+}
+function pantryConsumeFromItem(item){
+  const ings=item?.ingredients||[];
+  ings.forEach(ingStr=>{
+    if(!ingStr)return;
+    const{name,qty}=_ingParts(ingStr);
+    if(!pantry[name])return;
+    const{count,unit}=parseQtyStr(qty);
+    if(count>0&&pantry[name].unit===unit){
+      pantry[name].count=Math.max(0,(pantry[name].count||0)-count);
+    }
+  });
   if(ings.length)save();
 }
 function switchShopTab(tab){
@@ -3921,27 +3957,33 @@ function renderPantryList(filter){
     list.appendChild(empty);return;
   }
   keys.forEach(ing=>{
-    const entry=_pantryEntry(ing);
-    const qty=entry?.qty||"";
+    const entry=_pantryEntry(ing)||{count:0,unit:""};
     const row=document.createElement("div");row.className="pantry-item";
     const name=document.createElement("span");name.className="pantry-item-name";name.innerText=ing;
-    const qtyInp=document.createElement("input");qtyInp.className="pantry-qty-input";
-    qtyInp.setAttribute("list","pantryQtyOptions");
-    qtyInp.value=qty;qtyInp.placeholder="個数";qtyInp.title="個数を入力（例: 3個, 200g）";
-    qtyInp.onchange=()=>{pantry[ing]={qty:qtyInp.value.trim()};save();};
+    const cntInp=document.createElement("input");cntInp.className="pantry-qty-input";
+    cntInp.type="number";cntInp.min="0";cntInp.step="0.5";
+    cntInp.value=entry.count||0;cntInp.placeholder="数量";cntInp.style.width="52px";
+    const unitInp=document.createElement("input");unitInp.className="pantry-qty-input";
+    unitInp.setAttribute("list","pantryUnitOptions");
+    unitInp.value=entry.unit||"";unitInp.placeholder="単位";unitInp.style.width="50px";
+    const save2=()=>{pantry[ing]={count:parseFloat(cntInp.value)||0,unit:unitInp.value.trim()};save();};
+    cntInp.onchange=save2;unitInp.onchange=save2;
     const del=document.createElement("button");del.className="pantry-item-del";del.title="削除";del.innerText="✕";
     del.onclick=()=>{pantryRemove(ing);renderPantryList(document.getElementById("pantrySearch")?.value||"");};
-    row.appendChild(name);row.appendChild(qtyInp);row.appendChild(del);list.appendChild(row);
+    row.appendChild(name);row.appendChild(cntInp);row.appendChild(unitInp);row.appendChild(del);list.appendChild(row);
   });
 }
 function pantryAddFromInput(){
   const inp=document.getElementById("pantryAddInput");if(!inp)return;
-  const qtyInp=document.getElementById("pantryQtyInput");
-  const val=inp.value.trim();const qty=(qtyInp?.value||"").trim();
+  const cntInp=document.getElementById("pantryCountInput");
+  const unitInp=document.getElementById("pantryUnitInput");
+  const val=inp.value.trim();
   if(!val){showToast("食材名を入力してください");inp.focus();return;}
+  const count=parseFloat(cntInp?.value||0)||0;
+  const unit=(unitInp?.value||"").trim();
   const exists=!!pantry[val];
-  pantryAdd(val,qty);
-  inp.value="";if(qtyInp)qtyInp.value="";
+  pantryAdd(val,count,unit);
+  inp.value="";if(cntInp)cntInp.value="";if(unitInp)unitInp.value="";
   renderPantryList(document.getElementById("pantrySearch")?.value||"");
   showToast(exists?`📦 「${val}」を更新しました`:`📦 「${val}」を在庫に追加しました`);
   inp.focus();
@@ -3957,15 +3999,18 @@ function showShop(){
   if(t1)t1.classList.add("active");if(t2)t2.classList.remove("active");
   if(copyBtn)copyBtn.style.display="";
   const combined=allMealData(curKey());const ingMap={};
-  combined.forEach(day=>(day||[]).forEach(item=>(item.ingredients||[]).forEach(ing=>{
-    if(!ing)return;
-    if(!ingMap[ing])ingMap[ing]={need:[],stock:[]};
-    if(!!pantry[ing])ingMap[ing].stock.push(item.text);
-    else ingMap[ing].need.push(item.text);
+  combined.forEach(day=>(day||[]).forEach(item=>(item.ingredients||[]).forEach(ingStr=>{
+    if(!ingStr)return;
+    const{name}=_ingParts(ingStr);
+    if(!ingMap[name])ingMap[name]={need:[],stock:[]};
+    const entry=_pantryEntry(name);
+    const inStock=entry&&entry.count>0;
+    if(inStock)ingMap[name].stock.push(item.text);
+    else ingMap[name].need.push(item.text);
   })));
   const list=document.getElementById("shopList");list.innerHTML="";
-  const needKeys=Object.keys(ingMap).filter(ing=>ingMap[ing].need.length>0);
-  const stockKeys=Object.keys(ingMap).filter(ing=>ingMap[ing].need.length===0);
+  const needKeys=Object.keys(ingMap).filter(n=>ingMap[n].need.length>0);
+  const stockKeys=Object.keys(ingMap).filter(n=>ingMap[n].need.length===0);
   if(!Object.keys(ingMap).length){
     list.innerHTML="<p style=\"color:#64748b;text-align:center;font-size:13px\">食材が登録されていません</p>";
   }else{
@@ -3973,30 +4018,25 @@ function showShop(){
       const ok=document.createElement("p");ok.style.cssText="color:#4ade80;text-align:center;font-size:13px;padding:8px 0";
       ok.innerText="✅ 今週の食材はすべて在庫にあります";list.appendChild(ok);
     }else{
-      needKeys.forEach((ing,i)=>{
+      needKeys.forEach((name,i)=>{
         const row=document.createElement("div");row.className="shop-item";
         const cb=document.createElement("input");cb.type="checkbox";cb.id="si"+i;
         cb.onchange=()=>row.classList.toggle("checked",cb.checked);
-        const lbl=document.createElement("label");lbl.htmlFor="si"+i;lbl.innerText=ing;
-        const src=document.createElement("span");src.className="shop-source";src.innerText="("+ingMap[ing].need.join("・")+")";
-        const addBtn=document.createElement("button");addBtn.className="ing-pantry-btn";addBtn.innerText="📦 在庫に";
-        addBtn.onclick=()=>{
-          pantryAdd(ing);
-          row.querySelector("input[type=checkbox]").checked=true;row.classList.add("checked");addBtn.style.display="none";
-          showToast(`📦 「${ing}」を在庫に追加しました`);
-        };
-        row.appendChild(cb);row.appendChild(lbl);row.appendChild(src);row.appendChild(addBtn);list.appendChild(row);
+        const lbl=document.createElement("label");lbl.htmlFor="si"+i;lbl.innerText=name;
+        const src=document.createElement("span");src.className="shop-source";src.innerText="("+ingMap[name].need.join("・")+")";
+        row.appendChild(cb);row.appendChild(lbl);row.appendChild(src);list.appendChild(row);
       });
     }
     if(stockKeys.length){
       const sep=document.createElement("div");sep.className="shop-stocked-sep";sep.innerText="✅ 在庫あり";list.appendChild(sep);
-      stockKeys.forEach((ing,i)=>{
+      stockKeys.forEach((name,i)=>{
         const row=document.createElement("div");row.className="shop-item stocked";
         const cb=document.createElement("input");cb.type="checkbox";cb.id="ss"+i;cb.checked=true;
         cb.onchange=()=>row.classList.toggle("checked",cb.checked);
-        const entry=_pantryEntry(ing);const qtyTxt=entry?.qty?` [${entry.qty}]`:"";
-        const lbl=document.createElement("label");lbl.htmlFor="ss"+i;lbl.innerText=ing+qtyTxt;
-        const src=document.createElement("span");src.className="shop-source";src.innerText="("+ingMap[ing].stock.join("・")+")";
+        const entry=_pantryEntry(name);
+        const qtyTxt=entry&&(entry.count||entry.unit)?` [${entry.count||""}${entry.unit}]`:"";
+        const lbl=document.createElement("label");lbl.htmlFor="ss"+i;lbl.innerText=name+qtyTxt;
+        const src=document.createElement("span");src.className="shop-source";src.innerText="("+ingMap[name].stock.join("・")+")";
         row.appendChild(cb);row.appendChild(lbl);row.appendChild(src);list.appendChild(row);
       });
     }
@@ -4380,7 +4420,7 @@ function autoSuggest(){
       // フォールバック: 全プールからランダム
       pick=pool[Math.floor(Math.random()*pool.length)];
     }
-    day.push(createPlannedItemFromSource(pick,true));
+    const _pi=createPlannedItemFromSource(pick,true);pantryConsumeFromItem(_pi);day.push(_pi);
     filled++;
   });
 
@@ -4420,7 +4460,7 @@ function autoSuggestDay(dayIndex){
   }else{
     pick=pool[Math.floor(Math.random()*pool.length)];
   }
-  wd[dayIndex].push(createPlannedItemFromSource(pick,true));
+  const _ad=createPlannedItemFromSource(pick,true);pantryConsumeFromItem(_ad);wd[dayIndex].push(_ad);
   save();render();showToast(assignmentDateLabel(dayIndex)+" に提案しました 🎲");
 }
 
@@ -4492,9 +4532,8 @@ function renderPool(){
     const ings=item.ingredients||[];
     if(activeInventoryFilter===null)return true;
     if(!ings.length)return false;
-    const inv=item.ingredientInventory||{};
-    if(activeInventoryFilter===true)return ings.every(ing=>inv[ing]===true);
-    return ings.some(ing=>inv[ing]!==true);
+    if(activeInventoryFilter===true)return ings.every(ing=>_ingInStock(ing));
+    return ings.some(ing=>!_ingInStock(ing));
   };
   const filtered=pool.filter(item=>{
     if(activeTagFilter&&item.tag!==activeTagFilter)return false;
@@ -5315,7 +5354,7 @@ function showMonthDayMenu(dateObj,wk,dayIdx){
         const addToDay=(m)=>{
           if(!allData[wk])allData[wk]={};
           MEALS.forEach(ml=>{if(!allData[wk][ml])allData[wk][ml]=Array.from({length:7},()=>[]);});
-          allData[wk][m][dayIdx].push(createPlannedItemFromSource(item,true));
+          const _md=createPlannedItemFromSource(item,true);pantryConsumeFromItem(_md);allData[wk][m][dayIdx].push(_md);
           save();render();overlay.remove();showToast(`${mo}月${da}日 ${m}に追加しました`);
         };
         if(currentMeal!=="全"){
@@ -5972,7 +6011,7 @@ function recAddToToday(){
   const wk=curKey();
   if(!allData[wk])allData[wk]={};
   MEALS.forEach(m=>{if(!allData[wk][m])allData[wk][m]=Array.from({length:7},()=>[]);});
-  allData[wk][currentMeal][todayIdx].push(createPlannedItemFromSource(newItem,true));
+  const _ri=createPlannedItemFromSource(newItem,true);pantryConsumeFromItem(_ri);allData[wk][currentMeal][todayIdx].push(_ri);
   save();render();
   closeOverlay("recognizeOverlay");
   showToast(`📅 今日の${currentMeal}食に「${newItem.text}」を追加しました`);
@@ -6478,7 +6517,7 @@ JSONのみ返してください（説明不要）:
             if(!src)continue;
             if(!MEALS.includes(entry.meal))continue;
             if(!allData[wk][entry.meal][dayIndex])allData[wk][entry.meal][dayIndex]=[];
-            allData[wk][entry.meal][dayIndex].push(createPlannedItemFromSource(src,true));
+            const _ai=createPlannedItemFromSource(src,true);pantryConsumeFromItem(_ai);allData[wk][entry.meal][dayIndex].push(_ai);
           }
           save();render();
           showToast(`${dayLabel} の朝昼夜をAIで計画しました🌸`);
@@ -6496,7 +6535,7 @@ JSONのみ返してください（説明不要）:
     if(!allData[wk][mealTime][dayIndex])allData[wk][mealTime][dayIndex]=[];
     if(allData[wk][mealTime][dayIndex].length)continue;
     const pick=shuffled[idx%shuffled.length];
-    if(pick)allData[wk][mealTime][dayIndex].push(createPlannedItemFromSource(pick,true));
+    if(pick){const _fb=createPlannedItemFromSource(pick,true);pantryConsumeFromItem(_fb);allData[wk][mealTime][dayIndex].push(_fb);}
     idx++;
   }
   save();render();
